@@ -1,0 +1,32 @@
+[versions]
+kotlin = "2.3.0"
+coroutines = "1.10.2"
+serialization-json = "1.8.0"
+anthropic = "2.20.0"
+openai = "4.30.0"
+langchain4j = "1.0.1"
+mcp-kotlin-sdk = "0.11.1"
+junit5 = "5.12.0"
+kotest = "6.1.11"
+mockk = "1.14.0"
+coroutines-test = "1.10.2"
+kotlinter = "5.0.0"
+jacoco-min-coverage = "0.80"
+
+[libraries]
+coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines-test" }
+serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization-json" }
+anthropic-java = { module = "com.anthropic:anthropic-java", version.ref = "anthropic" }
+openai-java = { module = "com.openai:openai-java", version.ref = "openai" }
+langchain4j-ollama = { module = "dev.langchain4j:langchain4j-ollama", version.ref = "langchain4j" }
+langchain4j-gemini = { module = "dev.langchain4j:langchain4j-google-ai-gemini", version.ref = "langchain4j" }
+mcp-kotlin-sdk = { module = "io.modelcontextprotocol:kotlin-sdk", version.ref = "mcp-kotlin-sdk" }
+junit5 = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit5" }
+kotest-assertions = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+kotlinter = { id = "org.jmailen.kotlinter", version.ref = "kotlinter" }
