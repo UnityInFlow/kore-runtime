@@ -9,9 +9,9 @@ Requirements for v0.1 release. Each maps to roadmap phases.
 
 ### Agent Core
 
-- [ ] **CORE-01**: Agent executes a coroutine-based loop: task intake -> LLM call -> tool use -> result -> loop
-- [ ] **CORE-02**: AgentResult sealed class hierarchy: Success | BudgetExceeded | ToolError | LLMError | Cancelled
-- [ ] **CORE-03**: Agent defined via Kotlin DSL: `agent("name") { model = claude(); tools = mcp("server") }`
+- [x] **CORE-01**: Agent executes a coroutine-based loop: task intake -> LLM call -> tool use -> result -> loop
+- [x] **CORE-02**: AgentResult sealed class hierarchy: Success | BudgetExceeded | ToolError | LLMError | Cancelled
+- [x] **CORE-03**: Agent defined via Kotlin DSL: `agent("name") { model = claude(); tools = mcp("server") }`
 - [ ] **CORE-04**: Each agent runs as a coroutine with semaphore-based LLM rate limiting per backend
 - [ ] **CORE-05**: Parent agent can spawn child agents with structured concurrency (cancel parent cancels children)
 - [ ] **CORE-06**: LLM retry with configurable exponential backoff
@@ -138,9 +138,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CORE-01 | Phase 1 | Pending |
-| CORE-02 | Phase 1 | Pending |
-| CORE-03 | Phase 1 | Pending |
+| CORE-01 | Phase 1 | Complete |
+| CORE-02 | Phase 1 | Complete |
+| CORE-03 | Phase 1 | Complete |
 | CORE-04 | Phase 1 | Pending |
 | CORE-05 | Phase 1 | Pending |
 | CORE-06 | Phase 1 | Pending |
