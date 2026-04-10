@@ -169,5 +169,21 @@ None — no external service configuration required. CI runners (arc-runner-unit
 No blockers for Wave 2 execution.
 
 ---
+## Self-Check: PASSED
+
+- FOUND: settings.gradle.kts
+- FOUND: build.gradle.kts
+- FOUND: gradle/libs.versions.toml
+- FOUND: gradle/wrapper/gradle-wrapper.properties
+- FOUND: kore-core/build.gradle.kts
+- FOUND: kore-mcp/build.gradle.kts
+- FOUND: kore-llm/build.gradle.kts
+- FOUND: kore-test/build.gradle.kts
+- FOUND: .github/workflows/ci.yml
+- FOUND: .planning/phases/01-core-runtime/01-01-SUMMARY.md
+- FOUND commit 847246a (Task 1)
+- FOUND commit b470290 (Task 2)
+
+---
 *Phase: 01-core-runtime*
 *Completed: 2026-04-10*
