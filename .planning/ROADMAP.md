@@ -35,7 +35,7 @@ Plans:
 - [x] 01-01-PLAN.md — Gradle multi-module scaffold (settings, build, libs.versions.toml, CI workflow)
 - [x] 01-02-PLAN.md — kore-core domain types (AgentResult, LLMChunk) and port interfaces (LLMBackend, BudgetEnforcer, ToolProvider, EventBus, AuditLog)
 - [x] 01-03-PLAN.md — AgentLoop, Kotlin DSL (agent { }), InMemoryBudgetEnforcer, InProcessEventBus stubs
-- [ ] 01-04-PLAN.md — kore-test: MockLLMBackend, MockToolProvider, SessionRecorder, SessionReplayer
+- [x] 01-04-PLAN.md — kore-test: MockLLMBackend, MockToolProvider, SessionRecorder, SessionReplayer
 - [ ] 01-05-PLAN.md — kore-llm: ClaudeBackend, OpenAiBackend, OllamaBackend, GeminiBackend, DSL factory functions
 - [ ] 01-06-PLAN.md — kore-mcp: McpClientAdapter (tools+resources+prompts), McpServerAdapter
 - [ ] 01-07-PLAN.md — HeroDemoTest integration, README/CONTRIBUTING/LICENSE, Phase 1 completion gate

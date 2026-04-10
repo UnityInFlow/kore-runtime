@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-core-runtime/01-03-PLAN.md
-last_updated: "2026-04-10T19:10:41.622Z"
+stopped_at: Completed 01-core-runtime/01-04-PLAN.md
+last_updated: "2026-04-10T19:16:03.620Z"
 last_activity: 2026-04-10
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 7
-  completed_plans: 3
-  percent: 43
+  completed_plans: 4
+  percent: 57
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-10)
 ## Current Position
 
 Phase: 01 (core-runtime) — EXECUTING
-Plan: 4 of 7
+Plan: 5 of 7
 Status: Ready to execute
 Last activity: 2026-04-10
 
@@ -55,6 +55,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01-core-runtime P01 | 4 | 2 tasks | 20 files |
 | Phase 01-core-runtime P02 | 4min | 2 tasks | 19 files |
 | Phase 01-core-runtime P03 | 4min | 2 tasks | 11 files |
+| Phase 01-core-runtime P04 | 2min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -77,6 +78,7 @@ Recent decisions affecting current work:
 - [Phase 01-core-runtime]: AgentLoop history is MutableList mutated in-place each iteration — not re-created
 - [Phase 01-core-runtime]: InMemoryBudgetEnforcer uses ConcurrentHashMap.merge for atomic token accumulation (thread-safe)
 - [Phase 01-core-runtime]: ResilientLLMBackend.retryPolicy is internal (not private) so fallbackTo infix can copy it when chaining
+- [Phase 01-core-runtime]: SessionRecorder.kt hosts SessionReplayer — shared SerializableChunk types kept in one file, avoids adding @Serializable to kore-core domain types (preserves D-15 zero-dep constraint)
 
 ### Pending Todos
 
@@ -88,6 +90,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-10T19:10:41.619Z
-Stopped at: Completed 01-core-runtime/01-03-PLAN.md
+Last session: 2026-04-10T19:16:03.617Z
+Stopped at: Completed 01-core-runtime/01-04-PLAN.md
 Resume file: None

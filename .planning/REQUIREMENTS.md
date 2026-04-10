@@ -86,10 +86,10 @@ Requirements for v0.1 release. Each maps to roadmap phases.
 
 ### Testing
 
-- [ ] **TEST-01**: MockLLMBackend for scripted LLM responses in unit tests
-- [ ] **TEST-02**: MockMcpServer for scripted tool/resource responses in tests
-- [ ] **TEST-03**: Session recording mode: capture real LLM interactions to file
-- [ ] **TEST-04**: Session replay mode: deterministic replay of recorded sessions in CI
+- [x] **TEST-01**: MockLLMBackend for scripted LLM responses in unit tests
+- [x] **TEST-02**: MockMcpServer for scripted tool/resource responses in tests
+- [x] **TEST-03**: Session recording mode: capture real LLM interactions to file
+- [x] **TEST-04**: Session replay mode: deterministic replay of recorded sessions in CI
 
 ## v2 Requirements
 
@@ -160,10 +160,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BUDG-02 | Phase 1 | Complete |
 | BUDG-03 | Phase 1 | Complete |
 | BUDG-04 | Phase 1 | Complete |
-| TEST-01 | Phase 1 | Pending |
-| TEST-02 | Phase 1 | Pending |
-| TEST-03 | Phase 1 | Pending |
-| TEST-04 | Phase 1 | Pending |
+| TEST-01 | Phase 1 | Complete |
+| TEST-02 | Phase 1 | Complete |
+| TEST-03 | Phase 1 | Complete |
+| TEST-04 | Phase 1 | Complete |
 | OBSV-01 | Phase 2 | Pending |
 | OBSV-02 | Phase 2 | Pending |
 | OBSV-03 | Phase 2 | Pending |
