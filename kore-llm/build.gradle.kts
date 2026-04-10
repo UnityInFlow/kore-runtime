@@ -6,6 +6,7 @@ dependencies {
     implementation(project(":kore-core"))
     implementation(libs.coroutines.core)
     implementation(libs.anthropic.java)
+    implementation(libs.anthropic.java.okhttp)
     implementation(libs.openai.java)
     implementation(libs.langchain4j.ollama)
     implementation(libs.langchain4j.gemini)
