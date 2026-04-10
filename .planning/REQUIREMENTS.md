@@ -23,7 +23,7 @@ Requirements for v0.1 release. Each maps to roadmap phases.
 - [ ] **LLM-02**: GPT adapter via OpenAI Java SDK (tool calling, streaming)
 - [ ] **LLM-03**: Ollama adapter via LangChain4j transport (local inference)
 - [ ] **LLM-04**: Gemini adapter via LangChain4j transport (tool calling)
-- [ ] **LLM-05**: LLMBackend port interface designed against all four providers simultaneously
+- [x] **LLM-05**: LLMBackend port interface designed against all four providers simultaneously
 
 ### MCP Protocol
 
@@ -32,7 +32,7 @@ Requirements for v0.1 release. Each maps to roadmap phases.
 - [ ] **MCP-03**: MCP client: read resources from MCP servers
 - [ ] **MCP-04**: MCP client: use prompt templates from MCP servers
 - [ ] **MCP-05**: MCP server: expose kore agents as callable MCP tools to external clients
-- [ ] **MCP-06**: MCP capability negotiation (initialize handshake) before tool/resource listing
+- [x] **MCP-06**: MCP capability negotiation (initialize handshake) before tool/resource listing
 
 ### Skills Engine
 
@@ -43,7 +43,7 @@ Requirements for v0.1 release. Each maps to roadmap phases.
 
 ### Budget & Governance
 
-- [ ] **BUDG-01**: BudgetEnforcer port interface for token budget enforcement
+- [x] **BUDG-01**: BudgetEnforcer port interface for token budget enforcement
 - [ ] **BUDG-02**: InMemoryBudgetEnforcer stub implementation with configurable token limits
 - [ ] **BUDG-03**: Token counting on every LLM call (input + output tokens tracked)
 - [ ] **BUDG-04**: Agent loop checks budget before each LLM call, returns BudgetExceeded if exceeded
@@ -149,14 +149,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LLM-02 | Phase 1 | Pending |
 | LLM-03 | Phase 1 | Pending |
 | LLM-04 | Phase 1 | Pending |
-| LLM-05 | Phase 1 | Pending |
+| LLM-05 | Phase 1 | Complete |
 | MCP-01 | Phase 1 | Pending |
 | MCP-02 | Phase 1 | Pending |
 | MCP-03 | Phase 1 | Pending |
 | MCP-04 | Phase 1 | Pending |
 | MCP-05 | Phase 1 | Pending |
-| MCP-06 | Phase 1 | Pending |
-| BUDG-01 | Phase 1 | Pending |
+| MCP-06 | Phase 1 | Complete |
+| BUDG-01 | Phase 1 | Complete |
 | BUDG-02 | Phase 1 | Pending |
 | BUDG-03 | Phase 1 | Pending |
 | BUDG-04 | Phase 1 | Pending |

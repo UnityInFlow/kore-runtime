@@ -33,7 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01-PLAN.md — Gradle multi-module scaffold (settings, build, libs.versions.toml, CI workflow)
-- [ ] 01-02-PLAN.md — kore-core domain types (AgentResult, LLMChunk) and port interfaces (LLMBackend, BudgetEnforcer, ToolProvider, EventBus, AuditLog)
+- [x] 01-02-PLAN.md — kore-core domain types (AgentResult, LLMChunk) and port interfaces (LLMBackend, BudgetEnforcer, ToolProvider, EventBus, AuditLog)
 - [ ] 01-03-PLAN.md — AgentLoop, Kotlin DSL (agent { }), InMemoryBudgetEnforcer, InProcessEventBus stubs
 - [ ] 01-04-PLAN.md — kore-test: MockLLMBackend, MockToolProvider, SessionRecorder, SessionReplayer
 - [ ] 01-05-PLAN.md — kore-llm: ClaudeBackend, OpenAiBackend, OllamaBackend, GeminiBackend, DSL factory functions
@@ -82,7 +82,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Core Runtime | 1/7 | In Progress|  |
+| 1. Core Runtime | 2/7 | In Progress|  |
 | 2. Observability & Storage | 0/TBD | Not started | - |
 | 3. Skills, Spring & Dashboard | 0/TBD | Not started | - |
 | 4. Event Bus & Publishing | 0/TBD | Not started | - |
