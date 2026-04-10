@@ -29,7 +29,16 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. An agent configured with `claude() fallbackTo gpt()` transparently retries via the fallback backend on LLM error
   4. A test using MockLLMBackend produces deterministic, reproducible agent behavior without any network calls
   5. An MCP client connects to an MCP server over both stdio and SSE, calls tools, reads resources, and uses prompt templates
-**Plans**: TBD
+**Plans**: 7 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Gradle multi-module scaffold (settings, build, libs.versions.toml, CI workflow)
+- [ ] 01-02-PLAN.md — kore-core domain types (AgentResult, LLMChunk) and port interfaces (LLMBackend, BudgetEnforcer, ToolProvider, EventBus, AuditLog)
+- [ ] 01-03-PLAN.md — AgentLoop, Kotlin DSL (agent { }), InMemoryBudgetEnforcer, InProcessEventBus stubs
+- [ ] 01-04-PLAN.md — kore-test: MockLLMBackend, MockToolProvider, SessionRecorder, SessionReplayer
+- [ ] 01-05-PLAN.md — kore-llm: ClaudeBackend, OpenAiBackend, OllamaBackend, GeminiBackend, DSL factory functions
+- [ ] 01-06-PLAN.md — kore-mcp: McpClientAdapter (tools+resources+prompts), McpServerAdapter
+- [ ] 01-07-PLAN.md — HeroDemoTest integration, README/CONTRIBUTING/LICENSE, Phase 1 completion gate
 
 ### Phase 2: Observability & Storage
 **Goal**: Every agent run, LLM call, and tool invocation is traced with OpenTelemetry and durably recorded in PostgreSQL
@@ -73,7 +82,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Core Runtime | 0/TBD | Not started | - |
+| 1. Core Runtime | 0/7 | Planned | - |
 | 2. Observability & Storage | 0/TBD | Not started | - |
 | 3. Skills, Spring & Dashboard | 0/TBD | Not started | - |
 | 4. Event Bus & Publishing | 0/TBD | Not started | - |
