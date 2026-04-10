@@ -19,10 +19,10 @@ Requirements for v0.1 release. Each maps to roadmap phases.
 
 ### LLM Backends
 
-- [ ] **LLM-01**: Claude adapter via Anthropic Java SDK (tool calling, streaming)
-- [ ] **LLM-02**: GPT adapter via OpenAI Java SDK (tool calling, streaming)
-- [ ] **LLM-03**: Ollama adapter via LangChain4j transport (local inference)
-- [ ] **LLM-04**: Gemini adapter via LangChain4j transport (tool calling)
+- [x] **LLM-01**: Claude adapter via Anthropic Java SDK (tool calling, streaming)
+- [x] **LLM-02**: GPT adapter via OpenAI Java SDK (tool calling, streaming)
+- [x] **LLM-03**: Ollama adapter via LangChain4j transport (local inference)
+- [x] **LLM-04**: Gemini adapter via LangChain4j transport (tool calling)
 - [x] **LLM-05**: LLMBackend port interface designed against all four providers simultaneously
 
 ### MCP Protocol
@@ -145,10 +145,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CORE-05 | Phase 1 | Complete |
 | CORE-06 | Phase 1 | Complete |
 | CORE-07 | Phase 1 | Complete |
-| LLM-01 | Phase 1 | Pending |
-| LLM-02 | Phase 1 | Pending |
-| LLM-03 | Phase 1 | Pending |
-| LLM-04 | Phase 1 | Pending |
+| LLM-01 | Phase 1 | Complete |
+| LLM-02 | Phase 1 | Complete |
+| LLM-03 | Phase 1 | Complete |
+| LLM-04 | Phase 1 | Complete |
 | LLM-05 | Phase 1 | Complete |
 | MCP-01 | Phase 1 | Pending |
 | MCP-02 | Phase 1 | Pending |

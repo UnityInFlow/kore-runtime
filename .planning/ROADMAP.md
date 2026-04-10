@@ -36,7 +36,7 @@ Plans:
 - [x] 01-02-PLAN.md — kore-core domain types (AgentResult, LLMChunk) and port interfaces (LLMBackend, BudgetEnforcer, ToolProvider, EventBus, AuditLog)
 - [x] 01-03-PLAN.md — AgentLoop, Kotlin DSL (agent { }), InMemoryBudgetEnforcer, InProcessEventBus stubs
 - [x] 01-04-PLAN.md — kore-test: MockLLMBackend, MockToolProvider, SessionRecorder, SessionReplayer
-- [ ] 01-05-PLAN.md — kore-llm: ClaudeBackend, OpenAiBackend, OllamaBackend, GeminiBackend, DSL factory functions
+- [x] 01-05-PLAN.md — kore-llm: ClaudeBackend, OpenAiBackend, OllamaBackend, GeminiBackend, DSL factory functions
 - [ ] 01-06-PLAN.md — kore-mcp: McpClientAdapter (tools+resources+prompts), McpServerAdapter
 - [ ] 01-07-PLAN.md — HeroDemoTest integration, README/CONTRIBUTING/LICENSE, Phase 1 completion gate
 
@@ -82,7 +82,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Core Runtime | 2/7 | In Progress|  |
+| 1. Core Runtime | 5/7 | In Progress|  |
 | 2. Observability & Storage | 0/TBD | Not started | - |
 | 3. Skills, Spring & Dashboard | 0/TBD | Not started | - |
 | 4. Event Bus & Publishing | 0/TBD | Not started | - |
