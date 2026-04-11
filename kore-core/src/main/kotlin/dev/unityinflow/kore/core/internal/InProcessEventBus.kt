@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.asSharedFlow
  * (missing buffer config causes suspend under load).
  */
 class InProcessEventBus : EventBus {
-    private val _events =
+    private val mutableEvents =
         MutableSharedFlow<AgentEvent>(
             replay = 0,
             extraBufferCapacity = 64,
@@ -24,8 +24,8 @@ class InProcessEventBus : EventBus {
         )
 
     override suspend fun emit(event: AgentEvent) {
-        _events.emit(event)
+        mutableEvents.emit(event)
     }
 
-    override fun subscribe(): Flow<AgentEvent> = _events.asSharedFlow()
+    override fun subscribe(): Flow<AgentEvent> = mutableEvents.asSharedFlow()
 }

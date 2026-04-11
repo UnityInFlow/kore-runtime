@@ -6,7 +6,7 @@ import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel
 import dev.langchain4j.model.ollama.OllamaChatModel
 import kotlinx.coroutines.sync.Semaphore
 
-/**
+/*
  * DSL factory functions for LLM backends.
  *
  * Usage in the `agent { }` DSL:
@@ -33,9 +33,11 @@ fun claude(
     model: String = "claude-3-5-sonnet-20241022",
     maxConcurrency: Int = 10,
 ): ClaudeBackend {
-    val client = AnthropicOkHttpClient.builder()
-        .apiKey(apiKey)
-        .build()
+    val client =
+        AnthropicOkHttpClient
+            .builder()
+            .apiKey(apiKey)
+            .build()
     return ClaudeBackend(
         client = client,
         defaultModel = model,
@@ -55,9 +57,11 @@ fun gpt(
     model: String = "gpt-4o",
     maxConcurrency: Int = 10,
 ): OpenAiBackend {
-    val client = OpenAIOkHttpClient.builder()
-        .apiKey(apiKey)
-        .build()
+    val client =
+        OpenAIOkHttpClient
+            .builder()
+            .apiKey(apiKey)
+            .build()
     return OpenAiBackend(
         client = client,
         defaultModel = model,
@@ -77,10 +81,12 @@ fun ollama(
     model: String = "llama3",
     maxConcurrency: Int = 2,
 ): OllamaBackend {
-    val chatModel = OllamaChatModel.builder()
-        .baseUrl(baseUrl)
-        .modelName(model)
-        .build()
+    val chatModel =
+        OllamaChatModel
+            .builder()
+            .baseUrl(baseUrl)
+            .modelName(model)
+            .build()
     return OllamaBackend(
         chatModel = chatModel,
         semaphore = Semaphore(maxConcurrency),
@@ -99,10 +105,12 @@ fun gemini(
     model: String = "gemini-1.5-flash",
     maxConcurrency: Int = 10,
 ): GeminiBackend {
-    val chatModel = GoogleAiGeminiChatModel.builder()
-        .apiKey(apiKey)
-        .modelName(model)
-        .build()
+    val chatModel =
+        GoogleAiGeminiChatModel
+            .builder()
+            .apiKey(apiKey)
+            .modelName(model)
+            .build()
     return GeminiBackend(
         chatModel = chatModel,
         semaphore = Semaphore(maxConcurrency),
