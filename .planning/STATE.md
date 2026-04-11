@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-core-runtime/01-05-PLAN.md
-last_updated: "2026-04-10T19:35:48.466Z"
-last_activity: 2026-04-10
+stopped_at: Completed 01-core-runtime/01-06-PLAN.md
+last_updated: "2026-04-11T19:10:26.798Z"
+last_activity: 2026-04-11
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 7
-  completed_plans: 5
-  percent: 71
+  completed_plans: 6
+  percent: 86
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-04-10)
 ## Current Position
 
 Phase: 01 (core-runtime) — EXECUTING
-Plan: 6 of 7
+Plan: 7 of 7
 Status: Ready to execute
-Last activity: 2026-04-10
+Last activity: 2026-04-11
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -57,6 +57,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01-core-runtime P03 | 4min | 2 tasks | 11 files |
 | Phase 01-core-runtime P04 | 2min | 2 tasks | 5 files |
 | Phase 01-core-runtime P05 | 15min | 2 tasks | 11 files |
+| Phase 01-core-runtime P06 | 10min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -83,6 +84,8 @@ Recent decisions affecting current work:
 - [Phase 01-core-runtime]: anthropic-java version corrected 2.20.0→0.1.0 (planned version doesn't exist on Maven Central; okhttp artifact is separate)
 - [Phase 01-core-runtime]: langchain4j 1.0.1→0.26.1/0.36.1 (planned version doesn't exist; ollama and gemini on separate version trains, Gradle resolves langchain4j-core to 0.36.1 for both)
 - [Phase 01-core-runtime]: ChatLanguageModel injected as constructor param to OllamaBackend and GeminiBackend — enables MockK mocking without network, no concrete LangChain4j model types in signatures
+- [Phase 01-core-runtime]: McpServerAdapter.invokeAgent() extracted as public suspend fun for testability without transport
+- [Phase 01-core-runtime]: MCP SDK version resolved as 0.11.0 (plan specified 0.11.1); APIs identical
 
 ### Pending Todos
 
@@ -94,6 +97,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-10T19:35:48.463Z
-Stopped at: Completed 01-core-runtime/01-05-PLAN.md
+Last session: 2026-04-11T19:10:26.795Z
+Stopped at: Completed 01-core-runtime/01-06-PLAN.md
 Resume file: None

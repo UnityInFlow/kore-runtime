@@ -27,11 +27,11 @@ Requirements for v0.1 release. Each maps to roadmap phases.
 
 ### MCP Protocol
 
-- [ ] **MCP-01**: MCP client: call tools on MCP servers over stdio transport
-- [ ] **MCP-02**: MCP client: call tools on MCP servers over SSE transport
-- [ ] **MCP-03**: MCP client: read resources from MCP servers
-- [ ] **MCP-04**: MCP client: use prompt templates from MCP servers
-- [ ] **MCP-05**: MCP server: expose kore agents as callable MCP tools to external clients
+- [x] **MCP-01**: MCP client: call tools on MCP servers over stdio transport
+- [x] **MCP-02**: MCP client: call tools on MCP servers over SSE transport
+- [x] **MCP-03**: MCP client: read resources from MCP servers
+- [x] **MCP-04**: MCP client: use prompt templates from MCP servers
+- [x] **MCP-05**: MCP server: expose kore agents as callable MCP tools to external clients
 - [x] **MCP-06**: MCP capability negotiation (initialize handshake) before tool/resource listing
 
 ### Skills Engine
@@ -150,11 +150,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LLM-03 | Phase 1 | Complete |
 | LLM-04 | Phase 1 | Complete |
 | LLM-05 | Phase 1 | Complete |
-| MCP-01 | Phase 1 | Pending |
-| MCP-02 | Phase 1 | Pending |
-| MCP-03 | Phase 1 | Pending |
-| MCP-04 | Phase 1 | Pending |
-| MCP-05 | Phase 1 | Pending |
+| MCP-01 | Phase 1 | Complete |
+| MCP-02 | Phase 1 | Complete |
+| MCP-03 | Phase 1 | Complete |
+| MCP-04 | Phase 1 | Complete |
+| MCP-05 | Phase 1 | Complete |
 | MCP-06 | Phase 1 | Complete |
 | BUDG-01 | Phase 1 | Complete |
 | BUDG-02 | Phase 1 | Complete |
