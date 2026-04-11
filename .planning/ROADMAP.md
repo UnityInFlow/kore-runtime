@@ -12,7 +12,7 @@ kore-runtime is built in four phases that follow module dependency order. Phase 
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Core Runtime** - Agent loop, LLM backends (all 4), MCP client+server, budget enforcement, kore-test
+- [x] **Phase 1: Core Runtime** - Agent loop, LLM backends (all 4), MCP client+server, budget enforcement, kore-test (completed 2026-04-11)
 - [ ] **Phase 2: Observability & Storage** - OpenTelemetry spans, Micrometer metrics, PostgreSQL audit log via Flyway
 - [ ] **Phase 3: Skills, Spring & Dashboard** - Skills engine, Spring Boot starter, HTMX admin dashboard
 - [ ] **Phase 4: Event Bus & Publishing** - EventBus port, Kotlin Flows default, Kafka/RabbitMQ adapters, Maven Central
@@ -38,7 +38,7 @@ Plans:
 - [x] 01-04-PLAN.md — kore-test: MockLLMBackend, MockToolProvider, SessionRecorder, SessionReplayer
 - [x] 01-05-PLAN.md — kore-llm: ClaudeBackend, OpenAiBackend, OllamaBackend, GeminiBackend, DSL factory functions
 - [x] 01-06-PLAN.md — kore-mcp: McpClientAdapter (tools+resources+prompts), McpServerAdapter
-- [ ] 01-07-PLAN.md — HeroDemoTest integration, README/CONTRIBUTING/LICENSE, Phase 1 completion gate
+- [x] 01-07-PLAN.md — HeroDemoTest integration, README/CONTRIBUTING/LICENSE, Phase 1 completion gate
 
 ### Phase 2: Observability & Storage
 **Goal**: Every agent run, LLM call, and tool invocation is traced with OpenTelemetry and durably recorded in PostgreSQL
@@ -82,7 +82,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Core Runtime | 6/7 | In Progress|  |
+| 1. Core Runtime | 7/7 | Complete   | 2026-04-11 |
 | 2. Observability & Storage | 0/TBD | Not started | - |
 | 3. Skills, Spring & Dashboard | 0/TBD | Not started | - |
 | 4. Event Bus & Publishing | 0/TBD | Not started | - |
