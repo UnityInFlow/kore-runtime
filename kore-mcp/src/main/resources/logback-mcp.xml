@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  MCP stdio transport logging configuration.
+  CRITICAL: The MCP stdio transport reads from stdout. Any non-MCP output on stdout
+  corrupts the JSON-RPC message stream. This config routes ALL logging to stderr.
+
+  Activate with: -Dlogback.configurationFile=logback-mcp.xml
+  Or set the system property in your startup script before launching the JVM.
+
+  Per Pitfall 4 (T-06-01): stdout contamination is a transport-level protocol violation.
+  Every log line on stdout breaks the JSON-RPC framing that the MCP client reads.
+-->
+<configuration>
+    <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
+        <target>System.err</target>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="STDERR" />
+    </root>
+</configuration>

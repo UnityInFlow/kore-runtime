@@ -8,6 +8,9 @@ dependencies {
     implementation(libs.coroutines.core)
     implementation(libs.mcp.kotlin.sdk)
     implementation(libs.serialization.json)
+    // Ktor CIO engine needed to instantiate HttpClient for SseClientTransport
+    // SSE plugin is bundled inside ktor-client-core (already transitive from mcp-kotlin-sdk)
+    implementation(libs.ktor.client.cio)
 
     testImplementation(project(":kore-test"))
     testImplementation(libs.junit5)
