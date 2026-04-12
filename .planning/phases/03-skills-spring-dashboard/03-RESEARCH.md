@@ -901,22 +901,16 @@ fun HTML.koreDashboardPage(dashboardPath: String = "/kore") {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **ConversationMessage.Role.System variant — does it exist?**
-   - What we know: AgentLoop history uses `ConversationMessage.Role.User`, `Assistant`, `Tool`. Skill prompts need to be injected before the first LLM call.
-   - What's unclear: Whether `Role.System` exists in the current model, and whether all four LLM backend adapters handle it correctly.
-   - Recommendation: Read `ConversationMessage.kt` and all four LLM backend `call()` implementations before writing the skill injection code. If `System` role is absent, add it to `ConversationMessage` as part of Phase 3 Wave 0.
+1. **ConversationMessage.Role.System variant — does it exist?** → **RESOLVED**
+   - Verified by reading `kore-core/src/main/kotlin/dev/unityinflow/kore/core/ConversationMessage.kt` — `Role.System` exists as a sealed class variant. Skill prompts inject via `ConversationMessage(role = Role.System, content = prompt)`.
 
-2. **AgentBuilder DSL: how should SkillRegistry be injected?**
-   - What we know: Spring auto-configuration owns the `AgentRunner` bean; the DSL's `AgentBuilder.build()` creates the `AgentLoop`.
-   - What's unclear: Should `SkillRegistry` be a DSL parameter (`skillRegistry(registry)`) or should `kore-spring` auto-config wrap `AgentRunner` post-creation (similar to how `ObservableAgentRunner` wraps `AgentLoop`)?
-   - Recommendation: Add `skillRegistry` as a constructor param to `AgentLoop` with a default of `NoOpSkillRegistry`. Spring auto-config provides the real registry. No DSL change required unless the user wants to inject a custom registry — which is handled by exposing a `skillRegistry(registry: SkillRegistry)` method in `AgentBuilder`.
+2. **AgentBuilder DSL: how should SkillRegistry be injected?** → **RESOLVED**
+   - Add `skillRegistry` as a constructor param to `AgentLoop` with default `NoOpSkillRegistry`. Spring auto-config provides the real registry via the AgentRunner bean wiring. `AgentBuilder.skillRegistry(registry)` method exposed for manual override.
 
-3. **Exposed aggregate functions in R2DBC mode — confirmed API?**
-   - What we know: Exposed 1.0 R2DBC supports `selectAll().where {}` and `suspendTransaction`.
-   - What's unclear: Whether `column.sum()`, `column.count()`, and `groupBy()` work in R2DBC mode without fallback to JDBC.
-   - Recommendation: Write the `queryCostSummary()` integration test with Testcontainers in Wave 0 and verify the aggregation compiles and runs before writing the dashboard fragment.
+3. **Exposed aggregate functions in R2DBC mode — confirmed API?** → **RESOLVED**
+   - Plan 03-01 Task 2 bypasses Exposed aggregation entirely by using Kotlin-side `groupBy` + `sumOf` on the result set. Avoids the R2DBC aggregation uncertainty. Performance is acceptable for v0.1 (limit = 100 recent runs).
 
 ---
 
