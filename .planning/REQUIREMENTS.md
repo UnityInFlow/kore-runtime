@@ -54,7 +54,7 @@ Requirements for v0.1 release. Each maps to roadmap phases.
 - [x] **OBSV-02**: OpenTelemetry span on every tool use with tool name, MCP server, duration
 - [x] **OBSV-03**: OpenTelemetry span on every skill activation
 - [x] **OBSV-04**: OpenTelemetryContextElement on every agent CoroutineScope (context survives suspension)
-- [ ] **OBSV-05**: Micrometer metrics: agent_runs_total, llm_calls_total, tokens_used_total, errors_total
+- [x] **OBSV-05**: Micrometer metrics: agent_runs_total, llm_calls_total, tokens_used_total, errors_total
 
 ### Storage
 
@@ -168,7 +168,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | OBSV-02 | Phase 2 | Complete |
 | OBSV-03 | Phase 2 | Complete |
 | OBSV-04 | Phase 2 | Complete |
-| OBSV-05 | Phase 2 | Pending |
+| OBSV-05 | Phase 2 | Complete |
 | STOR-01 | Phase 2 | Complete |
 | STOR-02 | Phase 2 | Complete |
 | STOR-03 | Phase 2 | Complete |

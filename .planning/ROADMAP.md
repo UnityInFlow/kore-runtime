@@ -55,7 +55,7 @@ Plans:
 Plans:
 - [x] 02-01-PLAN.md — kore-observability module: KoreTracer (OTel spans + asContextElement), ObservableAgentRunner, EventBusSpanObserver
 - [x] 02-02-PLAN.md — kore-storage module: Flyway V1 migration, Exposed table objects, PostgresAuditLogAdapter, StorageConfig
-- [ ] 02-03-PLAN.md — KoreMetrics (4 counters + gauge), EventBusMetricsObserver
+- [x] 02-03-PLAN.md — KoreMetrics (4 counters + gauge), EventBusMetricsObserver
 
 ### Phase 3: Skills, Spring & Dashboard
 **Goal**: An existing Spring Boot application gains a fully working agent with skills, autoconfiguration, and a live HTMX dashboard by adding one Gradle dependency
