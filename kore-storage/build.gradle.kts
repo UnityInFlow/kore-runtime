@@ -11,7 +11,7 @@ dependencies {
     implementation(libs.exposed.core)
     implementation(libs.exposed.r2dbc)
     implementation(libs.exposed.java.time)
-    runtimeOnly(libs.r2dbc.postgresql)
+    implementation(libs.r2dbc.postgresql) // compile dep: JsonbTypeMapper wraps Json.of() from r2dbc-postgresql
     runtimeOnly(libs.postgresql.jdbc) // Flyway needs JDBC driver (Pitfall 14 / D-20)
     implementation(libs.flyway.core)
     implementation(libs.flyway.postgresql)

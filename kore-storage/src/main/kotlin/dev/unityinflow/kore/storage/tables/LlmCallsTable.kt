@@ -9,5 +9,5 @@ object LlmCallsTable : UUIDTable("llm_calls") {
     val tokensIn = integer("tokens_in")
     val tokensOut = integer("tokens_out")
     val durationMs = integer("duration_ms")
-    val metadata = text("metadata")
+    val metadata = jsonb("metadata") // JSONB column matching V1__init_schema.sql DDL
 }

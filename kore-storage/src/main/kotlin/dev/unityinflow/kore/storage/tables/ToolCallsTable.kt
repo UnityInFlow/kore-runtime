@@ -9,6 +9,6 @@ object ToolCallsTable : UUIDTable("tool_calls") {
     val toolName = varchar("tool_name", 255)
     val mcpServer = varchar("mcp_server", 255).nullable()
     val durationMs = integer("duration_ms")
-    val arguments = text("arguments") // JSON string
-    val result = text("result") // JSON string
+    val arguments = jsonb("arguments") // JSONB column matching V1__init_schema.sql DDL
+    val result = jsonb("result") // JSONB column matching V1__init_schema.sql DDL
 }

@@ -9,5 +9,5 @@ object AgentRunsTable : UUIDTable("agent_runs") {
     val resultType = varchar("result_type", 50)
     val startedAt = timestampWithTimeZone("started_at")
     val finishedAt = timestampWithTimeZone("finished_at").nullable()
-    val metadata = text("metadata") // JSONB stored as text in DSL; DDL uses JSONB via Flyway
+    val metadata = jsonb("metadata") // JSONB column matching V1__init_schema.sql DDL
 }

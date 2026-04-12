@@ -1,8 +1,12 @@
 package dev.unityinflow.kore.storage
 
+import dev.unityinflow.kore.storage.tables.JsonbTypeMapper
+import io.r2dbc.spi.ConnectionFactories
+import io.r2dbc.spi.ConnectionFactoryOptions
 import org.flywaydb.core.Flyway
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabaseConfig
+import org.jetbrains.exposed.v1.r2dbc.mappers.R2dbcRegistryTypeMapping
 
 /**
  * Wires R2dbcDatabase (Exposed) and Flyway with their respective connection types.
@@ -27,13 +31,18 @@ class StorageConfig(
 ) {
     /** R2DBC database connection for Exposed suspendTransaction blocks. */
     val database: R2dbcDatabase by lazy {
-        R2dbcDatabase.connect(
-            url = r2dbcUrl,
-            databaseConfig =
-                R2dbcDatabaseConfig {
-                    defaultMaxAttempts = 3
-                },
-        )
+        val options = ConnectionFactoryOptions.parse(r2dbcUrl)
+        val connectionFactory = ConnectionFactories.get(options)
+        val typeMapping =
+            (R2dbcRegistryTypeMapping.default() as R2dbcRegistryTypeMapping)
+                .register(JsonbTypeMapper())
+        val config =
+            R2dbcDatabaseConfig {
+                defaultMaxAttempts = 3
+                connectionFactoryOptions = options
+                this.typeMapping = typeMapping
+            }
+        R2dbcDatabase.connect(connectionFactory, config)
     }
 
     /**
