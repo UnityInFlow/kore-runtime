@@ -9,19 +9,27 @@ import io.kotest.matchers.shouldNotBe
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.yield
 import org.junit.jupiter.api.Test
 
 class EventBusMetricsObserverTest {
-
-    private val registry = SimpleMeterRegistry()
-    private val metrics = KoreMetrics(registry)
-    private val scope = TestScope()
-
-    private fun makeObserver(eventFlow: MutableSharedFlow<AgentEvent>): EventBusMetricsObserver {
+    /**
+     * Creates an [EventBusMetricsObserver] with a mocked [EventBus] backed by [eventFlow].
+     *
+     * Uses [backgroundScope] from [runTest] so the infinite [collect] loop is cancelled
+     * when the test ends. This prevents [runTest] from hanging waiting for it to finish.
+     * [yield] after [EventBusMetricsObserver.start] lets the launched coroutine reach its
+     * suspension point in [collect] before test events are emitted.
+     */
+    private fun makeObserver(
+        eventFlow: MutableSharedFlow<AgentEvent>,
+        metrics: KoreMetrics,
+        scope: CoroutineScope,
+    ): EventBusMetricsObserver {
         val eventBus = mockk<EventBus>()
         every { eventBus.subscribe() } returns eventFlow
         return EventBusMetricsObserver(
@@ -34,12 +42,16 @@ class EventBusMetricsObserverTest {
     @Test
     fun `AgentStarted increments agentsActive to 1`() =
         runTest {
+            val registry = SimpleMeterRegistry()
+            val metrics = KoreMetrics(registry)
             val flow = MutableSharedFlow<AgentEvent>(extraBufferCapacity = 16)
-            val observer = makeObserver(flow)
+            // backgroundScope is cancelled at test end — collect{} loop never finishes but that is fine
+            val observer = makeObserver(flow, metrics, backgroundScope)
             observer.start()
+            yield() // let collect{} coroutine reach its suspension point
 
             flow.emit(AgentEvent.AgentStarted(agentId = "agent-1", taskId = "task-1"))
-            advanceUntilIdle()
+            runCurrent()
 
             metrics.agentsActive.get() shouldBe 1
         }
@@ -47,9 +59,12 @@ class EventBusMetricsObserverTest {
     @Test
     fun `AgentStarted then AgentCompleted with Success resets agentsActive and increments run counter`() =
         runTest {
+            val registry = SimpleMeterRegistry()
+            val metrics = KoreMetrics(registry)
             val flow = MutableSharedFlow<AgentEvent>(extraBufferCapacity = 16)
-            val observer = makeObserver(flow)
+            val observer = makeObserver(flow, metrics, backgroundScope)
             observer.start()
+            yield()
 
             flow.emit(AgentEvent.AgentStarted(agentId = "agent-1", taskId = "task-1"))
             flow.emit(
@@ -58,7 +73,7 @@ class EventBusMetricsObserverTest {
                     result = AgentResult.Success(output = "done", tokenUsage = TokenUsage(10, 5)),
                 ),
             )
-            advanceUntilIdle()
+            runCurrent()
 
             metrics.agentsActive.get() shouldBe 0
             val count =
@@ -73,9 +88,12 @@ class EventBusMetricsObserverTest {
     @Test
     fun `AgentCompleted with LLMError increments kore_errors counter with llm_error tag`() =
         runTest {
+            val registry = SimpleMeterRegistry()
+            val metrics = KoreMetrics(registry)
             val flow = MutableSharedFlow<AgentEvent>(extraBufferCapacity = 16)
-            val observer = makeObserver(flow)
+            val observer = makeObserver(flow, metrics, backgroundScope)
             observer.start()
+            yield()
 
             flow.emit(AgentEvent.AgentStarted(agentId = "agent-1", taskId = "task-1"))
             flow.emit(
@@ -84,7 +102,7 @@ class EventBusMetricsObserverTest {
                     result = AgentResult.LLMError(backend = "claude", cause = RuntimeException("llm fail")),
                 ),
             )
-            advanceUntilIdle()
+            runCurrent()
 
             val errorCounter =
                 registry
@@ -98,9 +116,12 @@ class EventBusMetricsObserverTest {
     @Test
     fun `LLMCallCompleted with TokenUsage increments tokens_used counters with correct direction`() =
         runTest {
+            val registry = SimpleMeterRegistry()
+            val metrics = KoreMetrics(registry)
             val flow = MutableSharedFlow<AgentEvent>(extraBufferCapacity = 16)
-            val observer = makeObserver(flow)
+            val observer = makeObserver(flow, metrics, backgroundScope)
             observer.start()
+            yield()
 
             flow.emit(AgentEvent.AgentStarted(agentId = "agent-1", taskId = "task-1"))
             flow.emit(
@@ -109,7 +130,7 @@ class EventBusMetricsObserverTest {
                     tokenUsage = TokenUsage(inputTokens = 10, outputTokens = 5),
                 ),
             )
-            advanceUntilIdle()
+            runCurrent()
 
             val inCount =
                 registry
