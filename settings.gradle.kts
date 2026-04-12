@@ -5,4 +5,5 @@ include(
     "kore-mcp",
     "kore-llm",
     "kore-test",
+    "kore-observability",
 )

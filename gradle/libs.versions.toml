@@ -13,6 +13,8 @@ mockk = "1.14.0"
 coroutines-test = "1.10.2"
 kotlinter = "5.0.0"
 jacoco-min-coverage = "0.80"
+otel-extension-kotlin = "1.61.0"
+testcontainers = "1.20.0"
 
 [libraries]
 coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
@@ -28,6 +30,9 @@ ktor-client-cio = { module = "io.ktor:ktor-client-cio", version = "3.3.3" }
 junit5 = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit5" }
 kotest-assertions = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+otel-extension-kotlin = { module = "io.opentelemetry:opentelemetry-extension-kotlin", version.ref = "otel-extension-kotlin" }
+otel-api = { module = "io.opentelemetry:opentelemetry-api" }
+micrometer-core = { module = "io.micrometer:micrometer-core" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
