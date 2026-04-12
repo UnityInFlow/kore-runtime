@@ -15,6 +15,10 @@ kotlinter = "5.0.0"
 jacoco-min-coverage = "0.80"
 otel-extension-kotlin = "1.61.0"
 testcontainers = "1.20.0"
+exposed = "1.0.0"
+flyway = "12.3.0"
+r2dbc-postgresql = "1.0.7.RELEASE"
+postgresql-jdbc = "42.7.10"
 
 [libraries]
 coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
@@ -33,6 +37,15 @@ mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 otel-extension-kotlin = { module = "io.opentelemetry:opentelemetry-extension-kotlin", version.ref = "otel-extension-kotlin" }
 otel-api = { module = "io.opentelemetry:opentelemetry-api" }
 micrometer-core = { module = "io.micrometer:micrometer-core" }
+exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
+exposed-r2dbc = { module = "org.jetbrains.exposed:exposed-r2dbc", version.ref = "exposed" }
+exposed-java-time = { module = "org.jetbrains.exposed:exposed-java-time", version.ref = "exposed" }
+r2dbc-postgresql = { module = "org.postgresql:r2dbc-postgresql", version.ref = "r2dbc-postgresql" }
+postgresql-jdbc = { module = "org.postgresql:postgresql", version.ref = "postgresql-jdbc" }
+flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+flyway-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+testcontainers-junit5 = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
