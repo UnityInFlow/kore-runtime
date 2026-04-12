@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 2 context gathered
-last_updated: "2026-04-12T14:14:50.537Z"
-last_activity: 2026-04-12 -- Phase 2 planning complete
+stopped_at: Completed 02-observability-storage/02-01-PLAN.md
+last_updated: "2026-04-12T14:26:01.013Z"
+last_activity: 2026-04-12
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 10
-  completed_plans: 7
-  percent: 70
+  completed_plans: 8
+  percent: 80
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-10)
 
 **Core value:** A developer adds one Spring Boot dependency, writes an `agent { }` block, and has a production-ready agent running with observability and budget control.
-**Current focus:** Phase 01 — core-runtime
+**Current focus:** Phase 02 — observability-storage
 
 ## Current Position
 
-Phase: 2
-Plan: Not started
+Phase: 02 (observability-storage) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-04-12 -- Phase 2 planning complete
+Last activity: 2026-04-12
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -59,6 +59,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01-core-runtime P05 | 15min | 2 tasks | 11 files |
 | Phase 01-core-runtime P06 | 10min | 2 tasks | 7 files |
 | Phase 01-core-runtime P07 | 5min | 3 tasks | 5 files |
+| Phase 02-observability-storage P01 | 3min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -89,6 +90,9 @@ Recent decisions affecting current work:
 - [Phase 01-core-runtime]: MCP SDK version resolved as 0.11.0 (plan specified 0.11.1); APIs identical
 - [Phase 01-core-runtime]: HeroDemoTest comment enforces README/test sync — test must be updated first if README hero demo changes (T-07-01 mitigation)
 - [Phase 01-core-runtime]: kore-core testImplementation depends on kore-test — runtimeClasspath stays clean (zero non-coroutines external deps)
+- [Phase 02-observability-storage]: OTel kept out of kore-core entirely (D-10): all observability lives in kore-observability as a pure adapter
+- [Phase 02-observability-storage]: Decorator pattern for ObservableAgentRunner wrapping AgentLoop (AgentRunner has private scope, not extensible)
+- [Phase 02-observability-storage]: compileOnly for otel-api and micrometer-core in kore-observability: consumers supply versions via Spring Boot 4 BOM
 
 ### Pending Todos
 
@@ -100,6 +104,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-12T13:29:04.880Z
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-observability-storage/02-CONTEXT.md
+Last session: 2026-04-12T14:26:01.009Z
+Stopped at: Completed 02-observability-storage/02-01-PLAN.md
+Resume file: None

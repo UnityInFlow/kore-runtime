@@ -50,10 +50,10 @@ Requirements for v0.1 release. Each maps to roadmap phases.
 
 ### Observability
 
-- [ ] **OBSV-01**: OpenTelemetry span on every LLM call with model, token count, duration attributes
-- [ ] **OBSV-02**: OpenTelemetry span on every tool use with tool name, MCP server, duration
-- [ ] **OBSV-03**: OpenTelemetry span on every skill activation
-- [ ] **OBSV-04**: OpenTelemetryContextElement on every agent CoroutineScope (context survives suspension)
+- [x] **OBSV-01**: OpenTelemetry span on every LLM call with model, token count, duration attributes
+- [x] **OBSV-02**: OpenTelemetry span on every tool use with tool name, MCP server, duration
+- [x] **OBSV-03**: OpenTelemetry span on every skill activation
+- [x] **OBSV-04**: OpenTelemetryContextElement on every agent CoroutineScope (context survives suspension)
 - [ ] **OBSV-05**: Micrometer metrics: agent_runs_total, llm_calls_total, tokens_used_total, errors_total
 
 ### Storage
@@ -164,10 +164,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TEST-02 | Phase 1 | Complete |
 | TEST-03 | Phase 1 | Complete |
 | TEST-04 | Phase 1 | Complete |
-| OBSV-01 | Phase 2 | Pending |
-| OBSV-02 | Phase 2 | Pending |
-| OBSV-03 | Phase 2 | Pending |
-| OBSV-04 | Phase 2 | Pending |
+| OBSV-01 | Phase 2 | Complete |
+| OBSV-02 | Phase 2 | Complete |
+| OBSV-03 | Phase 2 | Complete |
+| OBSV-04 | Phase 2 | Complete |
 | OBSV-05 | Phase 2 | Pending |
 | STOR-01 | Phase 2 | Pending |
 | STOR-02 | Phase 2 | Pending |

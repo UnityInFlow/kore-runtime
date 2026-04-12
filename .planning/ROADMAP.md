@@ -53,7 +53,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — kore-observability module: KoreTracer (OTel spans + asContextElement), ObservableAgentRunner, EventBusSpanObserver
+- [x] 02-01-PLAN.md — kore-observability module: KoreTracer (OTel spans + asContextElement), ObservableAgentRunner, EventBusSpanObserver
 - [ ] 02-02-PLAN.md — kore-storage module: Flyway V1 migration, Exposed table objects, PostgresAuditLogAdapter, StorageConfig
 - [ ] 02-03-PLAN.md — KoreMetrics (4 counters + gauge), EventBusMetricsObserver
 
@@ -88,6 +88,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Core Runtime | 7/7 | Complete   | 2026-04-11 |
-| 2. Observability & Storage | 0/3 | Not started | - |
+| 2. Observability & Storage | 1/3 | In Progress|  |
 | 3. Skills, Spring & Dashboard | 0/TBD | Not started | - |
 | 4. Event Bus & Publishing | 0/TBD | Not started | - |
