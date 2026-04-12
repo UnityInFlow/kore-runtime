@@ -66,8 +66,14 @@ Plans:
   2. Adding `dev.unityinflow:kore-spring` to build.gradle.kts and creating an `agent {}` block in application code produces a running agent — no additional configuration required
   3. The HTMX dashboard at `/kore` shows currently active agents, a list of recent runs with results, and a per-agent token cost summary, all without a frontend build step
   4. Spring Actuator at `/actuator/kore` reports agent health and echoes live metrics
-**Plans**: TBD
+**Plans**: 4 plans
 **UI hint**: yes
+
+Plans:
+- [ ] 03-01-PLAN.md — kore-core contracts (SkillRegistry port, AuditLog read methods) + kore-skills module (YAML loader, PatternMatcher, SkillRegistryAdapter) + PostgresAuditLogAdapter query methods
+- [ ] 03-02-PLAN.md — kore-spring module: KoreProperties, KoreAutoConfiguration (@ConditionalOnClass nested configs), KoreActuatorEndpoint, Spring Boot SPI registration
+- [ ] 03-03-PLAN.md — kore-dashboard module: EventBusDashboardObserver, DashboardDataService, all kotlinx.html components per UI-SPEC, DashboardServer (SmartLifecycle)
+- [ ] 03-04-PLAN.md — Phase 3 integration: DashboardAutoConfiguration wiring, KoreIntegrationTest (full Spring context), README hero demo
 
 ### Phase 4: Event Bus & Publishing
 **Goal**: The event bus abstraction is complete with a production-ready default and opt-in messaging adapters, and all kore modules are published to Maven Central
@@ -89,5 +95,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Core Runtime | 7/7 | Complete   | 2026-04-11 |
 | 2. Observability & Storage | 1/3 | In Progress|  |
-| 3. Skills, Spring & Dashboard | 0/TBD | Not started | - |
+| 3. Skills, Spring & Dashboard | 0/4 | Not started | - |
 | 4. Event Bus & Publishing | 0/TBD | Not started | - |
