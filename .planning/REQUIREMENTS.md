@@ -58,10 +58,10 @@ Requirements for v0.1 release. Each maps to roadmap phases.
 
 ### Storage
 
-- [ ] **STOR-01**: PostgreSQL audit log schema: agent_runs, llm_calls, tool_calls tables
-- [ ] **STOR-02**: Flyway migrations for all schema changes
-- [ ] **STOR-03**: AuditRepository (append-only) via Exposed R2DBC
-- [ ] **STOR-04**: Audit logging records every agent run, LLM call, and tool invocation
+- [x] **STOR-01**: PostgreSQL audit log schema: agent_runs, llm_calls, tool_calls tables
+- [x] **STOR-02**: Flyway migrations for all schema changes
+- [x] **STOR-03**: AuditRepository (append-only) via Exposed R2DBC
+- [x] **STOR-04**: Audit logging records every agent run, LLM call, and tool invocation
 
 ### Spring Integration
 
@@ -169,10 +169,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | OBSV-03 | Phase 2 | Complete |
 | OBSV-04 | Phase 2 | Complete |
 | OBSV-05 | Phase 2 | Pending |
-| STOR-01 | Phase 2 | Pending |
-| STOR-02 | Phase 2 | Pending |
-| STOR-03 | Phase 2 | Pending |
-| STOR-04 | Phase 2 | Pending |
+| STOR-01 | Phase 2 | Complete |
+| STOR-02 | Phase 2 | Complete |
+| STOR-03 | Phase 2 | Complete |
+| STOR-04 | Phase 2 | Complete |
 | SKIL-01 | Phase 3 | Pending |
 | SKIL-02 | Phase 3 | Pending |
 | SKIL-03 | Phase 3 | Pending |

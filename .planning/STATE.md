@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-observability-storage/02-01-PLAN.md
-last_updated: "2026-04-12T14:26:01.013Z"
+stopped_at: Completed 02-observability-storage/02-02-PLAN.md
+last_updated: "2026-04-12T16:52:22.266Z"
 last_activity: 2026-04-12
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 10
-  completed_plans: 8
-  percent: 80
+  completed_plans: 9
+  percent: 90
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-10)
 ## Current Position
 
 Phase: 02 (observability-storage) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-04-12
 
@@ -60,6 +60,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01-core-runtime P06 | 10min | 2 tasks | 7 files |
 | Phase 01-core-runtime P07 | 5min | 3 tasks | 5 files |
 | Phase 02-observability-storage P01 | 3min | 2 tasks | 8 files |
+| Phase 02-observability-storage P02 | 45 | 2 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -93,6 +94,9 @@ Recent decisions affecting current work:
 - [Phase 02-observability-storage]: OTel kept out of kore-core entirely (D-10): all observability lives in kore-observability as a pure adapter
 - [Phase 02-observability-storage]: Decorator pattern for ObservableAgentRunner wrapping AgentLoop (AgentRunner has private scope, not extensible)
 - [Phase 02-observability-storage]: compileOnly for otel-api and micrometer-core in kore-observability: consumers supply versions via Spring Boot 4 BOM
+- [Phase 02-observability-storage]: org.postgresql:r2dbc-postgresql (not io.r2dbc) for 1.0.x JSONB support; custom JsonbColumnType+JsonbTypeMapper with priority 1.0 for Exposed JSONB binding
+- [Phase 02-observability-storage]: ConnectionFactoryOptions.parse(url) required for R2dbcDatabase dialect detection; plain URL string loses dialect metadata
+- [Phase 02-observability-storage]: UUIDTable from org.jetbrains.exposed.v1.core.dao.id.java.UUIDTable — .java. sub-package in Exposed 1.0; suspendTransaction from .r2dbc.transactions (not .r2dbc directly)
 
 ### Pending Todos
 
@@ -104,6 +108,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-12T14:26:01.009Z
-Stopped at: Completed 02-observability-storage/02-01-PLAN.md
+Last session: 2026-04-12T16:52:22.263Z
+Stopped at: Completed 02-observability-storage/02-02-PLAN.md
 Resume file: None

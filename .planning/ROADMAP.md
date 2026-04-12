@@ -54,7 +54,7 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md — kore-observability module: KoreTracer (OTel spans + asContextElement), ObservableAgentRunner, EventBusSpanObserver
-- [ ] 02-02-PLAN.md — kore-storage module: Flyway V1 migration, Exposed table objects, PostgresAuditLogAdapter, StorageConfig
+- [x] 02-02-PLAN.md — kore-storage module: Flyway V1 migration, Exposed table objects, PostgresAuditLogAdapter, StorageConfig
 - [ ] 02-03-PLAN.md — KoreMetrics (4 counters + gauge), EventBusMetricsObserver
 
 ### Phase 3: Skills, Spring & Dashboard
