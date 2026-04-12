@@ -6,7 +6,6 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.junit.jupiter.api.Test
 
 class KoreMetricsTest {
-
     private val registry = SimpleMeterRegistry()
     private val metrics = KoreMetrics(registry)
 
@@ -29,17 +28,23 @@ class KoreMetricsTest {
     @Test
     fun `agentRunCounter increments kore_agent_runs counter`() {
         metrics.agentRunCounter("my-agent", "success").increment()
-        val count = registry.find("kore.agent.runs")
-            .tag("result_type", "success")
-            .counter()!!
-            .count()
+        val count =
+            registry
+                .find("kore.agent.runs")
+                .tag("result_type", "success")
+                .counter()!!
+                .count()
         count shouldBe 1.0
     }
 
     @Test
     fun `llmCallCounter tags backend correctly`() {
         metrics.llmCallCounter("my-agent", "claude-opus-4-5", "claude").increment()
-        val counter = registry.find("kore.llm.calls").tag("backend", "claude").counter()
+        val counter =
+            registry
+                .find("kore.llm.calls")
+                .tag("backend", "claude")
+                .counter()
         counter shouldNotBe null
     }
 
@@ -53,10 +58,12 @@ class KoreMetricsTest {
     @Test
     fun `errorCounter registers under kore_errors name with error type tag`() {
         metrics.errorCounter("my-agent", "llm_error").increment()
-        val count = registry.find("kore.errors")
-            .tag("error_type", "llm_error")
-            .counter()!!
-            .count()
+        val count =
+            registry
+                .find("kore.errors")
+                .tag("error_type", "llm_error")
+                .counter()!!
+                .count()
         count shouldBe 1.0
     }
 }
