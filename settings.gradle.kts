@@ -9,4 +9,5 @@ include(
     "kore-storage",
     "kore-skills",
     "kore-spring",
+    "kore-dashboard",
 )
