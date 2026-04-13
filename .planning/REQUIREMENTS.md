@@ -36,10 +36,10 @@ Requirements for v0.1 release. Each maps to roadmap phases.
 
 ### Skills Engine
 
-- [ ] **SKIL-01**: YAML skill definition format with name, description, activation patterns
-- [ ] **SKIL-02**: Pattern-based activation context matching (task content, available tools, agent state)
-- [ ] **SKIL-03**: Skill loader discovers and loads skills from configurable directory
-- [ ] **SKIL-04**: Active skills injected into agent context before LLM calls
+- [x] **SKIL-01**: YAML skill definition format with name, description, activation patterns
+- [x] **SKIL-02**: Pattern-based activation context matching (task content, available tools, agent state)
+- [x] **SKIL-03**: Skill loader discovers and loads skills from configurable directory
+- [x] **SKIL-04**: Active skills injected into agent context before LLM calls
 
 ### Budget & Governance
 
@@ -173,10 +173,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | STOR-02 | Phase 2 | Complete |
 | STOR-03 | Phase 2 | Complete |
 | STOR-04 | Phase 2 | Complete |
-| SKIL-01 | Phase 3 | Pending |
-| SKIL-02 | Phase 3 | Pending |
-| SKIL-03 | Phase 3 | Pending |
-| SKIL-04 | Phase 3 | Pending |
+| SKIL-01 | Phase 3 | Complete |
+| SKIL-02 | Phase 3 | Complete |
+| SKIL-03 | Phase 3 | Complete |
+| SKIL-04 | Phase 3 | Complete |
 | SPRN-01 | Phase 3 | Pending |
 | SPRN-02 | Phase 3 | Pending |
 | SPRN-03 | Phase 3 | Pending |

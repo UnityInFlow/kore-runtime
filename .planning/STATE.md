@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 3 UI-SPEC approved
-last_updated: "2026-04-12T18:47:56.351Z"
-last_activity: 2026-04-12 -- Phase 3 planning complete
+stopped_at: Completed 03-01-PLAN.md (kore-skills module + AuditLog reads)
+last_updated: "2026-04-13T21:14:17.336Z"
+last_activity: 2026-04-13
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 14
-  completed_plans: 10
-  percent: 71
+  completed_plans: 11
+  percent: 79
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-10)
 
 **Core value:** A developer adds one Spring Boot dependency, writes an `agent { }` block, and has a production-ready agent running with observability and budget control.
-**Current focus:** Phase 02 — observability-storage
+**Current focus:** Phase 03 — skills-spring-dashboard
 
 ## Current Position
 
-Phase: 3
-Plan: Not started
+Phase: 03 (skills-spring-dashboard) — EXECUTING
+Plan: 2 of 4
 Status: Ready to execute
-Last activity: 2026-04-12 -- Phase 3 planning complete
+Last activity: 2026-04-13
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -63,6 +63,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 02-observability-storage P01 | 3min | 2 tasks | 8 files |
 | Phase 02-observability-storage P02 | 45 | 2 tasks | 12 files |
 | Phase 02-observability-storage P03 | 58min | 2 tasks | 4 files |
+| Phase 03-skills-spring-dashboard P01 | 30min | 2 tasks | 19 files |
 
 ## Accumulated Context
 
@@ -102,6 +103,12 @@ Recent decisions affecting current work:
 - [Phase 02-observability-storage]: backgroundScope + yield + runCurrent for infinite-flow coroutine testing in EventBusMetricsObserverTest (advanceUntilIdle hangs on never-finishing collect loops)
 - [Phase 02-observability-storage]: agentNameResolver lambda injected into EventBusMetricsObserver — Phase 3 kore-spring wires in name registry without changing observer
 - [Phase 02-observability-storage]: model/backend tags default to 'unknown' in EventBusMetricsObserver — LLMCallCompleted lacks model info; Phase 3 enriches via OTel span context
+- [Phase 03-skills-spring-dashboard]: SkillRegistry port lives in kore-core with NoOpSkillRegistry default (D-09); kore-skills is a pure adapter, kore-core stays zero runtime-dep
+- [Phase 03-skills-spring-dashboard]: jackson-dataformat-yaml chosen as YAML parser (kaml archived Nov 2025); version managed by Spring Boot 4 BOM via io.spring.dependency-management plugin
+- [Phase 03-skills-spring-dashboard]: AgentLoop.tracer is nullable (Tracer? = null); opentelemetry-api is compileOnly in kore-core so runtime classpath stays free of OTel
+- [Phase 03-skills-spring-dashboard]: AgentBuilder uses Array<SkillRegistry>(1) val-cell backing store instead of var to satisfy CLAUDE.md no-var rule
+- [Phase 03-skills-spring-dashboard]: PostgresAuditLogAdapter dashboard queries use .select(columns) projections instead of selectAll() to avoid the JsonbTypeMapper column-index bug on joined queries with jsonb columns
+- [Phase 03-skills-spring-dashboard]: queryCostSummary folds join results in Kotlin instead of SQL GROUP BY — dialect-agnostic and correct for dashboard scale
 
 ### Pending Todos
 
@@ -113,6 +120,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-12T18:17:12.474Z
-Stopped at: Phase 3 UI-SPEC approved
-Resume file: .planning/phases/03-skills-spring-dashboard/03-UI-SPEC.md
+Last session: 2026-04-13T21:14:17.333Z
+Stopped at: Completed 03-01-PLAN.md (kore-skills module + AuditLog reads)
+Resume file: None
