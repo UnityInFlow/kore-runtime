@@ -5,6 +5,8 @@ import dev.unityinflow.kore.core.AgentTask
 import dev.unityinflow.kore.core.TokenUsage
 import dev.unityinflow.kore.core.ToolCall
 import dev.unityinflow.kore.core.ToolResult
+import dev.unityinflow.kore.core.port.AgentCostRecord
+import dev.unityinflow.kore.core.port.AgentRunRecord
 import dev.unityinflow.kore.core.port.AuditLog
 
 /**
@@ -29,4 +31,10 @@ class InMemoryAuditLog : AuditLog {
         call: ToolCall,
         result: ToolResult,
     ) { /* no-op stub */ }
+
+    // in-memory stub; real data in PostgresAuditLogAdapter
+    override suspend fun queryRecentRuns(limit: Int): List<AgentRunRecord> = emptyList()
+
+    // in-memory stub; real data in PostgresAuditLogAdapter
+    override suspend fun queryCostSummary(): List<AgentCostRecord> = emptyList()
 }

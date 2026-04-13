@@ -12,6 +12,8 @@ import dev.unityinflow.kore.core.port.AuditLog
 import dev.unityinflow.kore.core.port.BudgetEnforcer
 import dev.unityinflow.kore.core.port.EventBus
 import dev.unityinflow.kore.core.port.LLMBackend
+import dev.unityinflow.kore.core.port.NoOpSkillRegistry
+import dev.unityinflow.kore.core.port.SkillRegistry
 import dev.unityinflow.kore.core.port.ToolProvider
 
 /**
@@ -43,6 +45,11 @@ class AgentBuilder(
     private var auditLog: AuditLog = InMemoryAuditLog()
     private var retryPolicy: RetryPolicy = RetryPolicy()
     private var llmConfig: LLMConfig = LLMConfig(model = "default")
+
+    // Single-element array acts as a val cell whose element can be swapped
+    // without declaring a `var` (CLAUDE.md rule). Only one registry is ever
+    // kept, at index 0.
+    private val skillRegistryCell: Array<SkillRegistry> = arrayOf(NoOpSkillRegistry)
 
     /** Add one or more tool providers. */
     @KoreDsl
@@ -89,6 +96,17 @@ class AgentBuilder(
         llmConfig = LLMConfigBuilder().apply(block).build()
     }
 
+    /**
+     * Override the [SkillRegistry] for this agent (D-09 / D-10).
+     *
+     * Default is [NoOpSkillRegistry] — kore-skills consumers pass a
+     * `SkillRegistryAdapter` here.
+     */
+    @KoreDsl
+    fun skillRegistry(registry: SkillRegistry) {
+        skillRegistryCell[0] = registry
+    }
+
     /** Build and return the configured [AgentRunner]. */
     fun build(): AgentRunner {
         val backend =
@@ -107,6 +125,7 @@ class AgentBuilder(
                 budgetEnforcer = budgetEnforcer,
                 eventBus = eventBus,
                 auditLog = auditLog,
+                skillRegistry = skillRegistryCell[0],
                 config = llmConfig,
             )
         return AgentRunner(loop = loop)

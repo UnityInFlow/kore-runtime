@@ -4,7 +4,10 @@ import dev.unityinflow.kore.core.port.AuditLog
 import dev.unityinflow.kore.core.port.BudgetEnforcer
 import dev.unityinflow.kore.core.port.EventBus
 import dev.unityinflow.kore.core.port.LLMBackend
+import dev.unityinflow.kore.core.port.NoOpSkillRegistry
+import dev.unityinflow.kore.core.port.SkillRegistry
 import dev.unityinflow.kore.core.port.ToolProvider
+import io.opentelemetry.api.trace.Tracer
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -27,6 +30,20 @@ class AgentLoop(
     private val budgetEnforcer: BudgetEnforcer,
     private val eventBus: EventBus,
     private val auditLog: AuditLog,
+    /**
+     * Skill registry called before the first LLM call to inject matching skill
+     * prompts as a [ConversationMessage.Role.System] message (D-10). Defaults
+     * to [NoOpSkillRegistry] so kore-core has zero runtime dependency on
+     * kore-skills.
+     */
+    private val skillRegistry: SkillRegistry = NoOpSkillRegistry,
+    /**
+     * Optional OpenTelemetry [Tracer]. When non-null, skill activation is
+     * wrapped in a `kore.skill.activate` span (D-11). When null — the default —
+     * no span is created; activation still proceeds. Graceful degradation
+     * ensures kore-core does not require kore-observability at runtime.
+     */
+    private val tracer: Tracer? = null,
     private val config: LLMConfig,
 ) {
     /**
@@ -71,6 +88,31 @@ class AgentLoop(
         initialUsage: TokenUsage,
     ): AgentResult {
         var accumulatedUsage = initialUsage
+
+        // D-10 skill injection hook: activate matching skills and prepend
+        // their prompts as a System message BEFORE the first LLM call.
+        // D-11: when a tracer is supplied, wrap activation in a
+        // "kore.skill.activate" span. Graceful degradation when tracer is null.
+        val userMessage = history.first { it.role == ConversationMessage.Role.User }
+        val span = tracer?.spanBuilder("kore.skill.activate")?.startSpan()
+        val activatedPrompts =
+            try {
+                skillRegistry.activateFor(
+                    taskContent = userMessage.content,
+                    availableTools = toolDefs.map { it.name },
+                )
+            } finally {
+                span?.end()
+            }
+        if (activatedPrompts.isNotEmpty()) {
+            history.add(
+                0,
+                ConversationMessage(
+                    role = ConversationMessage.Role.System,
+                    content = activatedPrompts.joinToString("\n\n"),
+                ),
+            )
+        }
 
         repeat(config.maxHistoryMessages) {
             // Budget check before each LLM call (per D-25, BUDG-04, T-03-02)
