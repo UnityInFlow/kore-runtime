@@ -8,4 +8,5 @@ include(
     "kore-observability",
     "kore-storage",
     "kore-skills",
+    "kore-spring",
 )
