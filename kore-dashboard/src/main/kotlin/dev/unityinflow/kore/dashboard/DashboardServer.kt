@@ -1,0 +1,147 @@
+package dev.unityinflow.kore.dashboard
+
+import dev.unityinflow.kore.core.port.AuditLog
+import dev.unityinflow.kore.core.port.EventBus
+import io.ktor.server.cio.CIO
+import io.ktor.server.engine.EmbeddedServer
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.routing.routing
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import org.springframework.context.SmartLifecycle
+import java.util.concurrent.atomic.AtomicReference
+
+/**
+ * Spring [SmartLifecycle]-aware dashboard side-car (D-33, RESEARCH.md Pattern 8).
+ *
+ * **Constructor contract:** the 3-arg constructor `(EventBus, AuditLog?,
+ * KoreProperties.DashboardProperties)` is consumed by
+ * `KoreAutoConfiguration.DashboardAutoConfiguration` in plan 03-02. Plan
+ * 03-04 will swap the reflective bridge in kore-spring for a direct
+ * constructor call against this exact signature — do not change it without
+ * also updating kore-spring.
+ *
+ * **Reflective construction note:** the auto-config currently calls
+ * `getConstructor(EventBus, AuditLog, KoreProperties.DashboardProperties)`
+ * with the non-nullable `AuditLog` parameter type. We therefore declare
+ * `auditLog` as non-null `AuditLog` here — the `InMemoryAuditLog` default
+ * supplied by `KoreAutoConfiguration` honours D-27 by returning empty lists
+ * from the read methods. A null-tolerant alternative constructor exists for
+ * unit tests that want to exercise the explicit-null degraded mode path.
+ *
+ * **Lifecycle:**
+ * - [start] launches the observer in an internal supervisor scope and
+ *   starts the Ktor CIO engine with `wait = false` (Pitfall 3).
+ * - [stop] stops the engine with a 1s grace period, cancels the observer
+ *   scope, and clears the engine reference so [isRunning] returns `false`.
+ * - [getPhase] returns `Int.MAX_VALUE - 1` so the dashboard starts after
+ *   every other Spring bean and stops first on shutdown.
+ *
+ * @property eventBus the [EventBus] the observer subscribes to.
+ * @property auditLog the (possibly in-memory) [AuditLog] backing the
+ *           recent-runs and cost-summary fragments.
+ * @property properties the dashboard properties from kore-spring's
+ *           `KoreProperties.DashboardProperties` (port, path, enabled).
+ */
+class DashboardServer(
+    private val eventBus: EventBus,
+    private val auditLog: AuditLog,
+    private val properties: DashboardProperties,
+) : SmartLifecycle {
+    /**
+     * Property bag matching `KoreProperties.DashboardProperties` from kore-spring.
+     * Defined as an interface so the kore-dashboard module does not need a
+     * compile-time dependency on kore-spring.
+     */
+    interface DashboardProperties {
+        val port: Int
+        val path: String
+        val enabled: Boolean
+    }
+
+    /** Default in-process implementation used by tests and standalone mains. */
+    data class DefaultDashboardProperties(
+        override val port: Int = 8090,
+        override val path: String = "/kore",
+        override val enabled: Boolean = true,
+    ) : DashboardProperties
+
+    /** Convenience constructor for unit tests / standalone usage with [DashboardConfig]. */
+    constructor(
+        eventBus: EventBus,
+        auditLog: AuditLog?,
+        config: DashboardConfig,
+    ) : this(
+        eventBus = eventBus,
+        auditLog = auditLog ?: InertAuditLog,
+        properties = DefaultDashboardProperties(port = config.port, path = config.path, enabled = config.enabled),
+    )
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val observer = EventBusDashboardObserver(eventBus, scope)
+    private val dataService = DashboardDataService(auditLog.takeUnless { it === InertAuditLog })
+
+    // EmbeddedServer<*, *> can't be a `val` — we hold it via AtomicReference
+    // to satisfy CLAUDE.md's no-`var` rule while still allowing start/stop
+    // to swap the held instance.
+    private val engine = AtomicReference<EmbeddedServer<*, *>?>(null)
+
+    override fun start() {
+        if (engine.get() != null) return
+        observer.startCollecting()
+        val config = DashboardConfig(properties.port, properties.path, properties.enabled)
+        val started =
+            embeddedServer(CIO, port = properties.port) {
+                routing {
+                    configureDashboardRoutes(observer, dataService, config)
+                }
+            }.also { it.start(wait = false) } // Pitfall 3 — never wait=true in SmartLifecycle
+        engine.set(started)
+    }
+
+    override fun stop() {
+        engine.getAndSet(null)?.stop(gracePeriodMillis = 1_000, timeoutMillis = 5_000)
+        scope.cancel()
+    }
+
+    override fun isRunning(): Boolean = engine.get() != null
+
+    override fun isAutoStartup(): Boolean = properties.enabled
+
+    /** Start last, stop first — dashboard depends on every other kore bean. */
+    override fun getPhase(): Int = Int.MAX_VALUE - 1
+}
+
+/**
+ * Sentinel marker used by the [DashboardServer.constructor] convenience
+ * overload to represent "no AuditLog supplied" without ever returning
+ * `null` from [DashboardDataService] when the primary 3-arg constructor
+ * is used. The [DashboardDataService] is constructed against `null` if
+ * the user originally passed `null`, so the recent-runs / cost-summary
+ * fragments still render the degraded notice.
+ */
+private object InertAuditLog : AuditLog {
+    override suspend fun recordAgentRun(
+        agentId: String,
+        task: dev.unityinflow.kore.core.AgentTask,
+        result: dev.unityinflow.kore.core.AgentResult,
+    ) = Unit
+
+    override suspend fun recordLLMCall(
+        agentId: String,
+        backend: String,
+        usage: dev.unityinflow.kore.core.TokenUsage,
+    ) = Unit
+
+    override suspend fun recordToolCall(
+        agentId: String,
+        call: dev.unityinflow.kore.core.ToolCall,
+        result: dev.unityinflow.kore.core.ToolResult,
+    ) = Unit
+
+    override suspend fun queryRecentRuns(limit: Int): List<dev.unityinflow.kore.core.port.AgentRunRecord> = emptyList()
+
+    override suspend fun queryCostSummary(): List<dev.unityinflow.kore.core.port.AgentCostRecord> = emptyList()
+}
