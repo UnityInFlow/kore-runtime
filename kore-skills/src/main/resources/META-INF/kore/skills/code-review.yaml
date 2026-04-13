@@ -1,0 +1,17 @@
+name: code-review
+description: "Activates expert code review mode for PR analysis tasks"
+version: "1.0.0"
+activation:
+  task_matches:
+    - "(?i)review.*code"
+    - "(?i)pull.?request"
+    - "(?i)pr.*feedback"
+  requires_tools:
+    - github_get_pr
+    - github_list_files
+prompt: |
+  You are an expert code reviewer. Focus on:
+  - Correctness and logic errors
+  - Security vulnerabilities
+  - Performance implications
+  Always provide specific line references and actionable suggestions.

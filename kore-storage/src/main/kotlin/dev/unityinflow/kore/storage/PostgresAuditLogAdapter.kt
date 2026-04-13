@@ -5,12 +5,17 @@ import dev.unityinflow.kore.core.AgentTask
 import dev.unityinflow.kore.core.TokenUsage
 import dev.unityinflow.kore.core.ToolCall
 import dev.unityinflow.kore.core.ToolResult
+import dev.unityinflow.kore.core.port.AgentCostRecord
+import dev.unityinflow.kore.core.port.AgentRunRecord
 import dev.unityinflow.kore.core.port.AuditLog
 import dev.unityinflow.kore.storage.tables.AgentRunsTable
 import dev.unityinflow.kore.storage.tables.LlmCallsTable
 import dev.unityinflow.kore.storage.tables.ToolCallsTable
+import kotlinx.coroutines.flow.toList
+import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.jetbrains.exposed.v1.r2dbc.insert
+import org.jetbrains.exposed.v1.r2dbc.select
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -81,6 +86,87 @@ class PostgresAuditLogAdapter(
             }
         }
     }
+
+    /**
+     * Dashboard read query: the [limit] most recent agent runs joined with
+     * their LLM calls, ordered by `finished_at DESC` (D-26, Pattern 11).
+     *
+     * One row per (agent_run × llm_call) is returned — agents with multiple
+     * LLM calls yield multiple rows. The dashboard renders this as a flat
+     * "recent runs" table. Task content is deliberately NOT projected (T-03-03).
+     */
+    override suspend fun queryRecentRuns(limit: Int): List<AgentRunRecord> =
+        suspendTransaction(database) {
+            // LlmCallsTable.runId has a reference() to AgentRunsTable.id, so
+            // innerJoin(ColumnSet) auto-detects the FK and uses it for the join
+            // predicate (Exposed 1.0 core API).
+            //
+            // NOTE (T-02-05 read path): we deliberately project only the
+            // columns AgentRunRecord exposes — this avoids bringing task
+            // content into the dashboard read path AND sidesteps the
+            // JsonbTypeMapper column-index bug that surfaces on joined
+            // selectAll() over tables with `jsonb` columns.
+            AgentRunsTable
+                .innerJoin(LlmCallsTable)
+                .select(
+                    AgentRunsTable.agentName,
+                    AgentRunsTable.resultType,
+                    AgentRunsTable.finishedAt,
+                    LlmCallsTable.tokensIn,
+                    LlmCallsTable.tokensOut,
+                    LlmCallsTable.durationMs,
+                ).orderBy(AgentRunsTable.finishedAt, SortOrder.DESC)
+                .limit(limit)
+                .toList()
+                .map { row ->
+                    AgentRunRecord(
+                        agentName = row[AgentRunsTable.agentName],
+                        resultType = row[AgentRunsTable.resultType],
+                        inputTokens = row[LlmCallsTable.tokensIn],
+                        outputTokens = row[LlmCallsTable.tokensOut],
+                        durationMs = row[LlmCallsTable.durationMs].toLong(),
+                        completedAt =
+                            row[AgentRunsTable.finishedAt]?.toInstant()
+                                ?: java.time.Instant.EPOCH,
+                    )
+                }
+        }
+
+    /**
+     * Dashboard read query: per-agent-name token totals and run counts.
+     *
+     * Implementation note (per plan): grouping is done in Kotlin rather than
+     * via SQL GROUP BY to sidestep Exposed R2DBC dialect quirks around mixing
+     * non-aggregated columns with aggregates. Pulls the join result into memory
+     * and folds on `agentName`. Dashboard scale (dozens of agents × thousands
+     * of calls) is well within safe in-memory bounds.
+     */
+    override suspend fun queryCostSummary(): List<AgentCostRecord> =
+        suspendTransaction(database) {
+            // Project only the columns AgentCostRecord needs — avoids the
+            // JsonbTypeMapper column-index bug on joined selectAll().
+            AgentRunsTable
+                .innerJoin(LlmCallsTable)
+                .select(
+                    AgentRunsTable.id,
+                    AgentRunsTable.agentName,
+                    LlmCallsTable.tokensIn,
+                    LlmCallsTable.tokensOut,
+                ).toList()
+                .groupBy { it[AgentRunsTable.agentName] }
+                .map { (agentName, rows) ->
+                    // Each row is one llm_call; count distinct agent_run ids for totalRuns.
+                    val distinctRunIds =
+                        rows
+                            .mapTo(HashSet()) { it[AgentRunsTable.id].value }
+                    AgentCostRecord(
+                        agentName = agentName,
+                        totalRuns = distinctRunIds.size,
+                        totalInputTokens = rows.sumOf { it[LlmCallsTable.tokensIn].toLong() },
+                        totalOutputTokens = rows.sumOf { it[LlmCallsTable.tokensOut].toLong() },
+                    )
+                }
+        }
 }
 
 /** Maps [AgentResult] to a stable string for the result_type column. */

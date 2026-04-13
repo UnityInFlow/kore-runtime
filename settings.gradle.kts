@@ -7,4 +7,5 @@ include(
     "kore-test",
     "kore-observability",
     "kore-storage",
+    "kore-skills",
 )
