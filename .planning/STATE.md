@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-02-PLAN.md (kore-spring auto-configuration)
-last_updated: "2026-04-13T21:24:55.917Z"
+stopped_at: Completed 03-03-PLAN.md (kore-dashboard HTMX module)
+last_updated: "2026-04-13T21:38:08.768Z"
 last_activity: 2026-04-13
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 14
-  completed_plans: 12
-  percent: 86
+  completed_plans: 13
+  percent: 93
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-10)
 ## Current Position
 
 Phase: 03 (skills-spring-dashboard) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
 Last activity: 2026-04-13
 
@@ -65,6 +65,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 02-observability-storage P03 | 58min | 2 tasks | 4 files |
 | Phase 03-skills-spring-dashboard P01 | 30min | 2 tasks | 19 files |
 | Phase 03-skills-spring-dashboard P02 | 6min | 2 tasks | 7 files |
+| Phase 03-skills-spring-dashboard P03 | 8min | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -114,6 +115,10 @@ Recent decisions affecting current work:
 - [Phase 03-skills-spring-dashboard]: OllamaLlmAutoConfiguration gated on explicit kore.llm.ollama.enabled=true (defaults false) — adding kore-llm to classpath must NOT eagerly construct an OllamaChatModel because langchain4j-ollama 0.26.1 vs langchain4j-google-ai-gemini 0.36.1 resolve to incompatible langchain4j-core versions causing NoSuchMethodError
 - [Phase 03-skills-spring-dashboard]: kore-spring redeclares exposed-r2dbc and opentelemetry-api as compileOnly transitively — compileOnly project deps don't expose THEIR compileOnly transitives, so KoreAutoConfiguration's direct @Bean signatures need both symbols on the compile classpath
 - [Phase 03-skills-spring-dashboard]: DashboardAutoConfiguration uses Class.forName reflection bridge until plan 03-03 creates kore-dashboard module; @ConditionalOnClass(name=["...DashboardServer"]) ensures reflection only runs at runtime when dashboard is present
+- [Phase 03-skills-spring-dashboard]: EventBusDashboardObserver takes injected CoroutineScope (mirrors EventBusMetricsObserver pattern); tests use runTest backgroundScope, DashboardServer uses internal supervisor scope — no internal AtomicReference<Job?>
+- [Phase 03-skills-spring-dashboard]: DashboardServer 3-arg constructor (EventBus, AuditLog, DashboardProperties) takes non-nullable AuditLog because kore-spring's reflective bridge uses getConstructor(...) — JVM erasure cannot resolve nullable parameter types; convenience constructor with InertAuditLog sentinel handles the explicit-null degraded path
+- [Phase 03-skills-spring-dashboard]: configureDashboardRoutes is a Route extension (not Routing) — Ktor 3.2 routing { } block lambda receiver is Route.() -> Unit; Routing extends Route so Route is the more general (and only) correct binding
+- [Phase 03-skills-spring-dashboard]: ktor-server-htmx plugin intentionally not used; HTMX attributes emitted manually via kotlinx.html attributes["hx-get"] = ... to avoid @OptIn(ExperimentalKtorApi::class)
 
 ### Pending Todos
 
@@ -125,6 +130,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-13T21:24:55.913Z
-Stopped at: Completed 03-02-PLAN.md (kore-spring auto-configuration)
+Last session: 2026-04-13T21:37:56.267Z
+Stopped at: Completed 03-03-PLAN.md (kore-dashboard HTMX module)
 Resume file: None

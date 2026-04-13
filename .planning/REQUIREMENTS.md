@@ -79,10 +79,10 @@ Requirements for v0.1 release. Each maps to roadmap phases.
 
 ### Dashboard
 
-- [ ] **DASH-01**: HTMX dashboard showing list of active agents with status
-- [ ] **DASH-02**: HTMX dashboard showing recent agent runs with results
-- [ ] **DASH-03**: HTMX dashboard showing token cost summary per agent and total
-- [ ] **DASH-04**: Ktor 3.2 embedded server with HTMX module (no frontend build step)
+- [x] **DASH-01**: HTMX dashboard showing list of active agents with status
+- [x] **DASH-02**: HTMX dashboard showing recent agent runs with results
+- [x] **DASH-03**: HTMX dashboard showing token cost summary per agent and total
+- [x] **DASH-04**: Ktor 3.2 embedded server with HTMX module (no frontend build step)
 
 ### Testing
 
@@ -181,10 +181,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SPRN-02 | Phase 3 | Complete |
 | SPRN-03 | Phase 3 | Complete |
 | SPRN-04 | Phase 3 | Complete |
-| DASH-01 | Phase 3 | Pending |
-| DASH-02 | Phase 3 | Pending |
-| DASH-03 | Phase 3 | Pending |
-| DASH-04 | Phase 3 | Pending |
+| DASH-01 | Phase 3 | Complete |
+| DASH-02 | Phase 3 | Complete |
+| DASH-03 | Phase 3 | Complete |
+| DASH-04 | Phase 3 | Complete |
 | EVNT-01 | Phase 4 | Pending |
 | EVNT-02 | Phase 4 | Pending |
 | EVNT-03 | Phase 4 | Pending |
