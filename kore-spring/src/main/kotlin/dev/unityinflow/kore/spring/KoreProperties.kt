@@ -45,8 +45,15 @@ data class KoreProperties(
         val model: String = "gpt-4o",
     )
 
-    /** Ollama — local model server, no API key required. */
+    /**
+     * Ollama — local model server, no API key required.
+     *
+     * [enabled] defaults to `false` so that adding kore-llm to the classpath
+     * does not eagerly construct an OllamaChatModel when the user only wants
+     * Claude or OpenAI. Set `kore.llm.ollama.enabled=true` to opt in.
+     */
     data class OllamaProperties(
+        val enabled: Boolean = false,
         val baseUrl: String = "http://localhost:11434",
         val model: String = "llama3",
     )
