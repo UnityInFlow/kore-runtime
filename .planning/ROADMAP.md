@@ -71,7 +71,7 @@ Plans:
 
 Plans:
 - [x] 03-01-PLAN.md — kore-core contracts (SkillRegistry port, AuditLog read methods) + kore-skills module (YAML loader, PatternMatcher, SkillRegistryAdapter) + PostgresAuditLogAdapter query methods
-- [ ] 03-02-PLAN.md — kore-spring module: KoreProperties, KoreAutoConfiguration (@ConditionalOnClass nested configs), KoreActuatorEndpoint, Spring Boot SPI registration
+- [x] 03-02-PLAN.md — kore-spring module: KoreProperties, KoreAutoConfiguration (@ConditionalOnClass nested configs), KoreActuatorEndpoint, Spring Boot SPI registration
 - [ ] 03-03-PLAN.md — kore-dashboard module: EventBusDashboardObserver, DashboardDataService, all kotlinx.html components per UI-SPEC, DashboardServer (SmartLifecycle)
 - [ ] 03-04-PLAN.md — Phase 3 integration: DashboardAutoConfiguration wiring, KoreIntegrationTest (full Spring context), README hero demo
 

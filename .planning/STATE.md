@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-01-PLAN.md (kore-skills module + AuditLog reads)
-last_updated: "2026-04-13T21:14:17.336Z"
+stopped_at: Completed 03-02-PLAN.md (kore-spring auto-configuration)
+last_updated: "2026-04-13T21:24:55.917Z"
 last_activity: 2026-04-13
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 14
-  completed_plans: 11
-  percent: 79
+  completed_plans: 12
+  percent: 86
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-10)
 ## Current Position
 
 Phase: 03 (skills-spring-dashboard) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-04-13
 
@@ -64,6 +64,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 02-observability-storage P02 | 45 | 2 tasks | 12 files |
 | Phase 02-observability-storage P03 | 58min | 2 tasks | 4 files |
 | Phase 03-skills-spring-dashboard P01 | 30min | 2 tasks | 19 files |
+| Phase 03-skills-spring-dashboard P02 | 6min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -109,6 +110,10 @@ Recent decisions affecting current work:
 - [Phase 03-skills-spring-dashboard]: AgentBuilder uses Array<SkillRegistry>(1) val-cell backing store instead of var to satisfy CLAUDE.md no-var rule
 - [Phase 03-skills-spring-dashboard]: PostgresAuditLogAdapter dashboard queries use .select(columns) projections instead of selectAll() to avoid the JsonbTypeMapper column-index bug on joined queries with jsonb columns
 - [Phase 03-skills-spring-dashboard]: queryCostSummary folds join results in Kotlin instead of SQL GROUP BY — dialect-agnostic and correct for dashboard scale
+- [Phase 03-skills-spring-dashboard]: kore-spring uses kore-llm public factory functions (claude/gpt/ollama/gemini) in @Bean methods rather than calling provider SDK constructors directly — the underlying clients (AnthropicClient, OpenAIClient, ChatLanguageModel) are constructor-required and the factory functions already encapsulate client wiring from an api key
+- [Phase 03-skills-spring-dashboard]: OllamaLlmAutoConfiguration gated on explicit kore.llm.ollama.enabled=true (defaults false) — adding kore-llm to classpath must NOT eagerly construct an OllamaChatModel because langchain4j-ollama 0.26.1 vs langchain4j-google-ai-gemini 0.36.1 resolve to incompatible langchain4j-core versions causing NoSuchMethodError
+- [Phase 03-skills-spring-dashboard]: kore-spring redeclares exposed-r2dbc and opentelemetry-api as compileOnly transitively — compileOnly project deps don't expose THEIR compileOnly transitives, so KoreAutoConfiguration's direct @Bean signatures need both symbols on the compile classpath
+- [Phase 03-skills-spring-dashboard]: DashboardAutoConfiguration uses Class.forName reflection bridge until plan 03-03 creates kore-dashboard module; @ConditionalOnClass(name=["...DashboardServer"]) ensures reflection only runs at runtime when dashboard is present
 
 ### Pending Todos
 
@@ -120,6 +125,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-13T21:14:17.333Z
-Stopped at: Completed 03-01-PLAN.md (kore-skills module + AuditLog reads)
+Last session: 2026-04-13T21:24:55.913Z
+Stopped at: Completed 03-02-PLAN.md (kore-spring auto-configuration)
 Resume file: None

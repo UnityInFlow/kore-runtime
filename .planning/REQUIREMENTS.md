@@ -65,10 +65,10 @@ Requirements for v0.1 release. Each maps to roadmap phases.
 
 ### Spring Integration
 
-- [ ] **SPRN-01**: KoreAutoConfiguration for Spring Boot auto-configuration
-- [ ] **SPRN-02**: KoreProperties @ConfigurationProperties for application.yml config
-- [ ] **SPRN-03**: Spring Boot starter dependency: add one dependency, agents work
-- [ ] **SPRN-04**: Spring Actuator endpoints for agent health and metrics
+- [x] **SPRN-01**: KoreAutoConfiguration for Spring Boot auto-configuration
+- [x] **SPRN-02**: KoreProperties @ConfigurationProperties for application.yml config
+- [x] **SPRN-03**: Spring Boot starter dependency: add one dependency, agents work
+- [x] **SPRN-04**: Spring Actuator endpoints for agent health and metrics
 
 ### Event Bus
 
@@ -177,10 +177,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SKIL-02 | Phase 3 | Complete |
 | SKIL-03 | Phase 3 | Complete |
 | SKIL-04 | Phase 3 | Complete |
-| SPRN-01 | Phase 3 | Pending |
-| SPRN-02 | Phase 3 | Pending |
-| SPRN-03 | Phase 3 | Pending |
-| SPRN-04 | Phase 3 | Pending |
+| SPRN-01 | Phase 3 | Complete |
+| SPRN-02 | Phase 3 | Complete |
+| SPRN-03 | Phase 3 | Complete |
+| SPRN-04 | Phase 3 | Complete |
 | DASH-01 | Phase 3 | Pending |
 | DASH-02 | Phase 3 | Pending |
 | DASH-03 | Phase 3 | Pending |
