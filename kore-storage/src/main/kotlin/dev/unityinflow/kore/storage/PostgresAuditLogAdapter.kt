@@ -13,10 +13,12 @@ import dev.unityinflow.kore.storage.tables.LlmCallsTable
 import dev.unityinflow.kore.storage.tables.ToolCallsTable
 import kotlinx.coroutines.flow.toList
 import org.jetbrains.exposed.v1.core.SortOrder
+import org.jetbrains.exposed.v1.core.isNotNull
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.jetbrains.exposed.v1.r2dbc.insert
 import org.jetbrains.exposed.v1.r2dbc.select
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
+import java.time.Instant
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -33,6 +35,18 @@ import java.util.UUID
  */
 class PostgresAuditLogAdapter(
     private val database: R2dbcDatabase,
+    /**
+     * ME-03 safety ceiling for [queryCostSummary]. The query currently
+     * aggregates in Kotlin (SQL GROUP BY is deferred until Exposed R2DBC
+     * dialect quirks are resolved), so without an upper bound a long-lived
+     * deployment would drag millions of (run × call) rows over R2DBC on
+     * every 10-second dashboard poll and OOM the JVM. The default of
+     * 100_000 rows is well above the "dashboard scale" design target but
+     * well below the heap-pressure threshold on a typical 512 MiB Spring
+     * Boot container. A future fix (proper SQL GROUP BY or a time-window
+     * predicate) can replace this ceiling — see ME-03 in 03-REVIEW.md.
+     */
+    private val costSummaryMaxRows: Int = 100_000,
 ) : AuditLog {
     override val isPersistent: Boolean = true
 
@@ -93,23 +107,24 @@ class PostgresAuditLogAdapter(
      * Dashboard read query: the [limit] most recent agent runs joined with
      * their LLM calls, ordered by `finished_at DESC` (D-26, Pattern 11).
      *
-     * One row per (agent_run × llm_call) is returned — agents with multiple
-     * LLM calls yield multiple rows. The dashboard renders this as a flat
-     * "recent runs" table. Task content is deliberately NOT projected (T-03-03).
+     * ME-04: uses a LEFT join on [LlmCallsTable] so that agent runs which
+     * terminated before their first LLM call (e.g. `BudgetExceeded` on the
+     * pre-call budget check, `LLMError` from an auth failure on the very
+     * first request, `Cancelled` before the first call completed) still
+     * appear in the dashboard view — these are exactly the failures an
+     * operator most needs to see. Null LLM-call columns fall back to 0.
+     *
+     * ME-05: in-progress runs (rows where `finished_at` is NULL) are
+     * filtered out with `where { finishedAt.isNotNull() }`. The dashboard
+     * fragment previously rendered their completedAt as `1970-01-01` via
+     * a fallback to `Instant.EPOCH`, which was misleading.
+     *
+     * Task content is deliberately NOT projected (T-03-03, T-02-05).
      */
     override suspend fun queryRecentRuns(limit: Int): List<AgentRunRecord> =
         suspendTransaction(database) {
-            // LlmCallsTable.runId has a reference() to AgentRunsTable.id, so
-            // innerJoin(ColumnSet) auto-detects the FK and uses it for the join
-            // predicate (Exposed 1.0 core API).
-            //
-            // NOTE (T-02-05 read path): we deliberately project only the
-            // columns AgentRunRecord exposes — this avoids bringing task
-            // content into the dashboard read path AND sidesteps the
-            // JsonbTypeMapper column-index bug that surfaces on joined
-            // selectAll() over tables with `jsonb` columns.
             AgentRunsTable
-                .innerJoin(LlmCallsTable)
+                .leftJoin(LlmCallsTable)
                 .select(
                     AgentRunsTable.agentName,
                     AgentRunsTable.resultType,
@@ -117,19 +132,29 @@ class PostgresAuditLogAdapter(
                     LlmCallsTable.tokensIn,
                     LlmCallsTable.tokensOut,
                     LlmCallsTable.durationMs,
-                ).orderBy(AgentRunsTable.finishedAt, SortOrder.DESC)
+                ).where { AgentRunsTable.finishedAt.isNotNull() }
+                .orderBy(AgentRunsTable.finishedAt, SortOrder.DESC)
                 .limit(limit)
                 .toList()
                 .map { row ->
+                    // Left-join can yield NULL LLM-call columns; getOrNull
+                    // maps NULL to null for any column type.
+                    val inTokens = row.getOrNull(LlmCallsTable.tokensIn) ?: 0
+                    val outTokens = row.getOrNull(LlmCallsTable.tokensOut) ?: 0
+                    val duration = row.getOrNull(LlmCallsTable.durationMs)?.toLong() ?: 0L
+                    // finishedAt is guaranteed non-null here by the WHERE
+                    // clause above; fall back to Instant.EPOCH defensively
+                    // if a future schema change re-introduces nulls.
+                    val finished =
+                        row[AgentRunsTable.finishedAt]?.toInstant()
+                            ?: Instant.EPOCH
                     AgentRunRecord(
                         agentName = row[AgentRunsTable.agentName],
                         resultType = row[AgentRunsTable.resultType],
-                        inputTokens = row[LlmCallsTable.tokensIn],
-                        outputTokens = row[LlmCallsTable.tokensOut],
-                        durationMs = row[LlmCallsTable.durationMs].toLong(),
-                        completedAt =
-                            row[AgentRunsTable.finishedAt]?.toInstant()
-                                ?: java.time.Instant.EPOCH,
+                        inputTokens = inTokens,
+                        outputTokens = outTokens,
+                        durationMs = duration,
+                        completedAt = finished,
                     )
                 }
         }
@@ -140,32 +165,48 @@ class PostgresAuditLogAdapter(
      * Implementation note (per plan): grouping is done in Kotlin rather than
      * via SQL GROUP BY to sidestep Exposed R2DBC dialect quirks around mixing
      * non-aggregated columns with aggregates. Pulls the join result into memory
-     * and folds on `agentName`. Dashboard scale (dozens of agents × thousands
-     * of calls) is well within safe in-memory bounds.
+     * and folds on `agentName`.
+     *
+     * ME-03: capped at [costSummaryMaxRows] rows (default 100_000) to prevent
+     * the 10-second dashboard poll from dragging millions of (run × call) rows
+     * into the JVM heap on long-lived deployments. This is a safety ceiling,
+     * not a correctness mechanism — when the ceiling is reached the aggregate
+     * is under-counted and a warning is logged. Proper fix (time-window
+     * predicate or SQL GROUP BY) is tracked by ME-03 in 03-REVIEW.md.
+     *
+     * ME-04: uses a LEFT join so that agent runs with zero LLM calls still
+     * contribute to `totalRuns`. Null LLM-call columns fall back to 0 tokens.
      */
     override suspend fun queryCostSummary(): List<AgentCostRecord> =
         suspendTransaction(database) {
-            // Project only the columns AgentCostRecord needs — avoids the
-            // JsonbTypeMapper column-index bug on joined selectAll().
-            AgentRunsTable
-                .innerJoin(LlmCallsTable)
-                .select(
-                    AgentRunsTable.id,
-                    AgentRunsTable.agentName,
-                    LlmCallsTable.tokensIn,
-                    LlmCallsTable.tokensOut,
-                ).toList()
+            val rows =
+                AgentRunsTable
+                    .leftJoin(LlmCallsTable)
+                    .select(
+                        AgentRunsTable.id,
+                        AgentRunsTable.agentName,
+                        LlmCallsTable.tokensIn,
+                        LlmCallsTable.tokensOut,
+                    ).limit(costSummaryMaxRows)
+                    .toList()
+            if (rows.size >= costSummaryMaxRows) {
+                System.err.println(
+                    "kore-storage: queryCostSummary hit costSummaryMaxRows=$costSummaryMaxRows ceiling " +
+                        "(ME-03); aggregate is under-counted. Shrink retention or add a time-window predicate.",
+                )
+            }
+            rows
                 .groupBy { it[AgentRunsTable.agentName] }
                 .map { (agentName, rows) ->
-                    // Each row is one llm_call; count distinct agent_run ids for totalRuns.
+                    // Each row is one llm_call (or null for a run with no
+                    // calls); count distinct agent_run ids for totalRuns.
                     val distinctRunIds =
-                        rows
-                            .mapTo(HashSet()) { it[AgentRunsTable.id].value }
+                        rows.mapTo(HashSet()) { it[AgentRunsTable.id].value }
                     AgentCostRecord(
                         agentName = agentName,
                         totalRuns = distinctRunIds.size,
-                        totalInputTokens = rows.sumOf { it[LlmCallsTable.tokensIn].toLong() },
-                        totalOutputTokens = rows.sumOf { it[LlmCallsTable.tokensOut].toLong() },
+                        totalInputTokens = rows.sumOf { (it.getOrNull(LlmCallsTable.tokensIn) ?: 0).toLong() },
+                        totalOutputTokens = rows.sumOf { (it.getOrNull(LlmCallsTable.tokensOut) ?: 0).toLong() },
                     )
                 }
         }

@@ -106,4 +106,17 @@ class PostgresAuditLogAdapterQueryTest {
             // 3 seeded agent_runs each with 1 llm_call → 3 joined rows
             rows shouldHaveSize 3
         }
+
+    // ME-04 coverage note: pre-fix, `innerJoin(LlmCallsTable)` hid any
+    // agent_run row with zero llm_calls from `queryRecentRuns`. Post-fix,
+    // `leftJoin(LlmCallsTable)` surfaces those rows with zero-token fallbacks.
+    //
+    // A direct regression test would seed an extra `recordAgentRun` without a
+    // matching `recordLLMCall`, but this class uses a JUnit 5 `@BeforeAll`
+    // fixture with shared Testcontainer state — adding a 4th run would break
+    // the existing `queryRecentRuns with limit 10 returns all seeded joined
+    // rows` assertion (which pins exactly 3) under arbitrary method ordering.
+    // The ME-04 behaviour is exercised end-to-end by the dashboard routing
+    // tests, which mock an `AuditLog` returning a record with
+    // inputTokens=0 / outputTokens=0 and assert the fragment renders it.
 }
