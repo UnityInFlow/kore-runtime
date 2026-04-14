@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 03-04-PLAN.md (Phase 3 integration gate)
-last_updated: "2026-04-14T04:58:52.460Z"
+stopped_at: "Completed 03-05-PLAN.md (Phase 3 gap closure: HI-01 + HI-02)"
+last_updated: "2026-04-14T18:21:58.205Z"
 last_activity: 2026-04-14
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 14
-  completed_plans: 14
+  total_plans: 15
+  completed_plans: 15
   percent: 100
 ---
 
@@ -67,6 +67,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 03-skills-spring-dashboard P02 | 6min | 2 tasks | 7 files |
 | Phase 03-skills-spring-dashboard P03 | 8min | 2 tasks | 11 files |
 | Phase 03-skills-spring-dashboard P04 | 6min | 1 tasks | 6 files |
+| Phase 03-skills-spring-dashboard P05 | 18min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -122,6 +123,7 @@ Recent decisions affecting current work:
 - [Phase 03-skills-spring-dashboard]: ktor-server-htmx plugin intentionally not used; HTMX attributes emitted manually via kotlinx.html attributes["hx-get"] = ... to avoid @OptIn(ExperimentalKtorApi::class)
 - [Phase 03-skills-spring-dashboard]: Replaced reflective DashboardServer bridge in KoreAutoConfiguration with direct constructor call once kore-dashboard became compileOnly project dep; KoreDashboardPropertiesAdapter (private nested class in kore-spring) bridges KoreProperties.DashboardProperties to DashboardServer.DashboardProperties without leaking kore-spring into kore-dashboard
 - [Phase 03-skills-spring-dashboard]: Removed @ConditionalOnProperty(enabled=true) from DashboardAutoConfiguration; bean creation gated only by classpath, engine startup gated by isAutoStartup() at SmartLifecycle level — separates 'create the bean' from 'bind the port' so tests can inject DashboardServer without binding 8090
+- [Phase 03-skills-spring-dashboard]: Gap closure 03-05: AuditLog.isPersistent interface default + DashboardServer AtomicReference-backed scope swap closed HI-01 + HI-02 with 11 new tests across kore-dashboard (8) + kore-spring (3); zero new deps in kore-spring build
 
 ### Pending Todos
 
@@ -133,6 +135,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-14T04:58:41.535Z
-Stopped at: Completed 03-04-PLAN.md (Phase 3 integration gate)
+Last session: 2026-04-14T18:21:53.062Z
+Stopped at: Completed 03-05-PLAN.md (Phase 3 gap closure: HI-01 + HI-02)
 Resume file: None
