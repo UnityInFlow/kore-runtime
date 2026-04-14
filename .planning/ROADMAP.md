@@ -73,7 +73,7 @@ Plans:
 - [x] 03-01-PLAN.md — kore-core contracts (SkillRegistry port, AuditLog read methods) + kore-skills module (YAML loader, PatternMatcher, SkillRegistryAdapter) + PostgresAuditLogAdapter query methods
 - [x] 03-02-PLAN.md — kore-spring module: KoreProperties, KoreAutoConfiguration (@ConditionalOnClass nested configs), KoreActuatorEndpoint, Spring Boot SPI registration
 - [x] 03-03-PLAN.md — kore-dashboard module: EventBusDashboardObserver, DashboardDataService, all kotlinx.html components per UI-SPEC, DashboardServer (SmartLifecycle)
-- [ ] 03-04-PLAN.md — Phase 3 integration: DashboardAutoConfiguration wiring, KoreIntegrationTest (full Spring context), README hero demo
+- [x] 03-04-PLAN.md — Phase 3 integration: DashboardAutoConfiguration wiring, KoreIntegrationTest (full Spring context), README hero demo
 
 ### Phase 4: Event Bus & Publishing
 **Goal**: The event bus abstraction is complete with a production-ready default and opt-in messaging adapters, and all kore modules are published to Maven Central
