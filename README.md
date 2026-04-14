@@ -61,6 +61,68 @@ when (result) {
 
 ---
 
+## Spring Boot — One Dependency, One Bean, Live Dashboard
+
+The `kore-spring` starter is the fastest way to get an agent running in a real
+Spring Boot app. **Add one Gradle dependency, write one `@Bean`, visit `/kore`.**
+
+**1. Add the starter to `build.gradle.kts`:**
+
+```kotlin
+implementation("dev.unityinflow:kore-spring:0.0.1-SNAPSHOT")
+```
+
+**2. Configure your LLM provider in `application.yml` — never commit API keys:**
+
+```yaml
+kore:
+  llm:
+    claude:
+      api-key: ${KORE_CLAUDE_API_KEY}   # set as an environment variable
+  skills:
+    directory: ./kore-skills            # YAML skills auto-loaded from here
+```
+
+**3. Drop a YAML skill in `./kore-skills/code-review.yaml`:**
+
+```yaml
+name: code-review
+description: Activates on review requests and injects review heuristics
+version: 1.0.0
+activation:
+  task_matches:
+    - "(?i)review"
+    - "(?i)pull request"
+prompt: |
+  When reviewing code, check correctness, clarity, security and tests.
+```
+
+**4. Register an agent as a Spring `@Bean`:**
+
+```kotlin
+@SpringBootApplication
+class MyApp {
+    @Bean
+    fun reviewAgent(
+        claude: dev.unityinflow.kore.llm.ClaudeBackend,
+    ): AgentRunner = agent("review-agent") {
+        model = claude
+        budget(maxTokens = 10_000)
+    }
+}
+```
+
+**5. Run the app and visit:**
+
+- `http://localhost:8090/kore` — live HTMX dashboard (active agents, recent runs, cost summary)
+- `http://localhost:8080/actuator/kore` — Spring Actuator health endpoint
+
+That's the entire developer experience. `kore-spring` auto-wires the event bus,
+budget enforcer, audit log, skill registry, observability, and dashboard from
+classpath detection — your agent inherits all of it for free.
+
+---
+
 ## Examples
 
 ### Example 1: Fallback chain for LLM resilience
@@ -140,16 +202,11 @@ class MyAgentTest {
 | `kore-llm` | `dev.unityinflow:kore-llm` | LLM backend adapters: Claude, GPT-4, Ollama, Gemini. DSL factory functions: `claude()`, `gpt()`, `ollama()`, `gemini()`. |
 | `kore-mcp` | `dev.unityinflow:kore-mcp` | MCP protocol client (stdio + SSE) and server. DSL factory functions: `mcp()`, `mcpSse()`. |
 | `kore-test` | `dev.unityinflow:kore-test` | `MockLLMBackend`, `MockToolProvider`, session recording and replay for deterministic agent tests. |
-
-### Coming in later phases
-
-| Module | What it will provide |
-|--------|---------------------|
-| `kore-observability` | OpenTelemetry spans + Micrometer metrics on every LLM call and tool use |
-| `kore-storage` | PostgreSQL audit log via Flyway migrations |
-| `kore-spring` | Spring Boot auto-configuration starter (`kore-spring-boot-starter`) |
-| `kore-skills` | YAML skill definitions with pattern-based auto-activation |
-| `kore-dashboard` | HTMX dashboard: active agents, recent traces, token cost |
+| `kore-observability` | `dev.unityinflow:kore-observability` | OpenTelemetry spans + Micrometer metrics on every LLM call and tool use. |
+| `kore-storage` | `dev.unityinflow:kore-storage` | PostgreSQL audit log via Exposed R2DBC + Flyway migrations. |
+| `kore-skills` | `dev.unityinflow:kore-skills` | YAML skill definitions (`./kore-skills/*.yaml`) with pattern-based auto-activation. |
+| `kore-dashboard` | `dev.unityinflow:kore-dashboard` | Embedded HTMX dashboard (Ktor 3.2 CIO): active agents, recent runs, cost summary. |
+| `kore-spring` | `dev.unityinflow:kore-spring` | Spring Boot 4 auto-configuration starter that wires every module above from a single Gradle dependency. |
 
 ---
 

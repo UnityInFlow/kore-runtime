@@ -26,6 +26,11 @@ dependencies {
     compileOnly(project(":kore-skills"))
     compileOnly(project(":kore-observability"))
     compileOnly(project(":kore-storage"))
+    // kore-dashboard is present at compile time so DashboardAutoConfiguration
+    // can call the DashboardServer constructor directly (plan 03-04 swap from
+    // reflective bridge). Still gated by @ConditionalOnClass at runtime so the
+    // host can exclude kore-dashboard via Gradle exclusion if desired.
+    compileOnly(project(":kore-dashboard"))
 
     // The compileOnly project deps above only expose their own classes.
     // KoreAutoConfiguration also references symbols from THEIR compileOnly
@@ -45,6 +50,14 @@ dependencies {
     // kore-llm on test classpath so the @ConditionalOnClass(name = ["...ClaudeBackend"])
     // gate fires and we can assert auto-wired LLM backend bean creation (D-15).
     testImplementation(project(":kore-llm"))
+    // kore-dashboard on test classpath so the full Spring context integration
+    // test can assert the DashboardServer bean is wired end-to-end (plan 03-04).
+    testImplementation(project(":kore-dashboard"))
+    // kore-skills on test classpath so the SkillRegistryAdapter @ConditionalOnClass
+    // gate fires for the integration test.
+    testImplementation(project(":kore-skills"))
+    // kore-test provides MockLLMBackend for the integration test's @Bean agent.
+    testImplementation(project(":kore-test"))
     testImplementation(libs.junit5)
     testImplementation(libs.kotest.assertions)
     testImplementation(libs.coroutines.test)

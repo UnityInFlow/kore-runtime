@@ -197,38 +197,56 @@ class KoreAutoConfiguration {
     }
 
     // ───────────────────────────────────────────────────────────────────────
-    // Dashboard (D-21) — wired in plan 03-03.
+    // Dashboard (D-21) — wired in plan 03-04.
     //
-    // Until the kore-dashboard module exists we use a reflective construction
-    // path so kore-spring continues to compile without a hard kore-dashboard
-    // dependency. The full direct-constructor wiring is added in plan 03-03
-    // when DashboardServer is created.
+    // kore-dashboard is now present on the compile classpath, so we construct
+    // `DashboardServer` directly (replacing the reflective bridge used in plan
+    // 03-02). `@ConditionalOnClass` still guards the whole inner @Configuration
+    // so hosts that deliberately exclude kore-dashboard from their runtime
+    // classpath do not trip up bean creation.
+    //
+    // `DashboardServer` defines its own `DashboardProperties` interface so it
+    // does not depend on kore-spring. We adapt `KoreProperties.DashboardProperties`
+    // to that interface via [KoreDashboardPropertiesAdapter] below.
     // ───────────────────────────────────────────────────────────────────────
 
     @Configuration(proxyBeanMethods = false)
     @ConditionalOnClass(name = ["dev.unityinflow.kore.dashboard.DashboardServer"])
-    @ConditionalOnProperty(
-        prefix = "kore.dashboard",
-        name = ["enabled"],
-        havingValue = "true",
-        matchIfMissing = true,
-    )
     class DashboardAutoConfiguration {
+        // NOTE: No @ConditionalOnProperty here. kore.dashboard.enabled is
+        // honoured by DashboardServer.isAutoStartup() — Spring SmartLifecycle
+        // creates the bean but skips start() when enabled=false. This is
+        // important for tests (and for hosts that want to inject the bean
+        // without actually binding the Ktor CIO engine to a port).
+
         @Bean
+        @ConditionalOnMissingBean(dev.unityinflow.kore.dashboard.DashboardServer::class)
         fun dashboardServer(
             eventBus: EventBus,
             auditLog: AuditLog,
             properties: KoreProperties,
-        ): Any {
-            // Reflective bridge to be replaced by direct constructor in plan 03-03.
-            // @ConditionalOnClass guarantees DashboardServer is on classpath here.
-            val clazz = Class.forName("dev.unityinflow.kore.dashboard.DashboardServer")
-            return clazz
-                .getConstructor(
-                    EventBus::class.java,
-                    AuditLog::class.java,
-                    KoreProperties.DashboardProperties::class.java,
-                ).newInstance(eventBus, auditLog, properties.dashboard)
-        }
+        ): dev.unityinflow.kore.dashboard.DashboardServer =
+            dev.unityinflow.kore.dashboard.DashboardServer(
+                eventBus = eventBus,
+                auditLog = auditLog,
+                properties = KoreDashboardPropertiesAdapter(properties.dashboard),
+            )
+    }
+
+    /**
+     * Adapts kore-spring's [KoreProperties.DashboardProperties] data class to
+     * the [dev.unityinflow.kore.dashboard.DashboardServer.DashboardProperties]
+     * interface defined in kore-dashboard.
+     *
+     * Lives in kore-spring (not kore-dashboard) so kore-dashboard stays free of
+     * any kore-spring compile dependency — the direction of the port/adapter
+     * boundary is preserved.
+     */
+    private class KoreDashboardPropertiesAdapter(
+        private val delegate: KoreProperties.DashboardProperties,
+    ) : dev.unityinflow.kore.dashboard.DashboardServer.DashboardProperties {
+        override val port: Int get() = delegate.port
+        override val path: String get() = delegate.path
+        override val enabled: Boolean get() = delegate.enabled
     }
 }

@@ -44,6 +44,12 @@ class KoreAutoConfigurationTest {
     private val contextRunner =
         ApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of(KoreAutoConfiguration::class.java))
+            // kore-dashboard is on the test classpath (so the integration test
+            // can wire it). Disable the dashboard SmartLifecycle for these
+            // unit tests so nothing tries to bind to port 8090 — DashboardServer
+            // honours `enabled=false` via isAutoStartup() and never starts the
+            // Ktor CIO engine.
+            .withPropertyValues("kore.dashboard.enabled=false")
 
     // ───────────────────────────────────────────────────────────────────
     // Default beans (Tests 1-4)
@@ -71,9 +77,16 @@ class KoreAutoConfigurationTest {
     }
 
     @Test
-    fun `auto-configures NoOpSkillRegistry as the default SkillRegistry bean when kore-skills is absent`() {
+    fun `auto-configures SkillRegistryAdapter as the SkillRegistry bean when kore-skills is on classpath`() {
+        // kore-skills is on the test classpath (testImplementation), so the
+        // @ConditionalOnClass gate on SkillsAutoConfiguration fires and the
+        // adapter beats the default NoOpSkillRegistry. The "kore-skills absent"
+        // path is exercised at runtime only — it cannot be tested from inside
+        // the same module that declares kore-skills as a test dep.
         contextRunner.run { context ->
-            context.getBean(SkillRegistry::class.java) shouldBe NoOpSkillRegistry
+            val bean = context.getBean(SkillRegistry::class.java)
+            (bean === NoOpSkillRegistry) shouldBe false
+            bean.shouldBeInstanceOf<dev.unityinflow.kore.skills.SkillRegistryAdapter>()
         }
     }
 
@@ -182,6 +195,11 @@ class KoreAutoConfigurationTest {
     properties = [
         // Disable Spring's web environment — kore-spring is not a web app on its own.
         "spring.main.web-application-type=none",
+        // kore-dashboard is on the test classpath. Disable the dashboard
+        // SmartLifecycle so the Ktor CIO engine does not bind to port 8090
+        // during this Spring context boot (port collision with the integration
+        // test would otherwise flake CI).
+        "kore.dashboard.enabled=false",
     ],
 )
 class KoreAutoConfigurationSpringContextTest {
