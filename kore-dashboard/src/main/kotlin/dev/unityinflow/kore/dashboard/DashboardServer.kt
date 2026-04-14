@@ -129,6 +129,12 @@ class DashboardServer(
      * enforce this mechanically if the convention spreads.)
      */
     fun dataServiceForTest(): DashboardDataService = dataService
+
+    /** HI-01 test accessor — see DashboardServerRestartTest. */
+    internal fun scopeForTest(): CoroutineScope? = scope
+
+    /** HI-01 test accessor — see DashboardServerRestartTest. */
+    internal fun observerForTest(): EventBusDashboardObserver? = observer
 }
 
 /**

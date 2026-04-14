@@ -19,6 +19,11 @@ dependencies {
     // Framework at runtime via the Spring Boot 4.0.5 BOM.
     compileOnly("org.springframework:spring-context:7.0.0")
 
+    // Tests constructing DashboardServer directly need the SmartLifecycle
+    // supertype on the compile classpath — compileOnly does NOT propagate
+    // to the test classpath in Gradle.
+    testImplementation("org.springframework:spring-context:7.0.0")
+
     testImplementation(project(":kore-test"))
     testImplementation(libs.junit5)
     testImplementation(libs.kotest.assertions)
