@@ -79,8 +79,14 @@ class DashboardServer(
         properties = DefaultDashboardProperties(port = config.port, path = config.path, enabled = config.enabled),
     )
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val observer = EventBusDashboardObserver(eventBus, scope)
+    // HI-01: scope and observer are held in AtomicReferences so start() after
+    // stop() can swap in a fresh CoroutineScope. The previous implementation
+    // used `private val scope = ...` which meant stop() → scope.cancel()
+    // permanently killed the only scope instance, and the next start() then
+    // launched the observer collector on a cancelled scope (silent failure).
+    // CLAUDE.md forbids `var`, so AtomicReference is the mechanism.
+    private val scopeRef = AtomicReference<CoroutineScope?>(null)
+    private val observerRef = AtomicReference<EventBusDashboardObserver?>(null)
     private val dataService = DashboardDataService(auditLog)
 
     // EmbeddedServer<*, *> can't be a `val` — we hold it via AtomicReference
@@ -90,12 +96,20 @@ class DashboardServer(
 
     override fun start() {
         if (engine.get() != null) return
-        observer.startCollecting()
+        // HI-01: recreate scope + observer on every start so a prior stop()
+        // that cancelled the scope cannot leave the second start() launching
+        // on a dead scope. SupervisorJob so one child failure does not tear
+        // down the whole dashboard.
+        val newScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        val newObserver = EventBusDashboardObserver(eventBus, newScope)
+        scopeRef.set(newScope)
+        observerRef.set(newObserver)
+        newObserver.startCollecting()
         val config = DashboardConfig(properties.port, properties.path, properties.enabled)
         val started =
             embeddedServer(CIO, port = properties.port) {
                 routing {
-                    configureDashboardRoutes(observer, dataService, config)
+                    configureDashboardRoutes(newObserver, dataService, config)
                 }
             }.also { it.start(wait = false) } // Pitfall 3 — never wait=true in SmartLifecycle
         engine.set(started)
@@ -103,7 +117,11 @@ class DashboardServer(
 
     override fun stop() {
         engine.getAndSet(null)?.stop(gracePeriodMillis = 1_000, timeoutMillis = 5_000)
-        scope.cancel()
+        // HI-01: cancel AND clear the scope so the next start() recreates it.
+        // getAndSet(null) is atomic; a concurrent start() observing null will
+        // install a fresh scope before calling startCollecting().
+        scopeRef.getAndSet(null)?.cancel()
+        observerRef.set(null)
     }
 
     override fun isRunning(): Boolean = engine.get() != null
@@ -130,11 +148,30 @@ class DashboardServer(
      */
     fun dataServiceForTest(): DashboardDataService = dataService
 
-    /** HI-01 test accessor — see DashboardServerRestartTest. */
-    internal fun scopeForTest(): CoroutineScope? = scope
+    /**
+     * Test-only accessor for the current [CoroutineScope] held in [scopeRef].
+     * Returns `null` when the server is stopped. Used by
+     * `DashboardServerRestartTest` to prove HI-01: after start → stop → start,
+     * the returned reference is a NEW instance (identity check), not the
+     * original scope that `stop()` cancelled.
+     *
+     * See [dataServiceForTest] for the rationale on the `-Test` suffix
+     * convention. This accessor is `internal` (not `public`) because the
+     * only caller lives in `kore-dashboard/src/test` — the SAME Kotlin
+     * compilation module as `kore-dashboard/src/main`, so `internal` IS
+     * visible there.
+     */
+    internal fun scopeForTest(): CoroutineScope? = scopeRef.get()
 
-    /** HI-01 test accessor — see DashboardServerRestartTest. */
-    internal fun observerForTest(): EventBusDashboardObserver? = observer
+    /**
+     * Test-only accessor for the current [EventBusDashboardObserver] held in
+     * [observerRef]. Returns `null` when the server is stopped. The observer
+     * is recreated on each [start] alongside [scopeRef], so a start → stop →
+     * start cycle produces a distinct instance. Used by
+     * `DashboardServerRestartTest` to emit events through `InProcessEventBus`
+     * and assert the NEW observer's `snapshot()` sees them.
+     */
+    internal fun observerForTest(): EventBusDashboardObserver? = observerRef.get()
 }
 
 /**
