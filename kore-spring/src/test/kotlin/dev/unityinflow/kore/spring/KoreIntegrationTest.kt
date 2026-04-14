@@ -1,6 +1,9 @@
 package dev.unityinflow.kore.spring
 
+import dev.unityinflow.kore.core.AgentEvent
+import dev.unityinflow.kore.core.AgentResult
 import dev.unityinflow.kore.core.AgentRunner
+import dev.unityinflow.kore.core.AgentTask
 import dev.unityinflow.kore.core.LLMChunk
 import dev.unityinflow.kore.core.dsl.agent
 import dev.unityinflow.kore.core.port.AuditLog
@@ -11,14 +14,23 @@ import dev.unityinflow.kore.dashboard.DashboardServer
 import dev.unityinflow.kore.skills.SkillRegistryAdapter
 import dev.unityinflow.kore.spring.actuator.KoreActuatorEndpoint
 import dev.unityinflow.kore.test.MockLLMBackend
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.yield
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Bean
+import java.util.UUID
 
 /**
  * Phase 3 end-to-end integration test.
@@ -125,6 +137,65 @@ class KoreIntegrationTest
             dashboardServer.shouldNotBe(null)
             testAgent.shouldNotBe(null)
         }
+
+        // ───────────────────────────────────────────────────────────────
+        // Test 6 (ME-08) — user agent runs the full loop end-to-end
+        //
+        // Pre-fix, every test in this class only asserted bean presence —
+        // no test actually invoked `testAgent.run(...)`, so any failure
+        // mode that happened AFTER DI (observer subscription timing,
+        // SkillRegistry activation, budget enforcer semantics) was
+        // invisible. This test closes that gap by exercising the full
+        // wired graph via MockLLMBackend and asserting that EventBus
+        // subscribers observe AgentStarted + AgentCompleted events.
+        // ───────────────────────────────────────────────────────────────
+        @Test
+        fun `user agent bean runs full loop through auto-wired EventBus`(): Unit =
+            runBlocking {
+                // Subscribe on a fresh scope BEFORE the run so the subscriber
+                // is active before the first emission. (EventBus uses a hot
+                // SharedFlow — late subscribers miss past events.)
+                val collectorScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+                val collected = mutableListOf<AgentEvent>()
+                val job =
+                    collectorScope.launch {
+                        eventBus.subscribe().collect { event ->
+                            collected += event
+                        }
+                    }
+                // Yield so the collect {} reaches its suspension point and
+                // the SharedFlow registers the subscriber before the agent
+                // runner emits anything.
+                yield()
+
+                val task =
+                    AgentTask(
+                        id = UUID.randomUUID().toString(),
+                        input = "hello",
+                    )
+                val result =
+                    withTimeout(10_000L) {
+                        testAgent.run(task).await()
+                    }
+
+                result.shouldBeInstanceOf<AgentResult.Success>()
+
+                // Give the SharedFlow a moment to deliver the terminal
+                // AgentCompleted event to our collector before we cancel.
+                yield()
+
+                job.cancel()
+                collectorScope.coroutineContext[kotlinx.coroutines.Job]?.cancel()
+
+                // The full loop should have emitted at least one AgentStarted
+                // and one AgentCompleted. We only pin the shapes — not the
+                // exact count — so the assertion is robust to any future
+                // instrumentation that adds extra events.
+                val started = collected.filterIsInstance<AgentEvent.AgentStarted>()
+                val completed = collected.filterIsInstance<AgentEvent.AgentCompleted>()
+                started shouldHaveSize 1
+                completed shouldHaveSize 1
+            }
     }
 
 /**
