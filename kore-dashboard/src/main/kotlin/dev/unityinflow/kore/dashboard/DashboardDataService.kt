@@ -8,10 +8,12 @@ import dev.unityinflow.kore.core.port.AuditLog
  * Thin facade over the optional [AuditLog] read methods consumed by the
  * recent-runs and cost-summary HTMX fragments.
  *
- * The [auditLog] parameter is nullable: when `null`, both queries return an
- * empty list and [hasStorage] returns `false`, so the fragments render the
- * "History unavailable — kore-storage not configured" degraded-mode notice
- * (D-27, UI-SPEC.md).
+ * The [auditLog] parameter is nullable AND filtered by [AuditLog.isPersistent]: when
+ * `null` OR when the bound adapter reports `isPersistent=false` (e.g. the default
+ * InMemoryAuditLog supplied by KoreAutoConfiguration), both queries effectively
+ * return an empty list for rendering purposes and [hasStorage] returns `false`, so
+ * the fragments render the "History unavailable — kore-storage not configured"
+ * degraded-mode notice (D-27, UI-SPEC.md, 03-VERIFICATION HI-02).
  */
 class DashboardDataService(
     private val auditLog: AuditLog?,
@@ -20,6 +22,11 @@ class DashboardDataService(
 
     suspend fun getCostSummary(): List<AgentCostRecord> = auditLog?.queryCostSummary() ?: emptyList()
 
-    /** `true` when an [AuditLog] adapter is configured (i.e. kore-storage is on the classpath). */
-    fun hasStorage(): Boolean = auditLog != null
+    /**
+     * `true` when an [AuditLog] adapter is configured AND it persists data durably
+     * (i.e. kore-storage's PostgresAuditLogAdapter is on the classpath). In-memory
+     * stubs (InMemoryAuditLog, InertAuditLog) inherit `isPersistent=false` and so
+     * report the degraded-mode state here — the HI-02 fix.
+     */
+    fun hasStorage(): Boolean = auditLog?.isPersistent == true
 }

@@ -228,6 +228,11 @@ private class SeededAuditLog(
     private val runs: List<dev.unityinflow.kore.core.port.AgentRunRecord>,
     private val costs: List<dev.unityinflow.kore.core.port.AgentCostRecord>,
 ) : dev.unityinflow.kore.core.port.AuditLog {
+    // Simulates a kore-storage-backed adapter so hasStorage() returns true and
+    // the recent-runs / cost-summary fragments render the table, not the
+    // degraded notice. Mirrors PostgresAuditLogAdapter.isPersistent = true.
+    override val isPersistent: Boolean = true
+
     override suspend fun recordAgentRun(
         agentId: String,
         task: dev.unityinflow.kore.core.AgentTask,

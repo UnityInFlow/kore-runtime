@@ -16,6 +16,22 @@ import java.time.Instant
  *          power the kore-dashboard HTMX fragments (D-26).
  */
 interface AuditLog {
+    /**
+     * `true` when this adapter persists audit data durably across JVM restarts
+     * (e.g. PostgreSQL via kore-storage), `false` for in-memory stubs used in
+     * default Spring wiring when kore-storage is absent.
+     *
+     * Consumed by `kore-dashboard` → `DashboardDataService.hasStorage()` (D-27):
+     * the recent-runs and cost-summary fragments render a "History unavailable"
+     * degraded notice when this is `false`.
+     *
+     * Default is `false` so existing in-memory implementations (InMemoryAuditLog,
+     * DashboardServer.InertAuditLog sentinel) inherit the degraded-mode semantics
+     * without any change. The PostgresAuditLogAdapter in kore-storage overrides
+     * this to `true`.
+     */
+    val isPersistent: Boolean get() = false
+
     suspend fun recordAgentRun(
         agentId: String,
         task: AgentTask,

@@ -34,6 +34,8 @@ import java.util.UUID
 class PostgresAuditLogAdapter(
     private val database: R2dbcDatabase,
 ) : AuditLog {
+    override val isPersistent: Boolean = true
+
     override suspend fun recordAgentRun(
         agentId: String,
         task: AgentTask,

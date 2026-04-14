@@ -81,7 +81,7 @@ class DashboardServer(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val observer = EventBusDashboardObserver(eventBus, scope)
-    private val dataService = DashboardDataService(auditLog.takeUnless { it === InertAuditLog })
+    private val dataService = DashboardDataService(auditLog)
 
     // EmbeddedServer<*, *> can't be a `val` — we hold it via AtomicReference
     // to satisfy CLAUDE.md's no-`var` rule while still allowing start/stop
@@ -112,6 +112,23 @@ class DashboardServer(
 
     /** Start last, stop first — dashboard depends on every other kore bean. */
     override fun getPhase(): Int = Int.MAX_VALUE - 1
+
+    /**
+     * Test-only accessor for integration tests that need to assert on the
+     * internally-held [DashboardDataService]. Used by
+     * `DashboardDegradedModeSpringTest` in kore-spring to pin HI-02 to the
+     * real `@Autowired` `DashboardServer` bean: any future refactor that
+     * re-introduces a null-coalescing wrapper around the audit log will
+     * break this accessor's return value and surface in CI.
+     *
+     * This accessor is `public` (not `internal`) because Kotlin `internal`
+     * visibility is scoped to a single Gradle/Kotlin compilation module, so
+     * kore-spring's test source set cannot see `internal` members declared
+     * in kore-dashboard/src/main. The `-Test` suffix is the reviewer guard —
+     * do not call from production code. (A future ktlint custom rule can
+     * enforce this mechanically if the convention spreads.)
+     */
+    fun dataServiceForTest(): DashboardDataService = dataService
 }
 
 /**
