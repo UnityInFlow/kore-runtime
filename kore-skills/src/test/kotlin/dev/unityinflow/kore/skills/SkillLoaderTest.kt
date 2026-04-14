@@ -86,4 +86,41 @@ class SkillLoaderTest {
         // The bundled code-review skill must still be present; filesystem was empty.
         skills.any { it.name == "code-review" } shouldBe true
     }
+
+    @Test
+    fun `Test 5 - malformed YAML syntax is skipped without crashing loadAll (ME-01)`(
+        @TempDir tempDir: Path,
+    ) {
+        // A file with unterminated quotes — triggers JsonParseException, not
+        // JsonMappingException. Pre-fix this crashed loadAll(); post-fix it
+        // is logged and skipped.
+        tempDir.resolve("broken.yaml").writeText(
+            """
+            name: "unterminated
+            description: broken
+            """.trimIndent(),
+        )
+        // A valid skill in the same directory must still load.
+        tempDir.resolve("valid.yaml").writeText(
+            """
+            name: me01-valid-skill
+            description: "valid sibling skill"
+            version: "0.0.1"
+            activation:
+              task_matches:
+                - "hello"
+              requires_tools: []
+            prompt: |
+              Respond politely.
+            """.trimIndent(),
+        )
+
+        val loader = SkillLoader(skillsDirectory = tempDir.toString())
+        // Must not throw.
+        val skills = loader.loadAll()
+
+        skills.any { it.name == "me01-valid-skill" } shouldBe true
+        // classpath-bundled code-review must still be present.
+        skills.any { it.name == "code-review" } shouldBe true
+    }
 }

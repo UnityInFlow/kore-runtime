@@ -1,13 +1,12 @@
 package dev.unityinflow.kore.skills
 
-import com.fasterxml.jackson.databind.JsonMappingException
-import com.fasterxml.jackson.databind.exc.MismatchedInputException
+import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
 import java.io.File
+import java.io.IOException
 import java.net.URL
-import java.util.jar.JarFile
 
 /**
  * Loads [SkillYamlDef] skill definitions from two sources (D-06):
@@ -85,15 +84,21 @@ class SkillLoader(
         resourceBase: String,
     ): List<SkillYamlDef> {
         // JAR URL format: jar:file:/path/to.jar!/META-INF/kore/skills/
-        val path = url.path
-        val bangIdx = path.indexOf("!/")
-        if (bangIdx < 0) return emptyList()
-        val jarPath = path.substring("file:".length, bangIdx)
+        // URL.getPath() does NOT URL-decode, so paths containing spaces
+        // (common on macOS: "/Users/foo/My Project/") arrive as "My%20Project"
+        // and JarFile(File(...)) fails with FileNotFoundException (ME-07).
+        // JarURLConnection handles URL decoding and nested JAR protocols
+        // correctly — use it instead of string-slicing the URL.
         val jar =
             try {
-                JarFile(File(jarPath))
-            } catch (ex: Exception) {
-                System.err.println("kore-skills: cannot open jar $jarPath: ${ex.message}")
+                val connection = url.openConnection() as java.net.JarURLConnection
+                connection.useCaches = false
+                connection.jarFile
+            } catch (ex: IOException) {
+                System.err.println("kore-skills: cannot open jar $url: ${ex.message}")
+                return emptyList()
+            } catch (ex: ClassCastException) {
+                System.err.println("kore-skills: unsupported jar URL $url: ${ex.message}")
                 return emptyList()
             }
         return jar.use { jf ->
@@ -109,11 +114,13 @@ class SkillLoader(
                         jf.getInputStream(entry).use { stream ->
                             mapper.readValue<SkillYamlDef>(stream)
                         }
-                    } catch (ex: MismatchedInputException) {
+                    } catch (ex: JsonProcessingException) {
+                        // Catches JsonParseException (syntax) + JsonMappingException
+                        // + MismatchedInputException — all subclasses.
                         System.err.println("kore-skills: malformed YAML at ${entry.name}: ${ex.message}")
                         null
-                    } catch (ex: JsonMappingException) {
-                        System.err.println("kore-skills: malformed YAML at ${entry.name}: ${ex.message}")
+                    } catch (ex: IOException) {
+                        System.err.println("kore-skills: cannot read skill file ${entry.name}: ${ex.message}")
                         null
                     }
                 }.toList()
@@ -133,11 +140,16 @@ class SkillLoader(
     private fun parseSkillFileSafely(file: File): SkillYamlDef? =
         try {
             mapper.readValue<SkillYamlDef>(file)
-        } catch (ex: MismatchedInputException) {
+        } catch (ex: JsonProcessingException) {
+            // Catches JsonParseException (syntax errors) + JsonMappingException
+            // + MismatchedInputException — all Jackson failure subclasses.
+            // ME-01: previously only Mismatched/Mapping were caught, so a
+            // single file with invalid YAML syntax (unterminated string,
+            // tab indentation) crashed loadAll() and the Spring context.
             System.err.println("kore-skills: malformed YAML at ${file.path}: ${ex.message}")
             null
-        } catch (ex: JsonMappingException) {
-            System.err.println("kore-skills: malformed YAML at ${file.path}: ${ex.message}")
+        } catch (ex: IOException) {
+            System.err.println("kore-skills: cannot read skill file ${file.path}: ${ex.message}")
             null
         }
 }
