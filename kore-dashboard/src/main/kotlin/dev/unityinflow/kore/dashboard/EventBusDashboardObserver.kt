@@ -6,6 +6,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Subscribes to [EventBus] and maintains a [ConcurrentHashMap] of active
@@ -33,21 +34,36 @@ class EventBusDashboardObserver(
 ) {
     private val activeAgents = ConcurrentHashMap<String, AgentState>()
 
+    // ME-06: idempotency guard — startCollecting() must not launch a second
+    // collector on the same scope. Double-collection double-counts tokens.
+    private val started = AtomicBoolean(false)
+
     /**
      * Launches the EventBus subscription in [scope]. Non-blocking — returns
      * immediately. Call once at startup before the dashboard starts serving
      * requests so the first `/kore/fragments/active-agents` poll has data.
+     *
+     * Idempotent (ME-06): a second call on the same instance is a no-op.
      */
     fun startCollecting() {
+        if (!started.compareAndSet(false, true)) return
         scope.launch {
             eventBus.subscribe().collect { event ->
                 when (event) {
                     is AgentEvent.AgentStarted -> {
-                        // Evict oldest entries if at capacity (T-03-11 DoS mitigation)
+                        // ME-02: evict OLDEST entries deterministically by
+                        // AgentState.startedAt. ConcurrentHashMap.keys has no
+                        // defined order, so the previous `.keys.take(N)` could
+                        // evict arbitrary (even newly-inserted) agents while
+                        // long-running zombies stuck around forever.
+                        // O(N log N) sort only fires when at capacity.
                         if (activeAgents.size >= maxTrackedAgents) {
-                            activeAgents.keys
-                                .take(activeAgents.size - maxTrackedAgents + 1)
-                                .forEach { activeAgents.remove(it) }
+                            val victims =
+                                activeAgents.entries
+                                    .sortedBy { it.value.startedAt }
+                                    .take(activeAgents.size - maxTrackedAgents + 1)
+                                    .map { it.key }
+                            victims.forEach { activeAgents.remove(it) }
                         }
                         activeAgents[event.agentId] =
                             AgentState(

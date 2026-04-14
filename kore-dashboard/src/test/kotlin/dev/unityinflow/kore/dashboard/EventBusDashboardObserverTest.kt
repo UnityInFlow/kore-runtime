@@ -106,6 +106,56 @@ class EventBusDashboardObserverTest {
         }
 
     @Test
+    fun `ME-02 capacity eviction bounds the active-agents map to maxTrackedAgents`() =
+        runTest {
+            val bus = InProcessEventBus()
+            // Small cap so we can hit it in the test.
+            val observer = EventBusDashboardObserver(bus, backgroundScope, maxTrackedAgents = 3)
+            observer.startCollecting()
+            yield()
+
+            // Emit 5 AgentStarted events; map must not exceed 3.
+            // The most-recently-emitted one (a5) must always be present because
+            // eviction happens BEFORE the new insert, so the newest entry cannot
+            // be evicted in the same step.
+            bus.emit(AgentEvent.AgentStarted(agentId = "a1", taskId = "t1"))
+            bus.emit(AgentEvent.AgentStarted(agentId = "a2", taskId = "t2"))
+            bus.emit(AgentEvent.AgentStarted(agentId = "a3", taskId = "t3"))
+            bus.emit(AgentEvent.AgentStarted(agentId = "a4", taskId = "t4"))
+            bus.emit(AgentEvent.AgentStarted(agentId = "a5", taskId = "t5"))
+            runCurrent()
+
+            val snapshot = observer.snapshot()
+            // Cap is 3 — must not exceed.
+            (snapshot.size <= 3) shouldBe true
+            snapshot shouldContainKey "a5"
+        }
+
+    @Test
+    fun `ME-06 startCollecting is idempotent — second call is a no-op`() =
+        runTest {
+            val bus = InProcessEventBus()
+            val observer = EventBusDashboardObserver(bus, backgroundScope)
+            observer.startCollecting()
+            // Second call MUST NOT launch a second collector.
+            observer.startCollecting()
+            yield()
+
+            // Emit one LLMCallCompleted — if two collectors were running,
+            // tokens would be double-counted.
+            bus.emit(AgentEvent.AgentStarted(agentId = "a1", taskId = "t1"))
+            bus.emit(
+                AgentEvent.LLMCallCompleted(
+                    agentId = "a1",
+                    tokenUsage = TokenUsage(inputTokens = 10, outputTokens = 5),
+                ),
+            )
+            runCurrent()
+
+            observer.snapshot()["a1"]!!.tokensUsed shouldBe 15L
+        }
+
+    @Test
     fun `cancelling observer scope stops processing further events`() =
         runTest {
             val bus = InProcessEventBus()
