@@ -72,8 +72,8 @@ Requirements for v0.1 release. Each maps to roadmap phases.
 
 ### Event Bus
 
-- [ ] **EVNT-01**: EventBus port interface for agent lifecycle events
-- [ ] **EVNT-02**: Kotlin Flows implementation (SharedFlow, DROP_OLDEST backpressure, default)
+- [x] **EVNT-01**: EventBus port interface for agent lifecycle events
+- [x] **EVNT-02**: Kotlin Flows implementation (SharedFlow, DROP_OLDEST backpressure, default)
 - [ ] **EVNT-03**: Kafka adapter (opt-in, separate module)
 - [ ] **EVNT-04**: RabbitMQ adapter (opt-in, separate module)
 
@@ -185,8 +185,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DASH-02 | Phase 3 | Complete |
 | DASH-03 | Phase 3 | Complete |
 | DASH-04 | Phase 3 | Complete |
-| EVNT-01 | Phase 4 | Pending |
-| EVNT-02 | Phase 4 | Pending |
+| EVNT-01 | Phase 4 | Complete |
+| EVNT-02 | Phase 4 | Complete |
 | EVNT-03 | Phase 4 | Pending |
 | EVNT-04 | Phase 4 | Pending |
 

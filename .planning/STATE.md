@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
+milestone: v0.0.1
 milestone_name: milestone
-status: verifying
-stopped_at: "Completed 03-05-PLAN.md (Phase 3 gap closure: HI-01 + HI-02)"
-last_updated: "2026-04-14T18:21:58.205Z"
-last_activity: 2026-04-14
+status: executing
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-04-15T18:25:03.807Z"
+last_activity: 2026-04-15
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 15
-  completed_plans: 15
-  percent: 100
+  total_plans: 21
+  completed_plans: 16
+  percent: 76
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-10)
 
 **Core value:** A developer adds one Spring Boot dependency, writes an `agent { }` block, and has a production-ready agent running with observability and budget control.
-**Current focus:** Phase 03 — skills-spring-dashboard
+**Current focus:** Phase 04 — event-bus-publishing
 
 ## Current Position
 
-Phase: 03 (skills-spring-dashboard) — EXECUTING
-Plan: 4 of 4
-Status: Phase complete — ready for verification
-Last activity: 2026-04-14
+Phase: 04 (event-bus-publishing) — EXECUTING
+Plan: 2 of 6
+Status: Ready to execute
+Last activity: 2026-04-15
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -68,6 +68,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 03-skills-spring-dashboard P03 | 8min | 2 tasks | 11 files |
 | Phase 03-skills-spring-dashboard P04 | 6min | 1 tasks | 6 files |
 | Phase 03-skills-spring-dashboard P05 | 18min | 2 tasks | 10 files |
+| Phase 04-event-bus-publishing P01 | 12min | 3 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -124,6 +125,10 @@ Recent decisions affecting current work:
 - [Phase 03-skills-spring-dashboard]: Replaced reflective DashboardServer bridge in KoreAutoConfiguration with direct constructor call once kore-dashboard became compileOnly project dep; KoreDashboardPropertiesAdapter (private nested class in kore-spring) bridges KoreProperties.DashboardProperties to DashboardServer.DashboardProperties without leaking kore-spring into kore-dashboard
 - [Phase 03-skills-spring-dashboard]: Removed @ConditionalOnProperty(enabled=true) from DashboardAutoConfiguration; bean creation gated only by classpath, engine startup gated by isAutoStartup() at SmartLifecycle level — separates 'create the bean' from 'bind the port' so tests can inject DashboardServer without binding 8090
 - [Phase 03-skills-spring-dashboard]: Gap closure 03-05: AuditLog.isPersistent interface default + DashboardServer AtomicReference-backed scope swap closed HI-01 + HI-02 with 11 new tests across kore-dashboard (8) + kore-spring (3); zero new deps in kore-spring build
+- [Phase 04-event-bus-publishing]: compileOnly kotlinx.serialization on kore-core (both -core and -json) keeps runtime classpath zero-external-dep while enabling @Serializable + @JsonClassDiscriminator annotations
+- [Phase 04-event-bus-publishing]: @SerialName on every AgentEvent/AgentResult subclass — default kotlinx.serialization discriminator uses FQN, explicit SerialName gives human-readable wire format in broker admin UIs
+- [Phase 04-event-bus-publishing]: File-scope DESERIALIZED_CAUSE sentinel instead of private companion object — Kotlin 2.3.0 IR backend bug in SyntheticAccessorLowering when data class default value references a private companion member
+- [Phase 04-event-bus-publishing]: Wave-0 bootstrap: consolidate all shared-file edits (settings.gradle.kts + libs.versions.toml + module skeletons) into plan 04-01 so later waves run on disjoint file sets without merge races
 
 ### Pending Todos
 
@@ -135,6 +140,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-14T18:21:53.062Z
-Stopped at: Completed 03-05-PLAN.md (Phase 3 gap closure: HI-01 + HI-02)
+Last session: 2026-04-15T18:24:54.606Z
+Stopped at: Completed 04-01-PLAN.md
 Resume file: None
