@@ -15,7 +15,7 @@ subprojects {
     apply(plugin = "org.jmailen.kotlinter")
 
     group = "dev.unityinflow"
-    version = "0.0.1-SNAPSHOT" // Bumped to "0.0.1" in plan 04-06 at release time
+    version = "0.0.1" // Bumped from 0.0.1-SNAPSHOT in plan 04-06 Phase A for v0.0.1 release
 
     repositories {
         mavenCentral()
