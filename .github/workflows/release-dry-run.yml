@@ -1,0 +1,47 @@
+# Safety net before pressing `git tag v0.0.1 && git push --tags`. Run this first.
+# If green, you're safe to tag. This workflow does NOT sign, does NOT upload
+# to the Sonatype Central Portal, and does NOT create a GitHub Release — it
+# only verifies that the full build + publishToMavenLocal pipeline works on
+# the self-hosted runner with the current main branch state.
+#
+# Triggered manually from the GitHub Actions UI → "Run workflow".
+# No secrets required; no network calls beyond Gradle dependency resolution.
+
+name: Release dry-run (manual)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  dry-run:
+    runs-on: [arc-runner-unityinflow]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Clean + build + unit tests
+        run: ./gradlew clean build --no-configuration-cache
+
+      - name: Publish to Maven Local (unsigned, no Central upload)
+        run: ./gradlew publishToMavenLocal --no-configuration-cache
+
+      - name: List published modules under ~/.m2/repository/dev/unityinflow/
+        run: |
+          ls -la ~/.m2/repository/dev/unityinflow/ || true
+          for m in kore-core kore-llm kore-mcp kore-observability kore-storage \
+                   kore-skills kore-spring kore-dashboard kore-test \
+                   kore-kafka kore-rabbitmq; do
+            echo "=== $m ==="
+            ls ~/.m2/repository/dev/unityinflow/$m/0.0.1/ 2>/dev/null || echo "MISSING"
+          done
