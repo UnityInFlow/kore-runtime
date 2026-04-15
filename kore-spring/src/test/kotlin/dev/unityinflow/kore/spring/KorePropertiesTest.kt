@@ -39,6 +39,69 @@ class KorePropertiesTest {
 
         // MCP server list defaults to empty
         props.mcp.servers.shouldBeEmpty()
+
+        // Event bus defaults to in-process with blank adapter credentials
+        props.eventBus.type shouldBe "in-process"
+        props.eventBus.kafka.bootstrapServers shouldBe ""
+        props.eventBus.kafka.topic shouldBe "kore-agent-events"
+        props.eventBus.kafka.groupIdPrefix shouldBe "kore"
+        props.eventBus.rabbitmq.uri shouldBe ""
+        props.eventBus.rabbitmq.exchange shouldBe "kore.agent-events"
+        props.eventBus.rabbitmq.confirmTimeoutMillis shouldBe 5_000L
+    }
+
+    @Test
+    fun `custom eventBus type and kafka config overrides defaults`() {
+        val props =
+            KoreProperties(
+                eventBus =
+                    KoreProperties.EventBusProperties(
+                        type = "kafka",
+                        kafka =
+                            KoreProperties.KafkaProperties(
+                                bootstrapServers = "broker.example.com:9092",
+                                topic = "custom-topic",
+                                groupIdPrefix = "prod",
+                            ),
+                    ),
+            )
+
+        props.eventBus.type shouldBe "kafka"
+        props.eventBus.kafka.bootstrapServers shouldBe "broker.example.com:9092"
+        props.eventBus.kafka.topic shouldBe "custom-topic"
+        props.eventBus.kafka.groupIdPrefix shouldBe "prod"
+    }
+
+    @Test
+    fun `KafkaProperties toAdapterConfig maps fields to KafkaEventBusConfig`() {
+        val kafka =
+            KoreProperties.KafkaProperties(
+                bootstrapServers = "broker:9092",
+                topic = "events",
+                groupIdPrefix = "svc",
+            )
+
+        val adapter = kafka.toAdapterConfig()
+
+        adapter.bootstrapServers shouldBe "broker:9092"
+        adapter.topic shouldBe "events"
+        adapter.groupIdPrefix shouldBe "svc"
+    }
+
+    @Test
+    fun `RabbitMqProperties toAdapterConfig maps fields to RabbitMqEventBusConfig`() {
+        val rabbit =
+            KoreProperties.RabbitMqProperties(
+                uri = "amqp://broker:5672",
+                exchange = "events",
+                confirmTimeoutMillis = 7_500L,
+            )
+
+        val adapter = rabbit.toAdapterConfig()
+
+        adapter.uri shouldBe "amqp://broker:5672"
+        adapter.exchange shouldBe "events"
+        adapter.confirmTimeoutMillis shouldBe 7_500L
     }
 
     @Test

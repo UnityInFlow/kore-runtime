@@ -31,6 +31,13 @@ dependencies {
     // reflective bridge). Still gated by @ConditionalOnClass at runtime so the
     // host can exclude kore-dashboard via Gradle exclusion if desired.
     compileOnly(project(":kore-dashboard"))
+    // Opt-in event bus adapters (EVNT-03 / EVNT-04 / D-08). Kept compileOnly so
+    // consumers MUST explicitly add `implementation("dev.unityinflow:kore-kafka")`
+    // or `kore-rabbitmq` to their build — kore-spring does not transitively pull
+    // either adapter. Gated at runtime by @ConditionalOnClass(name=[...]) string
+    // form (Pitfall 2) inside KafkaEventBusAutoConfiguration / RabbitMqEventBusAutoConfiguration.
+    compileOnly(project(":kore-kafka"))
+    compileOnly(project(":kore-rabbitmq"))
 
     // The compileOnly project deps above only expose their own classes.
     // KoreAutoConfiguration also references symbols from THEIR compileOnly
@@ -58,6 +65,11 @@ dependencies {
     testImplementation(project(":kore-skills"))
     // kore-test provides MockLLMBackend for the integration test's @Bean agent.
     testImplementation(project(":kore-test"))
+    // kore-kafka / kore-rabbitmq on test classpath so the Spring context tests
+    // can evaluate the @ConditionalOnClass(name=["...KafkaEventBus"]) / rabbit
+    // gates and assert definition presence via assertThat(ctx).hasBean(...).
+    testImplementation(project(":kore-kafka"))
+    testImplementation(project(":kore-rabbitmq"))
     testImplementation(libs.junit5)
     testImplementation(libs.kotest.assertions)
     testImplementation(libs.coroutines.test)

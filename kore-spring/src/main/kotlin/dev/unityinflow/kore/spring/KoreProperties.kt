@@ -24,6 +24,7 @@ data class KoreProperties(
     val storage: StorageProperties = StorageProperties(),
     val dashboard: DashboardProperties = DashboardProperties(),
     val budget: BudgetProperties = BudgetProperties(),
+    val eventBus: EventBusProperties = EventBusProperties(),
 ) {
     /** LLM backend configuration — one nested block per supported provider. */
     data class LlmProperties(
@@ -94,4 +95,58 @@ data class KoreProperties(
     data class BudgetProperties(
         val defaultMaxTokens: Long = 100_000L,
     )
+
+    /**
+     * Event bus selector and adapter-specific configuration (D-08).
+     *
+     * [type] controls which `EventBus` implementation kore-spring wires:
+     *  - `in-process` (default): [dev.unityinflow.kore.core.internal.InProcessEventBus]
+     *    — Kotlin Flows SharedFlow with DROP_OLDEST (EVNT-02).
+     *  - `kafka`: `dev.unityinflow.kore.kafka.KafkaEventBus` — requires kore-kafka on
+     *    the classpath (EVNT-03).
+     *  - `rabbitmq`: `dev.unityinflow.kore.rabbitmq.RabbitMqEventBus` — requires
+     *    kore-rabbitmq on the classpath (EVNT-04).
+     *
+     * Per D-08 and Pitfall 8, `havingValue` is always explicit on the auto-configuration
+     * conditions — the string `type` must exactly match to activate.
+     */
+    data class EventBusProperties(
+        val type: String = "in-process",
+        val kafka: KafkaProperties = KafkaProperties(),
+        val rabbitmq: RabbitMqProperties = RabbitMqProperties(),
+    )
+
+    /**
+     * Kafka adapter configuration — bound under `kore.event-bus.kafka.*`.
+     * Broadcast semantics: see kore-kafka README (consumer group
+     * `${groupIdPrefix}-${hostname}-${pid}` per D-04).
+     */
+    data class KafkaProperties(
+        val bootstrapServers: String = "",
+        val topic: String = "kore-agent-events",
+        val groupIdPrefix: String = "kore",
+    )
+
+    /** RabbitMQ adapter configuration — bound under `kore.event-bus.rabbitmq.*`. */
+    data class RabbitMqProperties(
+        val uri: String = "",
+        val exchange: String = "kore.agent-events",
+        val confirmTimeoutMillis: Long = 5_000L,
+    )
 }
+
+/** Maps [KoreProperties.KafkaProperties] to kore-kafka's native config type. */
+fun KoreProperties.KafkaProperties.toAdapterConfig(): dev.unityinflow.kore.kafka.KafkaEventBusConfig =
+    dev.unityinflow.kore.kafka.KafkaEventBusConfig(
+        bootstrapServers = this.bootstrapServers,
+        topic = this.topic,
+        groupIdPrefix = this.groupIdPrefix,
+    )
+
+/** Maps [KoreProperties.RabbitMqProperties] to kore-rabbitmq's native config type. */
+fun KoreProperties.RabbitMqProperties.toAdapterConfig(): dev.unityinflow.kore.rabbitmq.RabbitMqEventBusConfig =
+    dev.unityinflow.kore.rabbitmq.RabbitMqEventBusConfig(
+        uri = this.uri,
+        exchange = this.exchange,
+        confirmTimeoutMillis = this.confirmTimeoutMillis,
+    )
