@@ -21,6 +21,9 @@ r2dbc-postgresql = "1.0.7.RELEASE"
 postgresql-jdbc = "42.7.10"
 ktor = "3.2.0"
 spring-boot = "4.0.5"
+kafka-clients = "4.2.0"
+amqp-client = "5.29.0"
+nmcp = "1.4.4"
 
 [libraries]
 coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
@@ -56,6 +59,11 @@ jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-
 ktor-server-cio = { module = "io.ktor:ktor-server-cio", version.ref = "ktor" }
 ktor-server-htmx = { module = "io.ktor:ktor-server-htmx", version.ref = "ktor" }
 ktor-server-html-builder = { module = "io.ktor:ktor-server-html-builder", version.ref = "ktor" }
+# Phase 4 event-bus adapters (04-02 kore-kafka, 04-03 kore-rabbitmq).
+kafka-clients = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka-clients" }
+amqp-client = { module = "com.rabbitmq:amqp-client", version.ref = "amqp-client" }
+testcontainers-kafka = { module = "org.testcontainers:kafka", version.ref = "testcontainers" }
+testcontainers-rabbitmq = { module = "org.testcontainers:rabbitmq", version.ref = "testcontainers" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
@@ -63,3 +71,7 @@ kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", versi
 kotlinter = { id = "org.jmailen.kotlinter", version.ref = "kotlinter" }
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
 spring-dep-mgmt = { id = "io.spring.dependency-management", version = "1.1.7" }
+# Sonatype Central Portal publishing (plan 04-05). Per-module outgoing variants
+# + root aggregation task. Declared here so no later plan races libs.versions.toml.
+nmcp = { id = "com.gradleup.nmcp", version.ref = "nmcp" }
+nmcp-aggregation = { id = "com.gradleup.nmcp.aggregation", version.ref = "nmcp" }

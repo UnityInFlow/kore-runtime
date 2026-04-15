@@ -10,4 +10,6 @@ include(
     "kore-skills",
     "kore-spring",
     "kore-dashboard",
+    "kore-kafka",
+    "kore-rabbitmq",
 )
