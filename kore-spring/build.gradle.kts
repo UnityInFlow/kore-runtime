@@ -4,6 +4,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.spring") version
         libs.versions.kotlin
             .get()
+    id("kore.publishing")
 }
 
 // Import the Spring Boot BOM so all Spring Boot / actuator versions
@@ -82,4 +83,17 @@ kotlin {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        named<MavenPublication>("maven") {
+            pom {
+                name.set("kore-runtime — Spring Boot")
+                description.set(
+                    "Spring Boot 4 auto-configuration starter for kore-runtime.",
+                )
+            }
+        }
+    }
 }

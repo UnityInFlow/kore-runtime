@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlinter)
     jacoco
+    id("kore.publishing")
 }
 
 group = "dev.unityinflow"
@@ -30,4 +31,17 @@ kotlin {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        named<MavenPublication>("maven") {
+            pom {
+                name.set("kore-runtime — Observability")
+                description.set(
+                    "OpenTelemetry span + Micrometer metric observers for kore-runtime agent events.",
+                )
+            }
+        }
+    }
 }

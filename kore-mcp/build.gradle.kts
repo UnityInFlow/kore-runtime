@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
+    id("kore.publishing")
 }
 
 dependencies {
@@ -27,4 +28,17 @@ kotlin {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        named<MavenPublication>("maven") {
+            pom {
+                name.set("kore-runtime — MCP")
+                description.set(
+                    "Model Context Protocol client and server adapters for kore-runtime.",
+                )
+            }
+        }
+    }
 }

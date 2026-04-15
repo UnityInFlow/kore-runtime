@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlinter)
     jacoco
+    id("kore.publishing")
 }
 
 group = "dev.unityinflow"
@@ -31,4 +32,17 @@ kotlin {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        named<MavenPublication>("maven") {
+            pom {
+                name.set("kore-runtime — Storage")
+                description.set(
+                    "PostgreSQL audit log adapter via Exposed + Flyway for kore-runtime.",
+                )
+            }
+        }
+    }
 }

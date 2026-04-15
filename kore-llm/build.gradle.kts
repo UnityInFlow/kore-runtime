@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
+    id("kore.publishing")
 }
 
 dependencies {
@@ -26,4 +27,17 @@ kotlin {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        named<MavenPublication>("maven") {
+            pom {
+                name.set("kore-runtime — LLM backends")
+                description.set(
+                    "Claude, GPT, Ollama, and Gemini LLMBackend adapters for kore-runtime.",
+                )
+            }
+        }
+    }
 }

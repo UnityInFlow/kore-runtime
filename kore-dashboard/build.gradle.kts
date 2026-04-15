@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
+    id("kore.publishing")
 }
 
 dependencies {
@@ -40,4 +41,17 @@ kotlin {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        named<MavenPublication>("maven") {
+            pom {
+                name.set("kore-runtime — Dashboard")
+                description.set(
+                    "HTMX admin dashboard for kore-runtime — active agents, recent runs, and token cost summary.",
+                )
+            }
+        }
+    }
 }

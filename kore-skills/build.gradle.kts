@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.spring.dep.mgmt)
+    id("kore.publishing")
 }
 
 // Import the Spring Boot BOM so jackson versions are managed centrally.
@@ -30,4 +31,17 @@ kotlin {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        named<MavenPublication>("maven") {
+            pom {
+                name.set("kore-runtime — Skills")
+                description.set(
+                    "YAML-based skill definition loader with pattern-activation matching for kore-runtime.",
+                )
+            }
+        }
+    }
 }

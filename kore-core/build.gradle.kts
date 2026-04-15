@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
+    id("kore.publishing")
 }
 
 dependencies {
@@ -38,4 +39,18 @@ kotlin {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        named<MavenPublication>("maven") {
+            pom {
+                name.set("kore-runtime — Core")
+                description.set(
+                    "Core agent loop, DSL, sealed-class result types, and EventBus " +
+                        "port for the kore-runtime JVM agent runtime.",
+                )
+            }
+        }
+    }
 }

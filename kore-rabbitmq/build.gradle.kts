@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlinter)
+    id("kore.publishing")
 }
 
 group = "dev.unityinflow"
@@ -38,4 +39,17 @@ tasks.register<Test>("integrationTest") {
     group = "verification"
     useJUnitPlatform { includeTags("integration") }
     shouldRunAfter(tasks.test)
+}
+
+publishing {
+    publications {
+        named<MavenPublication>("maven") {
+            pom {
+                name.set("kore-runtime — RabbitMQ EventBus adapter")
+                description.set(
+                    "Opt-in RabbitMQ implementation of the kore-runtime EventBus port using fanout exchanges and publisher confirms.",
+                )
+            }
+        }
+    }
 }

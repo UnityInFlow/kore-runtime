@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
+    id("kore.publishing")
 }
 
 dependencies {
@@ -21,4 +22,17 @@ kotlin {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        named<MavenPublication>("maven") {
+            pom {
+                name.set("kore-runtime — Test")
+                description.set(
+                    "MockLLMBackend + session recording / replay for deterministic kore-runtime agent testing.",
+                )
+            }
+        }
+    }
 }
