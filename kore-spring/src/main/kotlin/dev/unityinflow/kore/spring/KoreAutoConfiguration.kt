@@ -8,6 +8,10 @@ import dev.unityinflow.kore.core.port.BudgetEnforcer
 import dev.unityinflow.kore.core.port.EventBus
 import dev.unityinflow.kore.core.port.NoOpSkillRegistry
 import dev.unityinflow.kore.core.port.SkillRegistry
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.autoconfigure.AutoConfiguration
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
@@ -29,6 +33,8 @@ import org.springframework.context.annotation.Configuration
  *  - kore-observability → KoreTracer (D-19)
  *  - kore-skills → SkillRegistryAdapter (D-20)
  *  - kore-dashboard → DashboardServer (D-21, wired in plan 03-03)
+ *  - kore-kafka → KafkaEventBus (EVNT-03, D-08 — plan 04-04)
+ *  - kore-rabbitmq → RabbitMqEventBus (EVNT-04, D-08 — plan 04-04)
  *
  * Every conditional uses `@ConditionalOnClass(name=[...])` string form to
  * avoid the eager classloading pitfall (RESEARCH.md Pattern 6 / Pitfall 12) —
@@ -248,5 +254,121 @@ class KoreAutoConfiguration {
         override val port: Int get() = delegate.port
         override val path: String get() = delegate.path
         override val enabled: Boolean get() = delegate.enabled
+    }
+
+    // ───────────────────────────────────────────────────────────────────────
+    // Event bus adapter scope (EVNT-03 / EVNT-04 / D-08 / plan 04-04)
+    //
+    // Shared CoroutineScope for Kafka and RabbitMQ consumer loops. The scope
+    // is only created when an adapter is actively selected via
+    // `kore.event-bus.type={kafka,rabbitmq}` — the in-process default does not
+    // need it. Two parallel inner @Configuration classes are used because
+    // @ConditionalOnProperty on @Bean definitions does not natively support an
+    // `anyOf` disjunction (kafka OR rabbitmq); duplicating is simpler and
+    // keeps every conditional explicit.
+    //
+    // The bean name is always "koreEventBusScope" so the adapter @Bean methods
+    // below pick it up via @Qualifier regardless of which variant fires.
+    // ───────────────────────────────────────────────────────────────────────
+
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnProperty(
+        prefix = "kore.event-bus",
+        name = ["type"],
+        havingValue = "kafka",
+    )
+    class KafkaEventBusScopeConfiguration {
+        @Bean("koreEventBusScope")
+        @ConditionalOnMissingBean(name = ["koreEventBusScope"])
+        fun koreEventBusScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(4))
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnProperty(
+        prefix = "kore.event-bus",
+        name = ["type"],
+        havingValue = "rabbitmq",
+    )
+    class RabbitMqEventBusScopeConfiguration {
+        @Bean("koreEventBusScope")
+        @ConditionalOnMissingBean(name = ["koreEventBusScope"])
+        fun koreEventBusScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(4))
+    }
+
+    // ───────────────────────────────────────────────────────────────────────
+    // Kafka EventBus (EVNT-03 / D-01 / D-08 / RESEARCH.md Pattern 6)
+    //
+    // Guarded by @ConditionalOnClass(name=[...]) string form (Pitfall 2) —
+    // `dev.unityinflow.kore.kafka.KafkaEventBus` only resolves when the
+    // opt-in kore-kafka module is present on the runtime classpath. Class
+    // literal reference would eagerly load the symbol at scan time and crash
+    // the Spring context when kore-kafka is absent.
+    //
+    // `havingValue = "kafka"` is explicit per Pitfall 8 — merely setting
+    // `kore.event-bus.type` to any non-empty value (or leaving it blank) must
+    // NOT activate Kafka. In-process stays the safe default.
+    //
+    // @Bean method is named `kafkaEventBus` — the Spring context test in
+    // plan 04-04 asserts `assertThat(ctx).hasBean("kafkaEventBus")`. This is
+    // a bean-definition-level assertion that does NOT invoke the factory
+    // method, so no KafkaProducer/KafkaConsumer is constructed during the
+    // test and no real broker socket is opened.
+    //
+    // `destroyMethod = "close"` so Spring calls AutoCloseable.close() at
+    // context shutdown — graceful producer/consumer shutdown per D-01.
+    // ───────────────────────────────────────────────────────────────────────
+
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(name = ["dev.unityinflow.kore.kafka.KafkaEventBus"])
+    @ConditionalOnProperty(
+        prefix = "kore.event-bus",
+        name = ["type"],
+        havingValue = "kafka",
+    )
+    class KafkaEventBusAutoConfiguration {
+        @Bean(destroyMethod = "close")
+        @ConditionalOnMissingBean(EventBus::class)
+        fun kafkaEventBus(
+            properties: KoreProperties,
+            @Qualifier("koreEventBusScope") scope: CoroutineScope,
+        ): EventBus =
+            dev.unityinflow.kore.kafka.KafkaEventBus(
+                config = properties.eventBus.kafka.toAdapterConfig(),
+                scope = scope,
+            )
+    }
+
+    // ───────────────────────────────────────────────────────────────────────
+    // RabbitMQ EventBus (EVNT-04 / D-02 / D-08 / RESEARCH.md Pattern 6)
+    //
+    // RabbitMqEventBus uses lazy Connection + lazy publishChannel (Pitfall 7),
+    // so bean resolution does not open a broker socket — the first emit() or
+    // subscribe() does. That lets the Spring context refresh succeed even
+    // when the broker is temporarily unavailable. The plan 04-04 test still
+    // uses the same `assertThat(ctx).hasBean(...)` definition-level assertion
+    // as the Kafka test for consistency and to stay resilient to future
+    // refactors that might move the lazy boundary.
+    //
+    // @Bean method is named `rabbitMqEventBus` to match `hasBean("rabbitMqEventBus")`.
+    // ───────────────────────────────────────────────────────────────────────
+
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(name = ["dev.unityinflow.kore.rabbitmq.RabbitMqEventBus"])
+    @ConditionalOnProperty(
+        prefix = "kore.event-bus",
+        name = ["type"],
+        havingValue = "rabbitmq",
+    )
+    class RabbitMqEventBusAutoConfiguration {
+        @Bean(destroyMethod = "close")
+        @ConditionalOnMissingBean(EventBus::class)
+        fun rabbitMqEventBus(
+            properties: KoreProperties,
+            @Qualifier("koreEventBusScope") scope: CoroutineScope,
+        ): EventBus =
+            dev.unityinflow.kore.rabbitmq.RabbitMqEventBus(
+                config = properties.eventBus.rabbitmq.toAdapterConfig(),
+                scope = scope,
+            )
     }
 }
