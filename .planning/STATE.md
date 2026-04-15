@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v0.0.1
 milestone_name: milestone
 status: executing
-stopped_at: Completed 04-05-PLAN.md
-last_updated: "2026-04-15T19:00:04.826Z"
-last_activity: 2026-04-15
+stopped_at: Phase 4 Wave 5 partial — 04-06 Phase A complete, awaiting human pre-flight
+last_updated: "2026-04-15T19:30:00.000Z"
+last_activity: 2026-04-15 (04-06 Phase A)
 progress:
   total_phases: 4
   completed_phases: 3
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-04-10)
 ## Current Position
 
 Phase: 04 (event-bus-publishing) — EXECUTING
-Plan: 6 of 6
-Status: Ready to execute
-Last activity: 2026-04-15
+Plan: 6 of 6 (PARTIAL — Phase A landed, Phase B awaiting human pre-flight)
+Status: Blocked on PF-00..PF-05 human action (see docs/RELEASE-CHECKLIST.md)
+Last activity: 2026-04-15 — 04-06 Phase A (release workflow + version bump + checklist)
 
 Progress: [░░░░░░░░░░] 0%
 
