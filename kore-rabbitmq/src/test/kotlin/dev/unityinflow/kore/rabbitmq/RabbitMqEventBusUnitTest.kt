@@ -119,7 +119,12 @@ class RabbitMqEventBusUnitTest {
             val consumerChannel = mockk<Channel>(relaxed = true)
 
             every { factory.newConnection() } returns connection
-            every { connection.createChannel() } returnsMany listOf(publishChannel, consumerChannel)
+            // Subscribe-only path triggers the consumer coroutine, which calls
+            // connection.createChannel() once (for the consumer channel). publishChannel
+            // is never touched in this test because emit() is not called. Put consumerChannel
+            // FIRST in returnsMany so the first (and only) createChannel() call is the
+            // consumer channel that the verify block asserts against.
+            every { connection.createChannel() } returnsMany listOf(consumerChannel, publishChannel)
 
             val declareOk = mockk<AMQP.Queue.DeclareOk>()
             every { declareOk.queue } returns "q-exclusive"
