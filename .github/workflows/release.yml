@@ -1,0 +1,86 @@
+# kore-runtime release workflow — Maven Central publish on v-tag push.
+#
+# Trust boundary (T-04-10): this workflow runs on the org-owned
+# `arc-runner-unityinflow` self-hosted runner pool. Only UnityInFlow org
+# admins can modify the runner group or the jobs that execute here. A
+# compromised runner = org compromise, which is out of scope for this plan;
+# the human RC dry-run checkpoint (see docs/RELEASE-CHECKLIST.md) catches
+# anomalous staging bundles via Sonatype portal inspection before the
+# manual "Publish" button is pressed.
+#
+# Provenance (T-04-09): `fetch-depth: 0` + `generate_release_notes: true`
+# ensures the GitHub Release is linked to the exact tag commit with a
+# full history-derived changelog.
+#
+# GPG key handling (T-04-07 / Pitfall 11): `--no-configuration-cache` on
+# every Gradle invocation forces `providers.environmentVariable(...)` to
+# re-read SIGNING_KEY / SIGNING_PASSWORD at execution time rather than
+# serializing a stale copy into the configuration cache.
+#
+# Runner label (Pitfall 10): `arc-runner-unityinflow` is the CLAUDE.md
+# default and resolves only to X64 Hetzner runners — the ARM orangepi
+# runner does NOT carry this label. An explicit `X64` pin is deliberately
+# omitted per the PF-02 pre-flight runner label audit.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  publish:
+    runs-on: [arc-runner-unityinflow]
+    permissions:
+      contents: write   # required by softprops/action-gh-release@v2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Lint + build + unit tests
+        run: ./gradlew clean build --no-configuration-cache
+
+      - name: Publish aggregated bundle to Sonatype Central Portal
+        env:
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+        run: ./gradlew publishAggregationToCentralPortal --no-configuration-cache
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: kore-runtime ${{ github.ref_name }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+          body: |
+            kore-runtime **${{ github.ref_name }}** is now available on Maven Central under `dev.unityinflow`.
+
+            ```kotlin
+            dependencies {
+                implementation("dev.unityinflow:kore-spring:${{ github.ref_name }}")
+            }
+            ```
+
+            **NOTE:** With `publishingType = "USER_MANAGED"`, artifacts land in a
+            Sonatype Central Portal staging bundle after this workflow succeeds.
+            A human must press "Publish" in the portal UI to promote them to
+            Maven Central. Replication to `repo.maven.apache.org` takes ~30
+            minutes after the button press.
+
+            See the auto-generated notes below for highlights from Phases 1–4.
