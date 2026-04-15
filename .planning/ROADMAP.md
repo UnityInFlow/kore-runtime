@@ -84,7 +84,15 @@ Plans:
   2. Adding the `kore-kafka` module and `kore.event-bus=kafka` in application.yml switches the event bus to Kafka without changing any agent code
   3. Adding the `kore-rabbitmq` module and `kore.event-bus=rabbitmq` in application.yml switches the event bus to RabbitMQ without changing any agent code
   4. All kore modules (kore-core, kore-mcp, kore-skills, kore-observability, kore-storage, kore-spring, kore-test) are resolvable from Maven Central as `dev.unityinflow:kore-*`
-**Plans**: TBD
+**Plans**: 6 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — EventBus formalization in kore-core: @Serializable on AgentEvent, EventBusBackpressureTest + EventBusConcurrencyTest + AgentEventSerializationTest
+- [ ] 04-02-PLAN.md — kore-kafka module: KafkaEventBus with suspendCancellableCoroutine producer bridge + Flow consumer loop + broadcast consumer group
+- [ ] 04-03-PLAN.md — kore-rabbitmq module: RabbitMqEventBus with lazy connection, fanout exchange, exclusive queue, publisher confirms
+- [ ] 04-04-PLAN.md — kore-spring auto-configuration wiring for Kafka + RabbitMQ EventBus adapters (+ KoreProperties.EventBusProperties)
+- [ ] 04-05-PLAN.md — Publishing infrastructure: buildSrc kore.publishing convention plugin + nmcp aggregation for all 11 modules
+- [ ] 04-06-PLAN.md — CI release workflow + version bump + v0.0.1 release (non-autonomous: HUMAN checkpoints for pre-flight, RC dry-run, and final Maven Central release)
 
 ## Progress
 
@@ -96,4 +104,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Core Runtime | 7/7 | Complete   | 2026-04-11 |
 | 2. Observability & Storage | 1/3 | In Progress|  |
 | 3. Skills, Spring & Dashboard | 0/4 | Not started | - |
-| 4. Event Bus & Publishing | 0/TBD | Not started | - |
+| 4. Event Bus & Publishing | 0/6 | Not started | - |
