@@ -14,7 +14,10 @@ dependencies {
     // kotlinx.serialization annotations are compile-time only — runtime JSON
     // lives in adapter modules (kore-kafka, kore-rabbitmq). Keeps kore-core's
     // runtime classpath zero-external-dep per CLAUDE.md (Pattern 2 / Pitfall 9).
+    // -core holds @Serializable, -json holds @JsonClassDiscriminator (both
+    // needed at compile time for the AgentEvent polymorphic type tag).
     compileOnly(libs.serialization.core)
+    compileOnly(libs.serialization.json)
 
     testImplementation(libs.junit5)
     testImplementation(libs.kotest.assertions)

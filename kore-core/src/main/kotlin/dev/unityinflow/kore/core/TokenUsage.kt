@@ -1,6 +1,9 @@
 package dev.unityinflow.kore.core
 
+import kotlinx.serialization.Serializable
+
 /** Tracks token consumption for a single LLM call or accumulated over an agent run. */
+@Serializable
 data class TokenUsage(
     val inputTokens: Int,
     val outputTokens: Int,
