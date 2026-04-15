@@ -89,7 +89,7 @@ Plans:
 Plans:
 - [x] 04-01-PLAN.md — EventBus formalization in kore-core: @Serializable on AgentEvent, EventBusBackpressureTest + EventBusConcurrencyTest + AgentEventSerializationTest
 - [x] 04-02-PLAN.md — kore-kafka module: KafkaEventBus with suspendCancellableCoroutine producer bridge + Flow consumer loop + broadcast consumer group
-- [ ] 04-03-PLAN.md — kore-rabbitmq module: RabbitMqEventBus with lazy connection, fanout exchange, exclusive queue, publisher confirms
+- [x] 04-03-PLAN.md — kore-rabbitmq module: RabbitMqEventBus with lazy connection, fanout exchange, exclusive queue, publisher confirms
 - [ ] 04-04-PLAN.md — kore-spring auto-configuration wiring for Kafka + RabbitMQ EventBus adapters (+ KoreProperties.EventBusProperties)
 - [ ] 04-05-PLAN.md — Publishing infrastructure: buildSrc kore.publishing convention plugin + nmcp aggregation for all 11 modules
 - [ ] 04-06-PLAN.md — CI release workflow + version bump + v0.0.1 release (non-autonomous: HUMAN checkpoints for pre-flight, RC dry-run, and final Maven Central release)

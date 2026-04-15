@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v0.0.1
 milestone_name: milestone
 status: executing
-stopped_at: Completed 04-02-PLAN.md
-last_updated: "2026-04-15T18:33:54.315Z"
+stopped_at: Completed 04-03-PLAN.md
+last_updated: "2026-04-15T18:41:46.095Z"
 last_activity: 2026-04-15
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 21
-  completed_plans: 17
-  percent: 81
+  completed_plans: 18
+  percent: 86
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-10)
 ## Current Position
 
 Phase: 04 (event-bus-publishing) — EXECUTING
-Plan: 3 of 6
+Plan: 4 of 6
 Status: Ready to execute
 Last activity: 2026-04-15
 
@@ -70,6 +70,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 03-skills-spring-dashboard P05 | 18min | 2 tasks | 10 files |
 | Phase 04-event-bus-publishing P01 | 12min | 3 tasks | 11 files |
 | Phase 04-event-bus-publishing P02 | 8min | 2 tasks | 8 files |
+| Phase 04-event-bus-publishing P03 | 7min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -132,6 +133,9 @@ Recent decisions affecting current work:
 - [Phase 04-event-bus-publishing]: Wave-0 bootstrap: consolidate all shared-file edits (settings.gradle.kts + libs.versions.toml + module skeletons) into plan 04-01 so later waves run on disjoint file sets without merge races
 - [Phase 04-event-bus-publishing]: kore-kafka uses internal primary constructor + companion invoke factory (no UnsupportedOperationException hack); createForTest injects mocked producer/consumer and a TestDispatcher for deterministic runTest assertions
 - [Phase 04-event-bus-publishing]: Kafka broadcast semantics: consumer group ID = prefix-hostname-pid (InetAddress + ProcessHandle), Jackson excluded from kafka-clients to avoid Spring Boot BOM transitive skew (Pitfall 12)
+- [Phase 04-event-bus-publishing]: RabbitMqEventBus uses lazy Connection + lazy publishChannel (Pitfall 7 defense) — construction never opens a broker socket
+- [Phase 04-event-bus-publishing]: RabbitMqEventBus mirrors kore-kafka shape: internal primary ctor + companion invoke factory + createForTest(factory, ioDispatcher) for deterministic runTest assertions
+- [Phase 04-event-bus-publishing]: basicNack(requeue=false) on decode failure prevents poison-message redelivery loops; explicit AMQP.Queue.DeclareOk mock avoids MockK chained-stub gotcha
 
 ### Pending Todos
 
@@ -143,6 +147,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-15T18:33:45.331Z
-Stopped at: Completed 04-02-PLAN.md
+Last session: 2026-04-15T18:41:46.092Z
+Stopped at: Completed 04-03-PLAN.md
 Resume file: None
