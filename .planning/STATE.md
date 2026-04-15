@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v0.0.1
 milestone_name: milestone
 status: executing
-stopped_at: Completed 04-04-PLAN.md
-last_updated: "2026-04-15T18:49:41.851Z"
+stopped_at: Completed 04-05-PLAN.md
+last_updated: "2026-04-15T19:00:04.826Z"
 last_activity: 2026-04-15
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 21
-  completed_plans: 19
-  percent: 90
+  completed_plans: 20
+  percent: 95
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-10)
 ## Current Position
 
 Phase: 04 (event-bus-publishing) — EXECUTING
-Plan: 5 of 6
+Plan: 6 of 6
 Status: Ready to execute
 Last activity: 2026-04-15
 
@@ -72,6 +72,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 04-event-bus-publishing P02 | 8min | 2 tasks | 8 files |
 | Phase 04-event-bus-publishing P03 | 7min | 2 tasks | 6 files |
 | Phase 04-event-bus-publishing P04 | 12min | 2 tasks | 6 files |
+| Phase 04-event-bus-publishing P05 | 5min | 2 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -141,6 +142,9 @@ Recent decisions affecting current work:
 - [Phase 04-event-bus-publishing]: Spring context tests use assertThat(ctx).hasBean(beanName) definition-level assertion instead of ctx.getBean() — KafkaEventBus(config, scope) opens real KafkaProducer/KafkaConsumer at construction, so factory invocation would open TCP socket to localhost:9092 and crash context refresh
 - [Phase 04-event-bus-publishing]: kore-spring compileOnly(kore-kafka) + compileOnly(kore-rabbitmq) preserves opt-in semantics (Pitfall 3) — consumers must explicitly depend on adapter modules, kore-spring never transitively pulls them
 - [Phase 04-event-bus-publishing]: toAdapterConfig() as top-level extension functions (not member functions) on KoreProperties.KafkaProperties/RabbitMqProperties — data classes themselves reference only stdlib, mapping extensions handle compileOnly kore-kafka/kore-rabbitmq type references
+- [Phase 04-event-bus-publishing]: buildSrc/kore.publishing precompiled script convention plugin applies java-library + maven-publish + signing + com.gradleup.nmcp with full POM template; java-library required at convention-plugin level because maven-publish alone doesn't expose java{} extension to precompiled scripts
+- [Phase 04-event-bus-publishing]: Root applies id("com.gradleup.nmcp.aggregation") WITHOUT version (not via alias) — buildSrc already puts nmcp marker on classpath so alias() conflicts with Gradle's unknown-classpath-version guard; pinning preserved via buildSrc implementation dep
+- [Phase 04-event-bus-publishing]: Signing guarded by env-var null check so publishToMavenLocal succeeds locally without GPG; Pitfall 11 defended via --no-configuration-cache on publish commands (documented in convention plugin KDoc)
 
 ### Pending Todos
 
@@ -152,6 +156,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-15T18:49:27.323Z
-Stopped at: Completed 04-04-PLAN.md
+Last session: 2026-04-15T18:59:52.450Z
+Stopped at: Completed 04-05-PLAN.md
 Resume file: None
