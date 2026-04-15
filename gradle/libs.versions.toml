@@ -26,6 +26,7 @@ spring-boot = "4.0.5"
 coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines-test" }
 serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization-json" }
+serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "serialization-json" }
 anthropic-java = { module = "com.anthropic:anthropic-java-core", version.ref = "anthropic" }
 anthropic-java-okhttp = { module = "com.anthropic:anthropic-java-client-okhttp", version.ref = "anthropic" }
 openai-java = { module = "com.openai:openai-java", version.ref = "openai" }

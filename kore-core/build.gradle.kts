@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 dependencies {
@@ -10,9 +11,15 @@ dependencies {
     // parameter. compileOnly keeps kore-core's runtime classpath clean.
     compileOnly("io.opentelemetry:opentelemetry-api:1.49.0")
 
+    // kotlinx.serialization annotations are compile-time only — runtime JSON
+    // lives in adapter modules (kore-kafka, kore-rabbitmq). Keeps kore-core's
+    // runtime classpath zero-external-dep per CLAUDE.md (Pattern 2 / Pitfall 9).
+    compileOnly(libs.serialization.core)
+
     testImplementation(libs.junit5)
     testImplementation(libs.kotest.assertions)
     testImplementation(libs.coroutines.test)
+    testImplementation(libs.serialization.json)
     testImplementation(project(":kore-test"))
     // For the AgentLoopSkillTest OTel span-export assertion
     testImplementation("io.opentelemetry:opentelemetry-api:1.49.0")
