@@ -21,6 +21,7 @@ dependencies {
     testImplementation(libs.junit5)
     testImplementation(libs.kotest.assertions)
     testImplementation(libs.coroutines.test)
+    testImplementation(libs.serialization.core) // AgentEvent/AgentResult @Serializable <clinit> needs this at runtime
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.testcontainers.junit5)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

@@ -11,8 +11,10 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
+import java.time.Duration
 import java.util.UUID
 
 @Testcontainers
@@ -25,6 +27,8 @@ class PostgresAuditLogAdapterQueryTest {
                 withDatabaseName("kore_test_queries")
                 withUsername("kore")
                 withPassword("kore")
+                waitingFor(Wait.forLogMessage(".*database system is ready to accept connections.*", 2))
+                withStartupTimeout(Duration.ofMinutes(3))
             }
 
         private lateinit var adapter: PostgresAuditLogAdapter

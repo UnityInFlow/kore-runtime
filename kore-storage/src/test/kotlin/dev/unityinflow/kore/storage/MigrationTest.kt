@@ -5,8 +5,10 @@ import io.kotest.matchers.shouldNotBe
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
+import java.time.Duration
 
 @Testcontainers
 class MigrationTest {
@@ -18,6 +20,8 @@ class MigrationTest {
                 withDatabaseName("kore_test")
                 withUsername("kore")
                 withPassword("kore")
+                waitingFor(Wait.forLogMessage(".*database system is ready to accept connections.*", 2))
+                withStartupTimeout(Duration.ofMinutes(3))
             }
 
         @JvmStatic
