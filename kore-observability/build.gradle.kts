@@ -18,6 +18,11 @@ dependencies {
     testImplementation("io.opentelemetry:opentelemetry-api:1.49.0")
     testImplementation("io.opentelemetry:opentelemetry-sdk-testing:1.49.0")
     testImplementation("io.micrometer:micrometer-core:1.16.0")
+    // kotlinx-serialization-core is needed at test runtime because kore-core's
+    // @Serializable sealed classes (AgentResult, AgentEvent) have compiler-generated
+    // companion init code that references KSerializer. kore-core declares serialization
+    // as compileOnly, so it doesn't propagate to downstream test classpaths.
+    testImplementation(libs.serialization.core)
     testImplementation(libs.junit5)
     testImplementation(libs.kotest.assertions)
     testImplementation(libs.mockk)
