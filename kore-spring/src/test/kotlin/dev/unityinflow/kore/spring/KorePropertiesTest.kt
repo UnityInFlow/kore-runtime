@@ -134,7 +134,11 @@ class KorePropertiesTest {
                 .map { it.trim() }
                 .filter { it.isNotEmpty() && !it.startsWith("#") }
 
-        nonEmptyLines shouldBe listOf("dev.unityinflow.kore.spring.KoreAutoConfiguration")
+        nonEmptyLines shouldBe
+            listOf(
+                "dev.unityinflow.kore.spring.KoreAutoConfiguration",
+                "dev.unityinflow.kore.spring.KoreDashboardAutoConfiguration",
+            )
     }
 
     private fun List<String>.shouldBeEmpty() {

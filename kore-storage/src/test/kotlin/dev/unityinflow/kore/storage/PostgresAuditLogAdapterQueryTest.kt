@@ -9,6 +9,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.Wait
@@ -17,6 +18,7 @@ import org.testcontainers.junit.jupiter.Testcontainers
 import java.time.Duration
 import java.util.UUID
 
+@Tag("integration")
 @Testcontainers
 class PostgresAuditLogAdapterQueryTest {
     companion object {

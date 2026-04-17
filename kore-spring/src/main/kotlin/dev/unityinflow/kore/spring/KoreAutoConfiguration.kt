@@ -72,6 +72,14 @@ class KoreAutoConfiguration {
     @ConditionalOnMissingBean(SkillRegistry::class)
     fun noOpSkillRegistry(): SkillRegistry = NoOpSkillRegistry
 
+    @Bean
+    @ConditionalOnMissingBean(KoreAgentFactory::class)
+    fun koreAgentFactory(
+        eventBus: EventBus,
+        auditLog: AuditLog,
+        skillRegistry: SkillRegistry,
+    ): KoreAgentFactory = KoreAgentFactory(eventBus, auditLog, skillRegistry)
+
     // ───────────────────────────────────────────────────────────────────────
     // LLM backends (D-15) — gated on kore-llm classpath presence + api-key set
     //
@@ -203,58 +211,13 @@ class KoreAutoConfiguration {
     }
 
     // ───────────────────────────────────────────────────────────────────────
-    // Dashboard (D-21) — wired in plan 03-04.
+    // Dashboard (D-21) — EXTRACTED to KoreDashboardAutoConfiguration.kt
     //
-    // kore-dashboard is now present on the compile classpath, so we construct
-    // `DashboardServer` directly (replacing the reflective bridge used in plan
-    // 03-02). `@ConditionalOnClass` still guards the whole inner @Configuration
-    // so hosts that deliberately exclude kore-dashboard from their runtime
-    // classpath do not trip up bean creation.
-    //
-    // `DashboardServer` defines its own `DashboardProperties` interface so it
-    // does not depend on kore-spring. We adapt `KoreProperties.DashboardProperties`
-    // to that interface via [KoreDashboardPropertiesAdapter] below.
+    // The inner class approach caused NoClassDefFoundError for
+    // DashboardServer$DashboardProperties when kore-dashboard wasn't on the
+    // classpath, because JVM resolves extends/implements eagerly at class load.
+    // See KoreDashboardAutoConfiguration for the fix.
     // ───────────────────────────────────────────────────────────────────────
-
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnClass(name = ["dev.unityinflow.kore.dashboard.DashboardServer"])
-    class DashboardAutoConfiguration {
-        // NOTE: No @ConditionalOnProperty here. kore.dashboard.enabled is
-        // honoured by DashboardServer.isAutoStartup() — Spring SmartLifecycle
-        // creates the bean but skips start() when enabled=false. This is
-        // important for tests (and for hosts that want to inject the bean
-        // without actually binding the Ktor CIO engine to a port).
-
-        @Bean
-        @ConditionalOnMissingBean(dev.unityinflow.kore.dashboard.DashboardServer::class)
-        fun dashboardServer(
-            eventBus: EventBus,
-            auditLog: AuditLog,
-            properties: KoreProperties,
-        ): dev.unityinflow.kore.dashboard.DashboardServer =
-            dev.unityinflow.kore.dashboard.DashboardServer(
-                eventBus = eventBus,
-                auditLog = auditLog,
-                properties = KoreDashboardPropertiesAdapter(properties.dashboard),
-            )
-    }
-
-    /**
-     * Adapts kore-spring's [KoreProperties.DashboardProperties] data class to
-     * the [dev.unityinflow.kore.dashboard.DashboardServer.DashboardProperties]
-     * interface defined in kore-dashboard.
-     *
-     * Lives in kore-spring (not kore-dashboard) so kore-dashboard stays free of
-     * any kore-spring compile dependency — the direction of the port/adapter
-     * boundary is preserved.
-     */
-    private class KoreDashboardPropertiesAdapter(
-        private val delegate: KoreProperties.DashboardProperties,
-    ) : dev.unityinflow.kore.dashboard.DashboardServer.DashboardProperties {
-        override val port: Int get() = delegate.port
-        override val path: String get() = delegate.path
-        override val enabled: Boolean get() = delegate.enabled
-    }
 
     // ───────────────────────────────────────────────────────────────────────
     // Event bus adapter scope (EVNT-03 / EVNT-04 / D-08 / plan 04-04)

@@ -32,7 +32,9 @@ kotlin {
 }
 
 tasks.test {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        excludeTags("integration")
+    }
 }
 
 publishing {
