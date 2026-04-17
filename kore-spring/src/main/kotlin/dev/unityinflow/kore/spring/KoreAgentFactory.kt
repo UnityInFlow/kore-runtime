@@ -37,10 +37,10 @@ class KoreAgentFactory(
         name: String,
         block: AgentBuilder.() -> Unit,
     ): AgentRunner =
-        agent(name) {
-            eventBus(eventBus)
-            auditLog(auditLog)
-            skillRegistry(skillRegistry)
+        dev.unityinflow.kore.core.dsl.agent(name) {
+            eventBus(this@KoreAgentFactory.eventBus)
+            auditLog(this@KoreAgentFactory.auditLog)
+            skillRegistry(this@KoreAgentFactory.skillRegistry)
             block()
         }
 }
