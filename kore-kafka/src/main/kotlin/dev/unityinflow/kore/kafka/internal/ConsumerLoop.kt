@@ -10,7 +10,6 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import org.apache.kafka.clients.consumer.CloseOptions
-import org.slf4j.LoggerFactory
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.errors.WakeupException
 import java.time.Duration
@@ -34,9 +33,7 @@ internal class ConsumerLoop(
     private val target: MutableSharedFlow<AgentEvent>,
     private val ioDispatcher: CoroutineDispatcher,
 ) {
-    private companion object {
-        private val log = LoggerFactory.getLogger(ConsumerLoop::class.java)
-    }
+    private companion object
 
     fun start(scope: CoroutineScope) {
         scope.launch(ioDispatcher) {
@@ -59,15 +56,15 @@ internal class ConsumerLoop(
                                 )
                             target.tryEmit(decoded)
                         } catch (ex: SerializationException) {
-                            // Skip malformed record — log and continue.
+                            // Skip malformed record and continue.
                             // Kafka has no per-record ack/nack; auto-commit
                             // advances the offset past it.
-                            log.warn(
-                                "Skipping malformed Kafka record on topic={} partition={} offset={}: {}",
-                                record.topic(),
-                                record.partition(),
-                                record.offset(),
-                                ex.message,
+                            System.err.println(
+                                "kore-kafka: skipping malformed record" +
+                                    " topic=${record.topic()}" +
+                                    " partition=${record.partition()}" +
+                                    " offset=${record.offset()}" +
+                                    ": ${ex.message}",
                             )
                         }
                     }
