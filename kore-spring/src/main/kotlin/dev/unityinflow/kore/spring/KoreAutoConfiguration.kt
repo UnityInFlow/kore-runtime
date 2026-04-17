@@ -241,9 +241,10 @@ class KoreAutoConfiguration {
         havingValue = "kafka",
     )
     class KafkaEventBusScopeConfiguration {
-        @Bean("koreEventBusScope")
+        @Bean("koreEventBusScope", destroyMethod = "close")
         @ConditionalOnMissingBean(name = ["koreEventBusScope"])
-        fun koreEventBusScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(4))
+        fun koreEventBusScope(): CoroutineScope =
+            CloseableCoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(4))
     }
 
     @Configuration(proxyBeanMethods = false)
@@ -253,9 +254,10 @@ class KoreAutoConfiguration {
         havingValue = "rabbitmq",
     )
     class RabbitMqEventBusScopeConfiguration {
-        @Bean("koreEventBusScope")
+        @Bean("koreEventBusScope", destroyMethod = "close")
         @ConditionalOnMissingBean(name = ["koreEventBusScope"])
-        fun koreEventBusScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(4))
+        fun koreEventBusScope(): CoroutineScope =
+            CloseableCoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(4))
     }
 
     // ───────────────────────────────────────────────────────────────────────
