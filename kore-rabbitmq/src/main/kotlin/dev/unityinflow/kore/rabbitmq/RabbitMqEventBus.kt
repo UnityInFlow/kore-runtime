@@ -56,16 +56,19 @@ class RabbitMqEventBus internal constructor(
         }
 
     // Lazy connection — not opened until first emit() or subscribe(). Pitfall 7.
-    private val connection: Connection by lazy { factory.newConnection() }
+    // Named Lazy instances so close() can check isInitialized() without triggering init.
+    private val connectionLazy = lazy { factory.newConnection() }
+    private val connection: Connection by connectionLazy
 
     // Publish channel — amqp-client Channel is NOT thread-safe, so we use a
     // dedicated channel for publishing separate from the consumer channel.
-    private val publishChannel: Channel by lazy {
+    private val publishChannelLazy = lazy {
         connection.createChannel().apply {
             confirmSelect()
             exchangeDeclare(config.exchange, "fanout", true)
         }
     }
+    private val publishChannel: Channel by publishChannelLazy
 
     private val shared =
         MutableSharedFlow<AgentEvent>(
@@ -135,8 +138,12 @@ class RabbitMqEventBus internal constructor(
 
     override fun close() {
         consumerJobRef.get()?.cancel()
-        runCatching { publishChannel.close() }
-        runCatching { connection.close(config.closeTimeoutMillis) }
+        if (publishChannelLazy.isInitialized()) {
+            runCatching { publishChannel.close() }
+        }
+        if (connectionLazy.isInitialized()) {
+            runCatching { connection.close(config.closeTimeoutMillis) }
+        }
     }
 
     companion object {
