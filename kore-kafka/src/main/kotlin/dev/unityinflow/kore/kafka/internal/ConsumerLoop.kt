@@ -7,8 +7,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import org.apache.kafka.clients.consumer.CloseOptions
+import org.slf4j.LoggerFactory
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.errors.WakeupException
 import java.time.Duration
@@ -32,6 +34,10 @@ internal class ConsumerLoop(
     private val target: MutableSharedFlow<AgentEvent>,
     private val ioDispatcher: CoroutineDispatcher,
 ) {
+    private companion object {
+        private val log = LoggerFactory.getLogger(ConsumerLoop::class.java)
+    }
+
     fun start(scope: CoroutineScope) {
         scope.launch(ioDispatcher) {
             try {
@@ -45,12 +51,25 @@ internal class ConsumerLoop(
                             break
                         }
                     for (record in records) {
-                        val decoded =
-                            json.decodeFromString(
-                                AgentEvent.serializer(),
-                                record.value().decodeToString(),
+                        try {
+                            val decoded =
+                                json.decodeFromString(
+                                    AgentEvent.serializer(),
+                                    record.value().decodeToString(),
+                                )
+                            target.tryEmit(decoded)
+                        } catch (ex: SerializationException) {
+                            // Skip malformed record — log and continue.
+                            // Kafka has no per-record ack/nack; auto-commit
+                            // advances the offset past it.
+                            log.warn(
+                                "Skipping malformed Kafka record on topic={} partition={} offset={}: {}",
+                                record.topic(),
+                                record.partition(),
+                                record.offset(),
+                                ex.message,
                             )
-                        target.tryEmit(decoded)
+                        }
                     }
                 }
             } finally {
