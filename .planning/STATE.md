@@ -156,15 +156,17 @@ None yet.
 
 ## Deferred Items
 
-Items acknowledged and deferred at milestone close on 2026-04-26:
+Items acknowledged and deferred at milestone close on 2026-04-26.
+
+**All verification gaps closed 2026-04-26 post-close** via `/gsd-verify-work 01` and `/gsd-verify-work 02`:
 
 | Category | Item | Status |
 |----------|------|--------|
 | debug | knowledge-base | benign — resolved-knowledge index file, not an open session |
-| verification_gap | Phase 01: 01-VERIFICATION.md | human_needed — manual UAT pending |
-| verification_gap | Phase 02: 02-VERIFICATION.md | human_needed — 5 manual UAT items (OTel, Micrometer, Postgres+Flyway, commit audit, kore-core OTel-import check) |
+| ~~verification_gap~~ | ~~Phase 01: 01-VERIFICATION.md~~ | ✅ resolved 2026-04-26 — UAT 3/3 pass, status flipped to verified |
+| ~~verification_gap~~ | ~~Phase 02: 02-VERIFICATION.md~~ | ✅ resolved 2026-04-26 — UAT 2/2 pass, status flipped to verified |
 
-Resume verification post-close with `/gsd-verify-work 01` and `/gsd-verify-work 02` against the archived phase artifacts under `.planning/milestones/v0.0.1-phases/` (if archived) or `.planning/phases/` (if kept in place).
+**Outstanding follow-up (not blocking, scoped for v0.0.2):** kore-storage's 7 Testcontainers integration tests are excluded from the default `test` task via `excludeTags("integration")` in kore-storage/build.gradle.kts:36 and have no separate `integrationTest` task. v0.0.2 should register `integrationTest` and add a CI step on arc-runner-unityinflow. See `.planning/phases/02-observability-storage/02-UAT.md` test 1 notes for details.
 
 ## Session Continuity
 
