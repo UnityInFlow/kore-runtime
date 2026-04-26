@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v0.0.1
 milestone_name: milestone
-status: executing
-stopped_at: Phase 4 Wave 5 partial — 04-06 Phase A complete, awaiting human pre-flight
-last_updated: "2026-04-15T19:30:00.000Z"
-last_activity: 2026-04-15 (04-06 Phase A)
+status: Blocked on PF-00..PF-05 human action (see docs/RELEASE-CHECKLIST.md)
+stopped_at: Completed 04-05-PLAN.md
+last_updated: "2026-04-26T07:54:49.274Z"
+last_activity: 2026-04-26
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 21
-  completed_plans: 20
-  percent: 95
+  completed_plans: 21
+  percent: 100
 ---
 
 # Project State
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-10)
 Phase: 04 (event-bus-publishing) — EXECUTING
 Plan: 6 of 6 (PARTIAL — Phase A landed, Phase B awaiting human pre-flight)
 Status: Blocked on PF-00..PF-05 human action (see docs/RELEASE-CHECKLIST.md)
-Last activity: 2026-04-15 — 04-06 Phase A (release workflow + version bump + checklist)
+Last activity: 2026-04-26
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -153,6 +153,18 @@ None yet.
 ### Blockers/Concerns
 
 - budget-breaker (Tool 05) not yet shipped — BudgetEnforcer uses InMemoryBudgetEnforcer stub per design. Real adapter deferred to v2 (BUDG-05).
+
+## Deferred Items
+
+Items acknowledged and deferred at milestone close on 2026-04-26:
+
+| Category | Item | Status |
+|----------|------|--------|
+| debug | knowledge-base | benign — resolved-knowledge index file, not an open session |
+| verification_gap | Phase 01: 01-VERIFICATION.md | human_needed — manual UAT pending |
+| verification_gap | Phase 02: 02-VERIFICATION.md | human_needed — 5 manual UAT items (OTel, Micrometer, Postgres+Flyway, commit audit, kore-core OTel-import check) |
+
+Resume verification post-close with `/gsd-verify-work 01` and `/gsd-verify-work 02` against the archived phase artifacts under `.planning/milestones/v0.0.1-phases/` (if archived) or `.planning/phases/` (if kept in place).
 
 ## Session Continuity
 
