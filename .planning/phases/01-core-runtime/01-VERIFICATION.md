@@ -1,13 +1,15 @@
 ---
 phase: 01-core-runtime
 verified: 2026-04-11T00:00:00Z
-status: human_needed
+status: verified
 score: 5/5 must-haves verified
 overrides_applied: 0
+human_verification_resolved: 2026-04-26T08:30:00Z
 human_verification:
   - test: "Run ./gradlew test lintKotlin from project root"
     expected: "BUILD SUCCESSFUL, 58 tests pass across all 4 modules (kore-core 14, kore-llm 24, kore-mcp 12, kore-test 8), lintKotlin exits 0"
     why_human: "Cannot execute a multi-minute Gradle build with dependency resolution inside a verification shell check. The SUMMARY claims 58 tests pass and ktlint clean — this needs human confirmation that the actual Gradle invocation succeeds on the working codebase."
+    resolved_by: "/gsd-verify-work 01 on 2026-04-26 — full ./gradlew clean build BUILD SUCCESSFUL in 43s (176 tasks), :kore-core/llm/mcp/test:test + lintKotlin all pass, HeroDemoTest 4/4 scenarios pass. UAT recorded in 01-UAT.md."
 ---
 
 # Phase 1: Core Runtime Verification Report
