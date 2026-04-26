@@ -35,63 +35,64 @@ class OllamaBackend(
     internal val chatModel: ChatLanguageModel,
     private val semaphore: Semaphore = Semaphore(2),
 ) : LLMBackend {
-
     override val name: String = "ollama"
 
     override fun call(
         messages: List<ConversationMessage>,
         tools: List<ToolDefinition>,
         config: LLMConfig,
-    ): Flow<LLMChunk> = flow {
-        val langChainMessages = messages.toLangChain4jMessages()
-        val langChainTools = tools.toLangChain4jToolSpecs()
+    ): Flow<LLMChunk> =
+        flow {
+            val langChainMessages = messages.toLangChain4jMessages()
+            val langChainTools = tools.toLangChain4jToolSpecs()
 
-        // Semaphore acquired only around the HTTP call — not around retry delay (Pitfall 11)
-        val response = semaphore.withPermit {
-            // All LangChain4j I/O inside Dispatchers.IO to prevent thread starvation (Pitfall 1)
-            withContext(Dispatchers.IO) {
-                if (langChainTools.isNotEmpty()) {
-                    chatModel.generate(langChainMessages, langChainTools)
-                } else {
-                    chatModel.generate(langChainMessages)
+            // Semaphore acquired only around the HTTP call — not around retry delay (Pitfall 11)
+            val response =
+                semaphore.withPermit {
+                    // All LangChain4j I/O inside Dispatchers.IO to prevent thread starvation (Pitfall 1)
+                    withContext(Dispatchers.IO) {
+                        if (langChainTools.isNotEmpty()) {
+                            chatModel.generate(langChainMessages, langChainTools)
+                        } else {
+                            chatModel.generate(langChainMessages)
+                        }
+                    }
+                }
+
+            // Translate LangChain4j response to canonical LLMChunk sequence (Pitfall 5, T-05-05)
+            // No LangChain4j types (AiMessage, ToolExecutionRequest) escape this boundary
+            val aiMessage: AiMessage = response.content()
+            if (aiMessage.hasToolExecutionRequests()) {
+                for (toolReq in aiMessage.toolExecutionRequests()) {
+                    emit(
+                        LLMChunk.ToolCall(
+                            id = toolReq.id() ?: "",
+                            name = toolReq.name(),
+                            // arguments() returns a JSON string already (Pitfall 5)
+                            arguments = toolReq.arguments() ?: "{}",
+                        ),
+                    )
+                }
+            } else {
+                val text = aiMessage.text()
+                if (!text.isNullOrEmpty()) {
+                    emit(LLMChunk.Text(text))
                 }
             }
-        }
 
-        // Translate LangChain4j response to canonical LLMChunk sequence (Pitfall 5, T-05-05)
-        // No LangChain4j types (AiMessage, ToolExecutionRequest) escape this boundary
-        val aiMessage: AiMessage = response.content()
-        if (aiMessage.hasToolExecutionRequests()) {
-            for (toolReq in aiMessage.toolExecutionRequests()) {
+            // Emit token usage if available
+            val tokenUsage = response.tokenUsage()
+            if (tokenUsage != null) {
                 emit(
-                    LLMChunk.ToolCall(
-                        id = toolReq.id() ?: "",
-                        name = toolReq.name(),
-                        // arguments() returns a JSON string already (Pitfall 5)
-                        arguments = toolReq.arguments() ?: "{}",
+                    LLMChunk.Usage(
+                        inputTokens = tokenUsage.inputTokenCount() ?: 0,
+                        outputTokens = tokenUsage.outputTokenCount() ?: 0,
                     ),
                 )
             }
-        } else {
-            val text = aiMessage.text()
-            if (!text.isNullOrEmpty()) {
-                emit(LLMChunk.Text(text))
-            }
-        }
 
-        // Emit token usage if available
-        val tokenUsage = response.tokenUsage()
-        if (tokenUsage != null) {
-            emit(
-                LLMChunk.Usage(
-                    inputTokens = tokenUsage.inputTokenCount() ?: 0,
-                    outputTokens = tokenUsage.outputTokenCount() ?: 0,
-                ),
-            )
+            emit(LLMChunk.Done)
         }
-
-        emit(LLMChunk.Done)
-    }
 
     private fun List<ConversationMessage>.toLangChain4jMessages(): List<ChatMessage> =
         map { msg ->
@@ -110,7 +111,8 @@ class OllamaBackend(
 
     private fun List<ToolDefinition>.toLangChain4jToolSpecs(): List<ToolSpecification> =
         map { tool ->
-            ToolSpecification.builder()
+            ToolSpecification
+                .builder()
                 .name(tool.name)
                 .description(tool.description)
                 .build()

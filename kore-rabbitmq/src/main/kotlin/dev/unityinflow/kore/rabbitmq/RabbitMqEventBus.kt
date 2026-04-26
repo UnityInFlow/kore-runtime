@@ -62,12 +62,13 @@ class RabbitMqEventBus internal constructor(
 
     // Publish channel — amqp-client Channel is NOT thread-safe, so we use a
     // dedicated channel for publishing separate from the consumer channel.
-    private val publishChannelLazy = lazy {
-        connection.createChannel().apply {
-            confirmSelect()
-            exchangeDeclare(config.exchange, "fanout", true)
+    private val publishChannelLazy =
+        lazy {
+            connection.createChannel().apply {
+                confirmSelect()
+                exchangeDeclare(config.exchange, "fanout", true)
+            }
         }
-    }
     private val publishChannel: Channel by publishChannelLazy
 
     private val shared =

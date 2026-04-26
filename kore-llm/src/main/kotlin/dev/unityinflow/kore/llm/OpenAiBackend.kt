@@ -36,113 +36,122 @@ class OpenAiBackend(
     private val defaultModel: String = "gpt-4o",
     private val semaphore: Semaphore = Semaphore(10),
 ) : LLMBackend {
-
     override val name: String = "gpt"
 
     override fun call(
         messages: List<ConversationMessage>,
         tools: List<ToolDefinition>,
         config: LLMConfig,
-    ): Flow<LLMChunk> = flow {
-        val openAiMessages = messages.map { it.toChatCompletionMessageParam() }
+    ): Flow<LLMChunk> =
+        flow {
+            val openAiMessages = messages.map { it.toChatCompletionMessageParam() }
 
-        val openAiTools = tools.map { tool ->
-            ChatCompletionTool.ofFunction(
-                ChatCompletionFunctionTool.builder()
-                    .function(
-                        FunctionDefinition.builder()
-                            .name(tool.name)
-                            .description(tool.description)
-                            .parameters(FunctionParameters.builder().build())
-                            .build(),
+            val openAiTools =
+                tools.map { tool ->
+                    ChatCompletionTool.ofFunction(
+                        ChatCompletionFunctionTool
+                            .builder()
+                            .function(
+                                FunctionDefinition
+                                    .builder()
+                                    .name(tool.name)
+                                    .description(tool.description)
+                                    .parameters(FunctionParameters.builder().build())
+                                    .build(),
+                            ).build(),
                     )
-                    .build(),
-            )
-        }
+                }
 
-        // Semaphore acquired only around the HTTP call — not around retry delay (Pitfall 11)
-        val completion = semaphore.withPermit {
-            // All SDK I/O inside Dispatchers.IO to prevent thread starvation (Pitfall 1, T-05-03)
-            withContext(Dispatchers.IO) {
-                val paramsBuilder = ChatCompletionCreateParams.builder()
-                    .model(config.model.ifBlank { defaultModel })
-                    .maxCompletionTokens(config.maxTokens.toLong())
-                    .messages(openAiMessages)
+            // Semaphore acquired only around the HTTP call — not around retry delay (Pitfall 11)
+            val completion =
+                semaphore.withPermit {
+                    // All SDK I/O inside Dispatchers.IO to prevent thread starvation (Pitfall 1, T-05-03)
+                    withContext(Dispatchers.IO) {
+                        val paramsBuilder =
+                            ChatCompletionCreateParams
+                                .builder()
+                                .model(config.model.ifBlank { defaultModel })
+                                .maxCompletionTokens(config.maxTokens.toLong())
+                                .messages(openAiMessages)
 
-                if (openAiTools.isNotEmpty()) paramsBuilder.tools(openAiTools)
+                        if (openAiTools.isNotEmpty()) paramsBuilder.tools(openAiTools)
 
-                client.chat().completions().create(paramsBuilder.build())
-            }
-        }
+                        client.chat().completions().create(paramsBuilder.build())
+                    }
+                }
 
-        // Translate provider-specific response to canonical LLMChunk sequence (Pitfall 5, T-05-05)
-        // Convert Optional to nullable Kotlin types before emitting — ifPresent() is not suspend-safe
-        val choice = completion.choices().firstOrNull()
-        if (choice != null) {
-            val message = choice.message()
+            // Translate provider-specific response to canonical LLMChunk sequence (Pitfall 5, T-05-05)
+            // Convert Optional to nullable Kotlin types before emitting — ifPresent() is not suspend-safe
+            val choice = completion.choices().firstOrNull()
+            if (choice != null) {
+                val message = choice.message()
 
-            // Emit text content if present
-            val text = message.content().orElse(null)
-            if (!text.isNullOrEmpty()) {
-                emit(LLMChunk.Text(text))
-            }
+                // Emit text content if present
+                val text = message.content().orElse(null)
+                if (!text.isNullOrEmpty()) {
+                    emit(LLMChunk.Text(text))
+                }
 
-            // Emit tool calls — arguments are already JSON strings in the OpenAI SDK
-            val toolCalls = message.toolCalls().orElse(null)
-            if (toolCalls != null) {
-                for (toolCall in toolCalls) {
-                    if (toolCall.isFunction()) {
-                        val fn = toolCall.asFunction()
-                        emit(
-                            LLMChunk.ToolCall(
-                                id = fn.id(),
-                                name = fn.function().name(),
-                                // arguments is already a JSON string — no conversion needed (Pitfall 5)
-                                arguments = fn.function().arguments(),
-                            ),
-                        )
+                // Emit tool calls — arguments are already JSON strings in the OpenAI SDK
+                val toolCalls = message.toolCalls().orElse(null)
+                if (toolCalls != null) {
+                    for (toolCall in toolCalls) {
+                        if (toolCall.isFunction()) {
+                            val fn = toolCall.asFunction()
+                            emit(
+                                LLMChunk.ToolCall(
+                                    id = fn.id(),
+                                    name = fn.function().name(),
+                                    // arguments is already a JSON string — no conversion needed (Pitfall 5)
+                                    arguments = fn.function().arguments(),
+                                ),
+                            )
+                        }
                     }
                 }
             }
-        }
 
-        // Emit usage if present — convert Optional to nullable before emit
-        val usage = completion.usage().orElse(null)
-        if (usage != null) {
-            emit(
-                LLMChunk.Usage(
-                    inputTokens = usage.promptTokens().toInt(),
-                    outputTokens = usage.completionTokens().toInt(),
-                ),
-            )
-        }
+            // Emit usage if present — convert Optional to nullable before emit
+            val usage = completion.usage().orElse(null)
+            if (usage != null) {
+                emit(
+                    LLMChunk.Usage(
+                        inputTokens = usage.promptTokens().toInt(),
+                        outputTokens = usage.completionTokens().toInt(),
+                    ),
+                )
+            }
 
-        emit(LLMChunk.Done)
-    }
+            emit(LLMChunk.Done)
+        }
 
     private fun ConversationMessage.toChatCompletionMessageParam(): ChatCompletionMessageParam =
         when (role) {
             ConversationMessage.Role.System ->
                 ChatCompletionMessageParam.ofSystem(
-                    ChatCompletionSystemMessageParam.builder()
+                    ChatCompletionSystemMessageParam
+                        .builder()
                         .content(content)
                         .build(),
                 )
             ConversationMessage.Role.User ->
                 ChatCompletionMessageParam.ofUser(
-                    ChatCompletionUserMessageParam.builder()
+                    ChatCompletionUserMessageParam
+                        .builder()
                         .content(content)
                         .build(),
                 )
             ConversationMessage.Role.Assistant ->
                 ChatCompletionMessageParam.ofAssistant(
-                    com.openai.models.chat.completions.ChatCompletionAssistantMessageParam.builder()
+                    com.openai.models.chat.completions.ChatCompletionAssistantMessageParam
+                        .builder()
                         .content(content)
                         .build(),
                 )
             ConversationMessage.Role.Tool ->
                 ChatCompletionMessageParam.ofTool(
-                    ChatCompletionToolMessageParam.builder()
+                    ChatCompletionToolMessageParam
+                        .builder()
                         .content(content)
                         .toolCallId(toolCallId ?: "")
                         .build(),

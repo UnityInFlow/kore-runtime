@@ -27,97 +27,110 @@ import org.junit.jupiter.api.Test
  * T-07-01 mitigation: HeroDemoTest uses identical syntax to the README example.
  */
 class HeroDemoTest {
-
     @Test
-    fun `hero demo - simple text response`() = runTest {
-        // This is the README hero demo pattern
-        val runner = agent("demo-agent") {
-            model = MockLLMBackend("mock")
-                .whenCalled(
-                    LLMChunk.Text("Hello from kore!"),
-                    LLMChunk.Usage(inputTokens = 20, outputTokens = 10),
-                    LLMChunk.Done,
-                )
-            budget(maxTokens = 1_000)
-        }
-
-        val result = runner.run(AgentTask(id = "demo-1", input = "say hello")).await()
-
-        val success = result.shouldBeInstanceOf<AgentResult.Success>()
-        success.output shouldBe "Hello from kore!"
-        success.tokenUsage.inputTokens shouldBe 20
-        success.tokenUsage.outputTokens shouldBe 10
-    }
-
-    @Test
-    fun `hero demo - tool calling loop`() = runTest {
-        val toolProvider = MockToolProvider()
-            .withTool("echo", "Echoes the input", "{}")
-            .returnsFor("echo", "echoed!")
-
-        var llmCallNumber = 0
-        val mockBackend = object : LLMBackend {
-            override val name = "mock"
-            override fun call(
-                messages: List<ConversationMessage>,
-                tools: List<ToolDefinition>,
-                config: LLMConfig,
-            ) = flow {
-                llmCallNumber++
-                if (llmCallNumber == 1) {
-                    emit(LLMChunk.ToolCall(id = "c1", name = "echo", arguments = """{"text":"hi"}"""))
-                    emit(LLMChunk.Done)
-                } else {
-                    emit(LLMChunk.Text("Tool returned: echoed!"))
-                    emit(LLMChunk.Done)
+    fun `hero demo - simple text response`() =
+        runTest {
+            // This is the README hero demo pattern
+            val runner =
+                agent("demo-agent") {
+                    model =
+                        MockLLMBackend("mock")
+                            .whenCalled(
+                                LLMChunk.Text("Hello from kore!"),
+                                LLMChunk.Usage(inputTokens = 20, outputTokens = 10),
+                                LLMChunk.Done,
+                            )
+                    budget(maxTokens = 1_000)
                 }
-            }
+
+            val result = runner.run(AgentTask(id = "demo-1", input = "say hello")).await()
+
+            val success = result.shouldBeInstanceOf<AgentResult.Success>()
+            success.output shouldBe "Hello from kore!"
+            success.tokenUsage.inputTokens shouldBe 20
+            success.tokenUsage.outputTokens shouldBe 10
         }
-
-        val runner = agent("tool-agent") {
-            model = mockBackend
-            tools(toolProvider)
-        }
-
-        val result = runner.run(AgentTask(id = "tool-1", input = "echo hi")).await()
-
-        val success = result.shouldBeInstanceOf<AgentResult.Success>()
-        success.output shouldBe "Tool returned: echoed!"
-        llmCallNumber shouldBe 2
-    }
 
     @Test
-    fun `fallback chain compiles and wraps backends`() = runTest {
-        val primary = MockLLMBackend("primary")
-        // No .whenCalled() on primary → throws on first call → fallback activates
-        val fallback = MockLLMBackend("fallback")
-            .whenCalled(LLMChunk.Text("from fallback"), LLMChunk.Done)
+    fun `hero demo - tool calling loop`() =
+        runTest {
+            val toolProvider =
+                MockToolProvider()
+                    .withTool("echo", "Echoes the input", "{}")
+                    .returnsFor("echo", "echoed!")
 
-        val resilient = primary fallbackTo fallback
+            var llmCallNumber = 0
+            val mockBackend =
+                object : LLMBackend {
+                    override val name = "mock"
 
-        resilient.name shouldBe "primary"
+                    override fun call(
+                        messages: List<ConversationMessage>,
+                        tools: List<ToolDefinition>,
+                        config: LLMConfig,
+                    ) = flow {
+                        llmCallNumber++
+                        if (llmCallNumber == 1) {
+                            emit(LLMChunk.ToolCall(id = "c1", name = "echo", arguments = """{"text":"hi"}"""))
+                            emit(LLMChunk.Done)
+                        } else {
+                            emit(LLMChunk.Text("Tool returned: echoed!"))
+                            emit(LLMChunk.Done)
+                        }
+                    }
+                }
 
-        // Primary has no responses — will fail — fallback should be used
-        val runner = agent("fallback-agent") {
-            model = resilient
+            val runner =
+                agent("tool-agent") {
+                    model = mockBackend
+                    tools(toolProvider)
+                }
+
+            val result = runner.run(AgentTask(id = "tool-1", input = "echo hi")).await()
+
+            val success = result.shouldBeInstanceOf<AgentResult.Success>()
+            success.output shouldBe "Tool returned: echoed!"
+            llmCallNumber shouldBe 2
         }
-        val result = runner.run(AgentTask(id = "fb-1", input = "test")).await()
-        // primary fails (no scripted response) → fallback returns "from fallback"
-        val success = result.shouldBeInstanceOf<AgentResult.Success>()
-        success.output shouldBe "from fallback"
-    }
 
     @Test
-    fun `budget exceeded stops the agent loop`() = runTest {
-        val backend = MockLLMBackend("mock")
-            .whenCalled(LLMChunk.Text("response"), LLMChunk.Done)
+    fun `fallback chain compiles and wraps backends`() =
+        runTest {
+            val primary = MockLLMBackend("primary")
+            // No .whenCalled() on primary → throws on first call → fallback activates
+            val fallback =
+                MockLLMBackend("fallback")
+                    .whenCalled(LLMChunk.Text("from fallback"), LLMChunk.Done)
 
-        val runner = agent("budget-agent") {
-            model = backend
-            budget(maxTokens = 0L)  // zero budget → BudgetExceeded immediately
+            val resilient = primary fallbackTo fallback
+
+            resilient.name shouldBe "primary"
+
+            // Primary has no responses — will fail — fallback should be used
+            val runner =
+                agent("fallback-agent") {
+                    model = resilient
+                }
+            val result = runner.run(AgentTask(id = "fb-1", input = "test")).await()
+            // primary fails (no scripted response) → fallback returns "from fallback"
+            val success = result.shouldBeInstanceOf<AgentResult.Success>()
+            success.output shouldBe "from fallback"
         }
 
-        val result = runner.run(AgentTask(id = "budget-1", input = "test")).await()
-        result.shouldBeInstanceOf<AgentResult.BudgetExceeded>()
-    }
+    @Test
+    fun `budget exceeded stops the agent loop`() =
+        runTest {
+            val backend =
+                MockLLMBackend("mock")
+                    .whenCalled(LLMChunk.Text("response"), LLMChunk.Done)
+
+            val runner =
+                agent("budget-agent") {
+                    model = backend
+                    budget(maxTokens = 0L) // zero budget → BudgetExceeded immediately
+                }
+
+            val result = runner.run(AgentTask(id = "budget-1", input = "test")).await()
+            result.shouldBeInstanceOf<AgentResult.BudgetExceeded>()
+        }
 }
