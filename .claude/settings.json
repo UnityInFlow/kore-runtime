@@ -1,0 +1,20 @@
+{
+  "hooks": {
+    "postToolCall": [
+      {
+        "matcher": "Write|Edit",
+        "command": ".claude/hooks/post-tool-call.sh"
+      }
+    ],
+    "preBash": [
+      {
+        "command": ".claude/hooks/pre-bash.sh"
+      }
+    ],
+    "stop": [
+      {
+        "command": ".claude/hooks/on-stop.sh"
+      }
+    ]
+  }
+}
