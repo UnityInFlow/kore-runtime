@@ -5,7 +5,7 @@
 kore gives Kotlin and Java teams everything they need to run AI agents in production: a coroutine-based agent loop, multi-LLM backends, MCP protocol support, budget enforcement, and first-class testing utilities — wired together with a clean Kotlin DSL.
 
 [![Build](https://github.com/UnityInFlow/kore-runtime/actions/workflows/ci.yml/badge.svg)](https://github.com/UnityInFlow/kore-runtime/actions)
-[![Maven Central](https://img.shields.io/maven-central/v/dev.unityinflow/kore-core)](https://central.sonatype.com/search?q=dev.unityinflow)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.unityinflow/kore-core)](https://central.sonatype.com/search?q=io.github.unityinflow)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ---
@@ -30,17 +30,17 @@ LangChain4j provides an LLM call abstraction but does not give you:
 Add the Spring Boot starter to your Gradle build:
 
 ```kotlin
-implementation("dev.unityinflow:kore-spring-boot-starter:0.0.1-SNAPSHOT")
+implementation("io.github.unityinflow:kore-spring-boot-starter:0.0.1-SNAPSHOT")
 ```
 
 Write an agent:
 
 ```kotlin
-import dev.unityinflow.kore.core.AgentResult
-import dev.unityinflow.kore.core.AgentTask
-import dev.unityinflow.kore.core.dsl.agent
-import dev.unityinflow.kore.llm.claude
-import dev.unityinflow.kore.mcp.mcp
+import io.github.unityinflow.kore.core.AgentResult
+import io.github.unityinflow.kore.core.AgentTask
+import io.github.unityinflow.kore.core.dsl.agent
+import io.github.unityinflow.kore.llm.claude
+import io.github.unityinflow.kore.mcp.mcp
 import java.util.UUID
 
 val runner = agent("my-agent") {
@@ -69,7 +69,7 @@ Spring Boot app. **Add one Gradle dependency, write one `@Bean`, visit `/kore`.*
 **1. Add the starter to `build.gradle.kts`:**
 
 ```kotlin
-implementation("dev.unityinflow:kore-spring:0.0.1-SNAPSHOT")
+implementation("io.github.unityinflow:kore-spring:0.0.1-SNAPSHOT")
 ```
 
 **2. Configure your LLM provider in `application.yml` — never commit API keys:**
@@ -104,7 +104,7 @@ prompt: |
 class MyApp {
     @Bean
     fun reviewAgent(
-        claude: dev.unityinflow.kore.llm.ClaudeBackend,
+        claude: io.github.unityinflow.kore.llm.ClaudeBackend,
     ): AgentRunner = agent("review-agent") {
         model = claude
         budget(maxTokens = 10_000)
@@ -128,10 +128,10 @@ classpath detection — your agent inherits all of it for free.
 ### Example 1: Fallback chain for LLM resilience
 
 ```kotlin
-import dev.unityinflow.kore.core.dsl.agent
-import dev.unityinflow.kore.core.internal.fallbackTo
-import dev.unityinflow.kore.llm.claude
-import dev.unityinflow.kore.llm.gpt
+import io.github.unityinflow.kore.core.dsl.agent
+import io.github.unityinflow.kore.core.internal.fallbackTo
+import io.github.unityinflow.kore.llm.claude
+import io.github.unityinflow.kore.llm.gpt
 
 val runner = agent("resilient-agent") {
     model = claude(apiKey = System.getenv("ANTHROPIC_API_KEY")) fallbackTo
@@ -145,8 +145,8 @@ If the Claude backend fails (rate limit, network error, API outage), the agent a
 ### Example 2: Local model with Ollama
 
 ```kotlin
-import dev.unityinflow.kore.core.dsl.agent
-import dev.unityinflow.kore.llm.ollama
+import io.github.unityinflow.kore.core.dsl.agent
+import io.github.unityinflow.kore.llm.ollama
 
 val runner = agent("local-agent") {
     model = ollama(baseUrl = "http://localhost:11434", model = "llama3")
@@ -158,11 +158,11 @@ Zero API keys, zero cloud dependencies. The same `agent { }` DSL works with any 
 ### Example 3: Deterministic testing with MockLLMBackend
 
 ```kotlin
-import dev.unityinflow.kore.core.AgentResult
-import dev.unityinflow.kore.core.AgentTask
-import dev.unityinflow.kore.core.LLMChunk
-import dev.unityinflow.kore.core.dsl.agent
-import dev.unityinflow.kore.test.MockLLMBackend
+import io.github.unityinflow.kore.core.AgentResult
+import io.github.unityinflow.kore.core.AgentTask
+import io.github.unityinflow.kore.core.LLMChunk
+import io.github.unityinflow.kore.core.dsl.agent
+import io.github.unityinflow.kore.test.MockLLMBackend
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.test.runTest
@@ -198,15 +198,15 @@ class MyAgentTest {
 
 | Module | Maven Artifact | What it provides |
 |--------|---------------|-----------------|
-| `kore-core` | `dev.unityinflow:kore-core` | Agent loop, DSL, sealed result types, port interfaces, in-memory stubs. No external dependencies except `kotlinx-coroutines-core`. |
-| `kore-llm` | `dev.unityinflow:kore-llm` | LLM backend adapters: Claude, GPT-4, Ollama, Gemini. DSL factory functions: `claude()`, `gpt()`, `ollama()`, `gemini()`. |
-| `kore-mcp` | `dev.unityinflow:kore-mcp` | MCP protocol client (stdio + SSE) and server. DSL factory functions: `mcp()`, `mcpSse()`. |
-| `kore-test` | `dev.unityinflow:kore-test` | `MockLLMBackend`, `MockToolProvider`, session recording and replay for deterministic agent tests. |
-| `kore-observability` | `dev.unityinflow:kore-observability` | OpenTelemetry spans + Micrometer metrics on every LLM call and tool use. |
-| `kore-storage` | `dev.unityinflow:kore-storage` | PostgreSQL audit log via Exposed R2DBC + Flyway migrations. |
-| `kore-skills` | `dev.unityinflow:kore-skills` | YAML skill definitions (`./kore-skills/*.yaml`) with pattern-based auto-activation. |
-| `kore-dashboard` | `dev.unityinflow:kore-dashboard` | Embedded HTMX dashboard (Ktor 3.2 CIO): active agents, recent runs, cost summary. |
-| `kore-spring` | `dev.unityinflow:kore-spring` | Spring Boot 4 auto-configuration starter that wires every module above from a single Gradle dependency. |
+| `kore-core` | `io.github.unityinflow:kore-core` | Agent loop, DSL, sealed result types, port interfaces, in-memory stubs. No external dependencies except `kotlinx-coroutines-core`. |
+| `kore-llm` | `io.github.unityinflow:kore-llm` | LLM backend adapters: Claude, GPT-4, Ollama, Gemini. DSL factory functions: `claude()`, `gpt()`, `ollama()`, `gemini()`. |
+| `kore-mcp` | `io.github.unityinflow:kore-mcp` | MCP protocol client (stdio + SSE) and server. DSL factory functions: `mcp()`, `mcpSse()`. |
+| `kore-test` | `io.github.unityinflow:kore-test` | `MockLLMBackend`, `MockToolProvider`, session recording and replay for deterministic agent tests. |
+| `kore-observability` | `io.github.unityinflow:kore-observability` | OpenTelemetry spans + Micrometer metrics on every LLM call and tool use. |
+| `kore-storage` | `io.github.unityinflow:kore-storage` | PostgreSQL audit log via Exposed R2DBC + Flyway migrations. |
+| `kore-skills` | `io.github.unityinflow:kore-skills` | YAML skill definitions (`./kore-skills/*.yaml`) with pattern-based auto-activation. |
+| `kore-dashboard` | `io.github.unityinflow:kore-dashboard` | Embedded HTMX dashboard (Ktor 3.2 CIO): active agents, recent runs, cost summary. |
+| `kore-spring` | `io.github.unityinflow:kore-spring` | Spring Boot 4 auto-configuration starter that wires every module above from a single Gradle dependency. |
 
 ---
 

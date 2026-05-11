@@ -73,11 +73,11 @@ jobs:
           draft: false
           prerelease: false
           body: |
-            kore-runtime **${{ github.ref_name }}** is now available on Maven Central under `dev.unityinflow`.
+            kore-runtime **${{ github.ref_name }}** is now available on Maven Central under `io.github.unityinflow`.
 
             ```kotlin
             dependencies {
-                implementation("dev.unityinflow:kore-spring:${{ steps.version.outputs.version }}")
+                implementation("io.github.unityinflow:kore-spring:${{ steps.version.outputs.version }}")
             }
             ```
 

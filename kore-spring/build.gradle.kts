@@ -33,7 +33,7 @@ dependencies {
     // host can exclude kore-dashboard via Gradle exclusion if desired.
     compileOnly(project(":kore-dashboard"))
     // Opt-in event bus adapters (EVNT-03 / EVNT-04 / D-08). Kept compileOnly so
-    // consumers MUST explicitly add `implementation("dev.unityinflow:kore-kafka")`
+    // consumers MUST explicitly add `implementation("io.github.unityinflow:kore-kafka")`
     // or `kore-rabbitmq` to their build — kore-spring does not transitively pull
     // either adapter. Gated at runtime by @ConditionalOnClass(name=[...]) string
     // form (Pitfall 2) inside KafkaEventBusAutoConfiguration / RabbitMqEventBusAutoConfiguration.

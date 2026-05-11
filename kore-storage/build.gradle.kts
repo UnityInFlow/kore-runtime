@@ -5,7 +5,7 @@ plugins {
     id("kore.publishing")
 }
 
-group = "dev.unityinflow"
+group = "io.github.unityinflow"
 
 dependencies {
     implementation(project(":kore-core"))

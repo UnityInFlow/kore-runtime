@@ -6,7 +6,7 @@
 (release workflow + version bump + this checklist) landed on `main`.
 
 This checklist walks through every manual step required to ship
-`dev.unityinflow:kore-*:0.0.1` to Maven Central. The release workflow
+`io.github.unityinflow:kore-*:0.0.1` to Maven Central. The release workflow
 (`.github/workflows/release.yml`) and its safety-net dry-run counterpart
 (`.github/workflows/release-dry-run.yml`) are already committed; what
 follows is the human work.
@@ -40,12 +40,12 @@ gh repo view UnityInFlow/kore-runtime --json visibility,defaultBranchRef
 # Expect: visibility=PUBLIC, defaultBranchRef.name=main
 ```
 
-### PF-01 — Claim and verify the `dev.unityinflow` Sonatype namespace
+### PF-01 — Claim and verify the `io.github.unityinflow` Sonatype namespace
 
 1. Log in at <https://central.sonatype.com/> (create an account if needed — use
    the email you want to own the namespace).
 2. Navigate to **Namespaces** → **Add Namespace**.
-3. Enter `dev.unityinflow`.
+3. Enter `io.github.unityinflow`.
 4. Choose a verification method:
    - **Recommended:** GitHub org verification. The portal generates an
      `OSSRH-<ticket>` repo name. Create a public repo with that exact name in
@@ -313,10 +313,10 @@ EOF
 cat > build.gradle.kts <<'EOF'
 plugins { id("org.jetbrains.kotlin.jvm") version "2.3.0" }
 repositories { mavenCentral() }
-dependencies { implementation("dev.unityinflow:kore-spring:0.0.1") }
+dependencies { implementation("io.github.unityinflow:kore-spring:0.0.1") }
 EOF
 
-gradle dependencies --configuration runtimeClasspath | grep "dev.unityinflow:kore-"
+gradle dependencies --configuration runtimeClasspath | grep "io.github.unityinflow:kore-"
 # Expect: kore-spring and all transitive kore-* modules resolved from Central
 ```
 
@@ -352,7 +352,7 @@ Installation snippet for announcements:
 
 ```kotlin
 dependencies {
-    implementation("dev.unityinflow:kore-spring:0.0.1")
+    implementation("io.github.unityinflow:kore-spring:0.0.1")
 }
 ```
 
@@ -386,7 +386,7 @@ dependencies {
 ## Done-when signals
 
 - [ ] PF-00 — `kore-runtime` repo exists on GitHub with all commits pushed
-- [ ] PF-01 — `dev.unityinflow` namespace VERIFIED on Sonatype Central Portal
+- [ ] PF-01 — `io.github.unityinflow` namespace VERIFIED on Sonatype Central Portal
 - [ ] PF-04 — GPG key generated, private half exported, public half on
       keyservers
 - [ ] PF-05 — All four org secrets set (`SIGNING_KEY`, `SIGNING_PASSWORD`,
@@ -397,6 +397,6 @@ dependencies {
 - [ ] Staging bundle inspected and **Publish**ed in the portal UI
 - [ ] All 11 modules return HTTP 200 from `repo.maven.apache.org`
 - [ ] GPG signature verification succeeds on at least one module
-- [ ] Smoke-test Gradle project resolves `dev.unityinflow:kore-spring:0.0.1`
+- [ ] Smoke-test Gradle project resolves `io.github.unityinflow:kore-spring:0.0.1`
 - [ ] Post-release `0.0.2-SNAPSHOT` version bump committed on `main`
 - [ ] Release announced in Discord + Twitter + r/Kotlin + r/ClaudeAI

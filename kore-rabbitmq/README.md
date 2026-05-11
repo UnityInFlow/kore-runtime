@@ -4,7 +4,7 @@ Opt-in RabbitMQ adapter for [kore-runtime](https://github.com/UnityInFlow/kore) 
 
 ## What it is
 
-`RabbitMqEventBus` implements `dev.unityinflow.kore.core.port.EventBus` over the official
+`RabbitMqEventBus` implements `io.github.unityinflow.kore.core.port.EventBus` over the official
 `com.rabbitmq:amqp-client` library. No Spring AMQP, no Spring Rabbit — it is a thin
 coroutine bridge that works from plain Kotlin applications or Spring Boot.
 
@@ -12,8 +12,8 @@ coroutine bridge that works from plain Kotlin applications or Spring Boot.
 
 ```kotlin
 dependencies {
-    implementation("dev.unityinflow:kore-spring:0.0.1")
-    implementation("dev.unityinflow:kore-rabbitmq:0.0.1")
+    implementation("io.github.unityinflow:kore-spring:0.0.1")
+    implementation("io.github.unityinflow:kore-rabbitmq:0.0.1")
 }
 ```
 

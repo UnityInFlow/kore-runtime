@@ -4,7 +4,7 @@ Opt-in Apache Kafka adapter for [kore-runtime](https://github.com/UnityInFlow/ko
 
 ## What it is
 
-`KafkaEventBus` implements `dev.unityinflow.kore.core.port.EventBus` over the official
+`KafkaEventBus` implements `io.github.unityinflow.kore.core.port.EventBus` over the official
 `org.apache.kafka:kafka-clients` library. It is a thin coroutine bridge over Kafka — it
 does NOT depend on Spring Kafka, Spring AMQP, or any framework. It works from plain
 Kotlin applications as well as Spring Boot.
@@ -13,8 +13,8 @@ Kotlin applications as well as Spring Boot.
 
 ```kotlin
 dependencies {
-    implementation("dev.unityinflow:kore-spring:0.0.1")
-    implementation("dev.unityinflow:kore-kafka:0.0.1")
+    implementation("io.github.unityinflow:kore-spring:0.0.1")
+    implementation("io.github.unityinflow:kore-kafka:0.0.1")
 }
 ```
 

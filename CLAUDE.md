@@ -6,7 +6,7 @@
 
 Production-grade Kotlin agent runtime with coroutine-based agent loop, MCP protocol client, hexagonal architecture, multi-LLM backends, skills engine, budget-breaker integration, OpenTelemetry observability, and PostgreSQL audit logging. The flagship JVM tool in the ecosystem.
 
-**Phase:** 3 | **Stack:** Kotlin + Spring WebFlux | **Maven:** `dev.unityinflow:kore-*`
+**Phase:** 3 | **Stack:** Kotlin + Spring WebFlux | **Maven:** `io.github.unityinflow:kore-*`
 
 ## Status
 
@@ -40,7 +40,7 @@ Read these before making architectural or scope decisions.
 - No `var` — always `val`, refactor if mutation seems needed
 - No `!!` without a comment explaining why it's safe
 - `ktlint` before every commit
-- Group: `dev.unityinflow`
+- Group: `io.github.unityinflow`
 - Maven Central publishing via Sonatype for all library modules
 
 ### Architecture
@@ -135,7 +135,7 @@ A production-grade Kotlin agent runtime for the JVM. kore lets developers define
 - **Error handling**: Sealed classes (AgentResult) instead of exceptions for expected failures
 - **Testing**: JUnit 5 + Kotest matchers. Coverage >80% on core logic
 - **Format**: ktlint before every commit
-- **Distribution**: Maven Central via Sonatype. Group: `dev.unityinflow`
+- **Distribution**: Maven Central via Sonatype. Group: `io.github.unityinflow`
 - **CI**: Self-hosted runners (arc-runner-unityinflow). Never ubuntu-latest
 - **Dashboard**: HTMX + Ktor embedded server. No frontend build step
 - **Event bus**: Kotlin Flows default. Kafka/RabbitMQ opt-in only

@@ -14,7 +14,7 @@ plugins {
 subprojects {
     apply(plugin = "org.jmailen.kotlinter")
 
-    group = "dev.unityinflow"
+    group = "io.github.unityinflow"
     version = "0.0.1" // Bumped from 0.0.1-SNAPSHOT in plan 04-06 Phase A for v0.0.1 release
 
     repositories {
