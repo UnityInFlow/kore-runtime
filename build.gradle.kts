@@ -11,6 +11,10 @@ plugins {
     id("com.gradleup.nmcp.aggregation")
 }
 
+repositories {
+    mavenCentral()
+}
+
 subprojects {
     apply(plugin = "org.jmailen.kotlinter")
 
