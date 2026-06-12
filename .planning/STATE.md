@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v0.0.1
 milestone_name: milestone
-status: Blocked on PF-00..PF-05 human action (see docs/RELEASE-CHECKLIST.md)
-stopped_at: Completed 04-05-PLAN.md
-last_updated: "2026-04-26T07:54:49.274Z"
-last_activity: 2026-04-26
+status: v0.0.1 shipped to Maven Central 2026-05-11 — no next milestone defined yet
+stopped_at: v0.0.1 released (tag v0.0.1, version bumped to 0.0.2-SNAPSHOT)
+last_updated: "2026-06-12T00:00:00.000Z"
+last_activity: 2026-06-12
 progress:
   total_phases: 4
   completed_phases: 4
@@ -21,16 +21,18 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-10)
 
 **Core value:** A developer adds one Spring Boot dependency, writes an `agent { }` block, and has a production-ready agent running with observability and budget control.
-**Current focus:** Phase 04 — event-bus-publishing
+**Current focus:** Milestone v0.0.1 complete — awaiting next milestone definition
 
 ## Current Position
 
-Phase: 04 (event-bus-publishing) — EXECUTING
-Plan: 6 of 6 (PARTIAL — Phase A landed, Phase B awaiting human pre-flight)
-Status: Blocked on PF-00..PF-05 human action (see docs/RELEASE-CHECKLIST.md)
-Last activity: 2026-04-26
+Phase: 04 (event-bus-publishing) — COMPLETE (all 4 phases / 21 plans complete)
+Plan: 21 of 21
+Status: v0.0.1 SHIPPED 2026-05-11 — all 11 modules published to Maven Central under `io.github.unityinflow` (tag v0.0.1, version bumped to 0.0.2-SNAPSHOT)
+Last activity: 2026-06-12
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██████████] 100%
+
+Next step: no next milestone defined yet — run `/gsd-new-milestone` to start the v0.0.2 cycle.
 
 ## Performance Metrics
 
@@ -170,6 +172,6 @@ Items acknowledged and deferred at milestone close on 2026-04-26.
 
 ## Session Continuity
 
-Last session: 2026-04-15T18:59:52.450Z
-Stopped at: Completed 04-05-PLAN.md
+Last session: 2026-06-12 (state sync)
+Stopped at: v0.0.1 released to Maven Central 2026-05-11 — milestone complete
 Resume file: None
