@@ -1,5 +1,5 @@
 {
-  "model_profile": "balanced",
+  "model_profile": "inherit",
   "commit_docs": true,
   "parallelization": true,
   "search_gitignored": false,
@@ -10,7 +10,8 @@
     "branching_strategy": "none",
     "phase_branch_template": "gsd/phase-{phase}-{slug}",
     "milestone_branch_template": "gsd/{milestone}-{slug}",
-    "quick_branch_template": null
+    "quick_branch_template": null,
+    "create_tag": true
   },
   "workflow": {
     "research": true,
@@ -28,7 +29,12 @@
     "skip_discuss": false,
     "code_review": true,
     "code_review_depth": "standard",
-    "_auto_chain_active": false
+    "_auto_chain_active": false,
+    "pattern_mapper": true,
+    "ui_review": true,
+    "ai_integration_phase": true,
+    "tdd_mode": false,
+    "use_worktrees": true
   },
   "hooks": {
     "context_warnings": true
@@ -37,5 +43,15 @@
   "phase_naming": "sequential",
   "agent_skills": {},
   "mode": "yolo",
-  "granularity": "standard"
+  "granularity": "standard",
+  "intel": {
+    "enabled": true
+  },
+  "graphify": {
+    "enabled": true,
+    "auto_update": false
+  },
+  "plan_review": {
+    "source_grounding": true
+  }
 }
