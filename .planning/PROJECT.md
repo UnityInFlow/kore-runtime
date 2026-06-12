@@ -14,7 +14,17 @@ The agent loop must work — task intake, LLM call, tool use, result handling, l
 
 **Shipped:** v0.0.1 Initial MVP (2026-04-26) — 4 phases, 21 plans, ~22.9k Kotlin LOC across 11 modules, 125 commits over 16 days.
 
-**On Maven Central** (pending release pipeline run): `dev.unityinflow:kore-{core,mcp,llm,skills,observability,storage,spring,dashboard,kafka,rabbitmq,test}:0.0.1`.
+**On Maven Central** (released 2026-05-11): `io.github.unityinflow:kore-{core,mcp,llm,skills,observability,storage,spring,dashboard,kafka,rabbitmq,test}:0.0.1` (repo now at 0.0.2-SNAPSHOT).
+
+## Current Milestone: v0.0.2 Hardening & Hierarchy
+
+**Goal:** Close every item deferred at v0.0.1's close — real budget enforcement, hierarchical agents, full observability coverage, and integration-test CI — so the runtime is production-trustworthy before the v0.1.0 feature push.
+
+**Target features:**
+- Real budget-breaker adapter (`io.github.unityinflow:budget-breaker`) replacing `InMemoryBudgetEnforcer` behind the existing `BudgetEnforcer` port
+- Hierarchical agents: parent agents spawn child agents with structured concurrency (cancelling parent cancels children)
+- OBSV-03: OTel span on skill activation, wired to the `SkillActivated` event
+- kore-storage `integrationTest` Gradle task for the 7 Testcontainers tests + CI step on arc-runner-unityinflow
 
 **Stack:** Kotlin 2.x · Gradle 9.4.1 · JVM 21 · Spring Boot 4 · Ktor 3.2 · Exposed 1.0 (R2DBC) · PostgreSQL · Flyway 12 · OpenTelemetry · Micrometer · MCP Kotlin SDK 0.11.0 · LangChain4j (Ollama/Gemini transport) · Anthropic Java SDK · OpenAI Java SDK · kotlinx.serialization (compile-only on kore-core) · MockK · Kotest assertions · JUnit 5 · Testcontainers · ktlint via kotlinter · GraalVM-aware buildSrc + nmcp Maven Central publishing.
 
@@ -46,12 +56,14 @@ The agent loop must work — task intake, LLM call, tool use, result handling, l
 
 ### Active
 
-(Define for next milestone via `/gsd-new-milestone`. Carried-over candidates:)
+(Milestone v0.0.2 — Hardening & Hierarchy)
 
+- [ ] Real budget-breaker adapter: BudgetEnforcer adapter backed by `io.github.unityinflow:budget-breaker`, replacing the InMemoryBudgetEnforcer stub (Tool 05 core library shipped v0.0.1; Spring Boot starter still pending — gate auto-config accordingly)
 - [ ] Hierarchical agents: parent agents spawn child agents with structured concurrency (deferred from v0.0.1 — original scope item, not exercised in initial loop)
-- [ ] Real budget-breaker adapter (replaces InMemoryBudgetEnforcer stub once Tool 05 ships)
-- [ ] Resolve Phase 01 + Phase 02 `human_needed` verification UAT items
 - [ ] Skill-activation OTel span (OBSV-03) — intentionally deferred from Phase 2; needs wiring against `SkillActivated` event from Phase 3 implementation
+- [ ] kore-storage `integrationTest` task + CI step on arc-runner-unityinflow for the 7 Testcontainers tests (currently excluded via `excludeTags("integration")` with no separate task)
+
+*(Resolved since v0.0.1 close: Phase 01 + Phase 02 `human_needed` UAT items — verified 2026-04-26.)*
 
 ### Out of Scope
 
@@ -82,7 +94,7 @@ Three target personas:
 - **Error handling**: Sealed classes (AgentResult) instead of exceptions for expected failures
 - **Testing**: JUnit 5 + Kotest matchers. Coverage >80% on core logic
 - **Format**: ktlint before every commit
-- **Distribution**: Maven Central via Sonatype. Group: `dev.unityinflow`
+- **Distribution**: Maven Central via Sonatype. Group: `io.github.unityinflow` (renamed from `dev.unityinflow` at v0.0.1 release — Sonatype namespace verification)
 - **CI**: Self-hosted runners (arc-runner-unityinflow). Never ubuntu-latest
 - **Dashboard**: HTMX + Ktor embedded server. No frontend build step
 - **Event bus**: Kotlin Flows default. Kafka/RabbitMQ opt-in only
@@ -145,4 +157,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-26 after v0.0.1 milestone*
+*Last updated: 2026-06-12 — milestone v0.0.2 Hardening & Hierarchy started*

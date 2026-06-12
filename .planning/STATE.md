@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.0.1
-milestone_name: milestone
-status: v0.0.1 shipped to Maven Central 2026-05-11 — no next milestone defined yet
-stopped_at: v0.0.1 released (tag v0.0.1, version bumped to 0.0.2-SNAPSHOT)
-last_updated: "2026-06-12T00:00:00.000Z"
+milestone: v0.0.2
+milestone_name: Hardening & Hierarchy
+status: planning
+last_updated: "2026-06-12T19:47:22.528Z"
 last_activity: 2026-06-12
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 21
-  completed_plans: 21
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,14 +24,10 @@ See: .planning/PROJECT.md (updated 2026-04-10)
 
 ## Current Position
 
-Phase: 04 (event-bus-publishing) — COMPLETE (all 4 phases / 21 plans complete)
-Plan: 21 of 21
-Status: v0.0.1 SHIPPED 2026-05-11 — all 11 modules published to Maven Central under `io.github.unityinflow` (tag v0.0.1, version bumped to 0.0.2-SNAPSHOT)
-Last activity: 2026-06-12
-
-Progress: [██████████] 100%
-
-Next step: no next milestone defined yet — run `/gsd-new-milestone` to start the v0.0.2 cycle.
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-06-12 — Milestone v0.0.2 started
 
 ## Performance Metrics
 
