@@ -65,23 +65,23 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BUDG-05 | — | Pending |
-| BUDG-06 | — | Pending |
-| BUDG-07 | — | Pending |
-| HIER-01 | — | Pending |
-| HIER-02 | — | Pending |
-| HIER-03 | — | Pending |
-| HIER-04 | — | Pending |
-| OBSV-03 | — | Pending |
-| OBSV-04 | — | Pending |
-| CI-01 | — | Pending |
-| CI-02 | — | Pending |
+| BUDG-05 | Phase 6 | Pending |
+| BUDG-06 | Phase 6 | Pending |
+| BUDG-07 | Phase 6 | Pending |
+| HIER-01 | Phase 7 | Pending |
+| HIER-02 | Phase 7 | Pending |
+| HIER-03 | Phase 7 | Pending |
+| HIER-04 | Phase 7 | Pending |
+| OBSV-03 | Phase 5 | Pending |
+| OBSV-04 | Phase 5 | Pending |
+| CI-01 | Phase 5 | Pending |
+| CI-02 | Phase 5 | Pending |
 
 **Coverage:**
 - v0.0.2 requirements: 11 total
-- Mapped to phases: 0 (roadmap pending)
-- Unmapped: 11 ⚠️
+- Mapped to phases: 11 ✓
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-06-12*
-*Last updated: 2026-06-12 after initial definition*
+*Last updated: 2026-06-12 after roadmap creation (Phases 5-7 mapped)*

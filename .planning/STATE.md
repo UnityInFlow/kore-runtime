@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v0.0.2
 milestone_name: Hardening & Hierarchy
-status: planning
+status: roadmap_created
 last_updated: "2026-06-12T19:47:22.528Z"
 last_activity: 2026-06-12
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -17,37 +17,41 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-10)
+See: .planning/PROJECT.md (updated 2026-06-12)
 
 **Core value:** A developer adds one Spring Boot dependency, writes an `agent { }` block, and has a production-ready agent running with observability and budget control.
-**Current focus:** Milestone v0.0.1 complete — awaiting next milestone definition
+**Current focus:** Milestone v0.0.2 Hardening & Hierarchy — Phase 5 (CI Baseline & Skill Observability)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-06-12 — Milestone v0.0.2 started
+Phase: 5 of 7 (CI Baseline & Skill Observability)
+Plan: Not started
+Status: Roadmap created — ready for `/gsd-plan-phase 5`
+Last activity: 2026-06-12 — v0.0.2 roadmap created (Phases 5-7, 11 requirements mapped)
+
+Progress: [░░░░░░░░░░] 0% (0/3 phases)
+
+**Milestone phase structure:**
+- Phase 5: CI Baseline & Skill Observability (CI-01, CI-02, OBSV-03, OBSV-04)
+- Phase 6: Real Budget Enforcement (BUDG-05, BUDG-06, BUDG-07) — independent of Phase 5
+- Phase 7: Hierarchical Agents (HIER-01..04) — must follow Phase 5 (shared AgentLoop.kt)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 10
+- Total plans completed: 21 (v0.0.1)
 - Average duration: -
-- Total execution time: 0 hours
+- Total execution time: -
 
-**By Phase:**
+**By Phase (v0.0.1):**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01 | 7 | - | - |
 | 02 | 3 | - | - |
-
-**Recent Trend:**
-
-- Last 5 plans: -
-- Trend: -
+| 03 | 5 | - | - |
+| 04 | 6 | - | - |
 
 *Updated after each plan completion*
 | Phase 01-core-runtime P01 | 4 | 2 tasks | 20 files |
@@ -78,6 +82,10 @@ Last activity: 2026-06-12 — Milestone v0.0.2 started
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- **[v0.0.2 roadmap]**: 3 phases (5-7) per research SUMMARY.md — CI/OBSV first (zero risk, unblocks CI correctness), budget adapter second (isolated new kore-budget module), hierarchy last (largest kore-core surface; must follow Phase 5 because both modify AgentLoop.kt)
+- **[v0.0.2 roadmap]**: kore-budget gates auto-config on class presence of budget-breaker core library only — `budget-breaker-spring-boot-starter` not yet published
+- **[v0.0.2 roadmap]**: Spawn model for hierarchical agents (child-as-tool-call), not handoff — handoff breaks the ReAct loop and severs the coroutine scope chain
+- **[v0.0.2 roadmap]**: All new `AgentLoop`/`AgentTask` constructor parameters must have default values to preserve binary compatibility
 - kore-core must have zero external dependencies except kotlinx.coroutines + stdlib
 - OTel context propagation (OpenTelemetryContextElement) must be in kore-core from day one
 - LLMBackend interface must be designed against all 4 providers simultaneously
@@ -149,7 +157,9 @@ None yet.
 
 ### Blockers/Concerns
 
-- budget-breaker (Tool 05) not yet shipped — BudgetEnforcer uses InMemoryBudgetEnforcer stub per design. Real adapter deferred to v2 (BUDG-05).
+- ~~budget-breaker (Tool 05) not yet shipped~~ — RESOLVED: `io.github.unityinflow:budget-breaker:0.0.1` published to Maven Central (verified 2026-06-12). Phase 6 builds the real adapter. Note: `budget-breaker-spring-boot-starter` still unpublished — kore-budget auto-config gates on core library class presence only.
+- Docker availability on arc-runner-unityinflow not pre-verified — Phase 5 CI job must include `docker info` pre-flight step (failure mode is config error, not test failure).
+- `BudgetBreakerAdapter` lifecycle bridging is MEDIUM confidence (event-subscription model for `withBudget` scopes) — fallback to `TokenTracker` low-level API documented in research SUMMARY.md.
 
 ## Deferred Items
 
@@ -163,10 +173,10 @@ Items acknowledged and deferred at milestone close on 2026-04-26.
 | ~~verification_gap~~ | ~~Phase 01: 01-VERIFICATION.md~~ | ✅ resolved 2026-04-26 — UAT 3/3 pass, status flipped to verified |
 | ~~verification_gap~~ | ~~Phase 02: 02-VERIFICATION.md~~ | ✅ resolved 2026-04-26 — UAT 2/2 pass, status flipped to verified |
 
-**Outstanding follow-up (not blocking, scoped for v0.0.2):** kore-storage's 7 Testcontainers integration tests are excluded from the default `test` task via `excludeTags("integration")` in kore-storage/build.gradle.kts:36 and have no separate `integrationTest` task. v0.0.2 should register `integrationTest` and add a CI step on arc-runner-unityinflow. See `.planning/phases/02-observability-storage/02-UAT.md` test 1 notes for details.
+~~**Outstanding follow-up:** kore-storage integrationTest task~~ — now in scope as Phase 5 (CI-01, CI-02).
 
 ## Session Continuity
 
-Last session: 2026-06-12 (state sync)
-Stopped at: v0.0.1 released to Maven Central 2026-05-11 — milestone complete
+Last session: 2026-06-12 (v0.0.2 roadmap created)
+Stopped at: Roadmap for v0.0.2 written (Phases 5-7) — next: `/gsd-plan-phase 5`
 Resume file: None
