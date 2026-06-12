@@ -10,12 +10,15 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import org.junit.jupiter.api.Test
 
+// runCurrent() is still @ExperimentalCoroutinesApi in kotlinx-coroutines-test
+@OptIn(ExperimentalCoroutinesApi::class)
 class EventBusMetricsObserverTest {
     /**
      * Creates an [EventBusMetricsObserver] with a mocked [EventBus] backed by [eventFlow].
