@@ -1,574 +1,609 @@
-# Architecture Patterns: kore-runtime
+# Architecture Research — kore-runtime v0.0.2 Integration Points
 
-**Domain:** Production Kotlin AI agent runtime
-**Researched:** 2026-04-10
-**Overall confidence:** HIGH (MCP protocol from official docs; coroutine/hexagonal patterns from verified Kotlin ecosystem sources; agent loop from multiple corroborating sources)
+**Domain:** Production Kotlin agent runtime (hexagonal, multi-module Gradle)
+**Researched:** 2026-06-12
+**Confidence:** HIGH — all findings from direct codebase reads; no speculation
 
 ---
 
-## Recommended Architecture
+## Scope
 
-kore uses hexagonal (ports-and-adapters) architecture at the Gradle module level. Each Gradle module maps to either the domain core, a port interface set, or an adapter. Dependencies flow strictly inward — adapters depend on core, core depends on nothing external.
+This document covers only the four new features in milestone v0.0.2:
+
+1. budget-breaker adapter (real `BudgetEnforcer` backed by `io.github.unityinflow:budget-breaker`)
+2. Hierarchical agents (parent/child with structured concurrency)
+3. OBSV-03: OTel span on skill activation
+4. kore-storage `integrationTest` Gradle task + CI step
+
+Zero-dep kore-core constraint is preserved throughout — no new runtime dependencies enter kore-core.
+
+---
+
+## Feature 1: budget-breaker Adapter
+
+### Where the adapter lives
+
+The adapter belongs in a new module **`kore-budget`** rather than inside kore-spring. Rationale:
+
+- kore-kafka and kore-rabbitmq are both separate modules despite being wired exclusively via kore-spring auto-config. The pattern is: adapter logic in its own module, auto-config wiring in kore-spring. Keeping `kore-budget` separate allows consumers to use it without kore-spring (standalone DSL users), mirrors the established pattern, and keeps kore-spring's build.gradle.kts from accumulating adapter implementation code.
+- kore-spring declares all optional modules as `compileOnly` and gates them with `@ConditionalOnClass(name=[...])`. A new `kore-budget` module follows this exact path.
+
+### budget-breaker public API (from codebase read)
+
+The core library (`io.github.unityinflow:budget-breaker`) exposes:
+
+- `BudgetCircuitBreaker` — stateful tracker, `withBudget(agentId, budget) { ... }` scope DSL, `SharedFlow<BudgetEvent>` for reactive consumers
+- `BudgetScope.trackCall(promptTokens, completionTokens)` — records usage, checks soft/hard limits, throws `BudgetHardLimitException` on hard breach
+- `AgentBudget(model, hardLimitTokens, softLimitTokens)` — configuration data class
+
+The kore `BudgetEnforcer` port has three methods: `recordUsage(agentId, usage)`, `checkBudget(agentId): Boolean`, `getUsage(agentId): TokenUsage`. The adapter must bridge `BudgetCircuitBreaker` to this port.
+
+### Adapter implementation strategy
+
+`BudgetBreakerAdapter` in `kore-budget` wraps a `BudgetCircuitBreaker` singleton per adapter instance. Because `BudgetCircuitBreaker.withBudget` is a scope DSL (the agent must execute *inside* it), and `BudgetEnforcer.checkBudget` / `recordUsage` are called from within `AgentLoop` iteration steps, the adapter cannot use `withBudget`'s scope DSL directly — the loop is not entered inside a `withBudget` lambda.
+
+The correct approach: `BudgetBreakerAdapter` subscribes to `EventBus` to track agent lifecycles, opening a `withBudget` scope per agent run and storing the live `BudgetScope` reference indexed by agentId. `recordUsage` looks up the stored `BudgetScope` and calls `trackCall`. `checkBudget` returns false when a hard-limit breach has been flagged.
+
+**Concrete data flow:**
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│  External Entry Points                                               │
-│  (Spring @RestController, HTMX controller, CLI runner)              │
-└────────────────────────┬────────────────────────────────────────────┘
-                         │ calls
-┌────────────────────────▼────────────────────────────────────────────┐
-│  kore-spring  (Spring Boot auto-configuration starter)              │
-│  Wires all adapters, exposes @ConfigurationProperties               │
-└────────────────────────┬────────────────────────────────────────────┘
-                         │ depends on all
-        ┌────────────────┼────────────────────┐
-        │                │                    │
-┌───────▼──────┐  ┌──────▼──────┐  ┌─────────▼──────┐
-│  kore-mcp    │  │  kore-      │  │  kore-storage  │
-│  (adapters:  │  │  observ-    │  │  (adapter:     │
-│   MCP client │  │  ability    │  │   PostgreSQL   │
-│   MCP server)│  │  (OTel,     │  │   + Flyway)    │
-│              │  │   Micrometer│  │                │
-└──────┬───────┘  └──────┬──────┘  └────────┬───────┘
-       │                 │                  │
-       └─────────────────┼──────────────────┘
-                         │ all depend on
-┌────────────────────────▼────────────────────────────────────────────┐
-│  kore-core   (domain + application layer)                           │
-│                                                                     │
-│  Ports (interfaces only — no implementations):                      │
-│    LLMBackend  BudgetEnforcer  EventBus  AuditLog                   │
-│                                                                     │
-│  Domain:                                                            │
-│    AgentLoop  AgentDSL  AgentResult  ToolRegistry                   │
-│    AgentContext  ConversationHistory                                 │
-│                                                                     │
-│  Implementations (no external deps):                                │
-│    InMemoryAuditLog  InProcessEventBus (SharedFlow)                 │
-│    InMemoryBudgetEnforcer (stub)                                    │
-└─────────────────────────────────────────────────────────────────────┘
-                         │
-        ┌────────────────┼────────────────────┐
-        │                │                    │
-┌───────▼──────┐  ┌──────▼──────┐  ┌─────────▼──────┐
-│  kore-skills │  │  kore-dash  │  │  kore-test     │
-│  (YAML skill │  │  board      │  │  (testing       │
-│   loader,    │  │  (Ktor       │  │   utilities,   │
-│   pattern    │  │   embedded  │  │   MockLLM-     │
-│   matcher)   │  │   HTMX)     │  │   Backend)     │
-└──────────────┘  └─────────────┘  └────────────────┘
+AgentLoop emits AgentStarted(agentId)
+    → BudgetBreakerAdapter (EventBus subscriber) launches coroutine:
+      budgetCircuitBreaker.withBudget(agentId) { scope ->
+          budgetScopes[agentId] = scope
+          runCompletionSuspend(agentId)   // suspends until AgentCompleted
+      }
+
+AgentLoop calls budgetEnforcer.recordUsage(agentId, usage)
+    → BudgetBreakerAdapter.recordUsage()
+      → budgetScopes[agentId]?.trackCall(usage.inputTokens.toLong(), usage.outputTokens.toLong())
+      → BudgetHardLimitException caught → sets breachedAgents.add(agentId)
+
+AgentLoop calls budgetEnforcer.checkBudget(agentId)
+    → returns agentId !in breachedAgents
+
+AgentLoop emits AgentCompleted
+    → BudgetBreakerAdapter signals runCompletionSuspend to return
+    → withBudget scope closes → BudgetCircuitBreaker finalizes BudgetReport
 ```
 
----
+This approach requires `BudgetBreakerAdapter` to take `EventBus` as a constructor parameter and a `CoroutineScope` for the subscriber coroutine. kore-spring wires both.
 
-## Component Boundaries
+### Auto-configuration gating (mirror kore-kafka pattern)
 
-### kore-core
-
-**Responsibility:** The agent's brain. Contains:
-- The `AgentLoop` — the coroutine that drives Thought → Action → Observation cycles
-- The Kotlin DSL (`agent { }` builder)
-- All domain types: `AgentResult`, `AgentContext`, `ConversationMessage`, `ToolCall`, `ToolResult`
-- Port interfaces — `LLMBackend`, `BudgetEnforcer`, `EventBus`, `ToolProvider`, `AuditLog`
-- Default in-memory/in-process implementations of all ports (stubs that work out of the box)
-- Concurrency primitives: per-agent `CoroutineScope` with `SupervisorJob`, `Semaphore` for LLM rate limiting
-
-**Communicates with:** Nothing external. All dependencies are either Kotlin stdlib, kotlinx.coroutines, or internal domain types.
-
-**Why separate:** kore-core must be testable with zero infrastructure. `kore-test` consumers import only `kore-core`.
-
----
-
-### kore-mcp
-
-**Responsibility:** Full MCP protocol implementation — both client (kore connects to external MCP servers) and server (kore exposes agents as MCP tools).
-
-**Internal structure:**
-- `McpClientAdapter`: implements `ToolProvider` port from kore-core. Connects to external MCP servers via STDIO or Streamable HTTP. Maintains one `McpClient` per `McpServer` connection. Handles initialize → tools/list → tools/call lifecycle.
-- `McpServerAdapter`: exposes running kore agents as MCP tools. Incoming `tools/call` → dispatches to `AgentLoop`. Supports both STDIO and HTTP+SSE transports.
-- Transport layer: STDIO for local process servers; Streamable HTTP for remote servers. Both use JSON-RPC 2.0 over the same data layer.
-
-**Communicates with:**
-- `kore-core` (implements `ToolProvider`, calls `AgentLoop`)
-- External MCP servers (over STDIO or HTTP)
-- External MCP clients calling into kore's own server endpoint
-
-**Why separate:** MCP has its own SDK dependency surface and connection management lifecycle. Isolating it means kore-core users who don't need MCP can exclude the module.
-
----
-
-### kore-observability
-
-**Responsibility:** Instrumentation adapters. Wraps kore-core operations with OpenTelemetry spans and Micrometer metrics.
-
-**Internal structure:**
-- `TracingAgentLoopDecorator`: wraps `AgentLoop` calls, opens a span per LLM call, per tool call, per skill activation. Propagates `OpenTelemetryContextElement` across coroutine boundaries — critical because coroutines switch threads on suspension, and OTel context lives in `ThreadLocal` by default.
-- `MetricsAdapter`: implements hooks on `AgentLoop` events; registers Micrometer counters and timers for agent runs, token counts, error rates.
-
-**Key pitfall addressed:** OTel context is `ThreadLocal`-based. When a coroutine suspends and resumes on a different thread, the context is lost unless wrapped in `OpenTelemetryContextElement` (implements `ThreadContextElement<Context>`). Every `launch` and `async` in an agent's scope must carry this element.
-
-**Communicates with:** `kore-core` (decorates domain services), OTel SDK, Micrometer registry.
-
----
-
-### kore-storage
-
-**Responsibility:** PostgreSQL audit log. Persistent record of every agent run, LLM call, and tool call.
-
-**Internal structure:**
-- `PostgresAuditLogAdapter`: implements `AuditLog` port. Writes to `agent_runs`, `llm_calls`, `tool_calls` tables.
-- Flyway for schema migrations. Migrations live in `kore-storage/src/main/resources/db/migration/`.
-- Exposed (JetBrains ORM) or Spring Data R2DBC for reactive writes — R2DBC preferred to stay fully non-blocking with WebFlux.
-
-**Communicates with:** `kore-core` (implements `AuditLog` port), PostgreSQL.
-
----
-
-### kore-skills
-
-**Responsibility:** Declarative skill system. YAML skill definitions describe activation patterns; the engine matches against agent context and injects skill prompts/tools automatically.
-
-**Internal structure:**
-- `SkillLoader`: reads YAML from classpath or filesystem. Parses into `Skill` domain objects.
-- `SkillActivationEngine`: pattern-matches incoming task/context against skill activation criteria. Returns activated skills to `AgentLoop`.
-- Skills declare: `name`, `description`, `activationPatterns`, `systemPromptFragment`, `additionalTools`.
-
-**Communicates with:** `kore-core` (plugs in as a `SkillProvider`).
-
----
-
-### kore-dashboard
-
-**Responsibility:** HTMX admin UI embedded in-process via Ktor. Active agents, recent runs, cost summary.
-
-**Internal structure:**
-- Ktor embedded server (not Spring MVC — no additional Spring dependency).
-- Server-rendered HTML with HTMX for partial updates. No frontend build step.
-- Reads live data from `kore-core` event streams (subscribes to `EventBus`).
-
-**Communicates with:** `kore-core` (reads agent state, subscribes to EventBus), `kore-storage` (queries recent runs).
-
----
-
-### kore-spring
-
-**Responsibility:** Spring Boot auto-configuration. Makes `kore-core` + all adapters work from `application.yml` with one starter dependency.
-
-**Internal structure:**
-- `@AutoConfiguration` class wiring all beans conditionally.
-- `KoreProperties` — `@ConfigurationProperties(prefix = "kore")` covering LLM backend selection, budget limits, MCP server URLs, OTel toggle.
-- Actuator endpoint for agent health.
-
-**Communicates with:** All other modules (wires them together). Spring Boot context.
-
----
-
-### kore-test
-
-**Responsibility:** Test utilities for agent authors. Eliminates the need for real LLM API calls in unit tests.
-
-**Internal structure:**
-- `MockLLMBackend`: implements `LLMBackend` port. Configurable response sequences. Assertion helpers for verifying tool calls made.
-- `AgentSessionRecorder`: records a live agent session to a JSON fixture.
-- `AgentSessionReplayer`: replays a recorded session deterministically — feeds pre-recorded LLM responses, verifies tool calls match.
-
-**Communicates with:** `kore-core` only (implements `LLMBackend`). No infrastructure dependencies.
-
----
-
-## Data Flow: The Agent Loop
-
-The agent loop is the critical path. Every other component plugs into it.
-
-```
-Task Input
-    │
-    ▼
-AgentLoop.run(task, context)   ← coroutine launched with SupervisorJob
-    │
-    ├─ SkillActivationEngine.match(context)   ← enriches system prompt + tools
-    │
-    ├─ BudgetEnforcer.checkBudget()           ← returns AgentResult.BudgetExceeded early
-    │
-    ├─── LLM CALL ────────────────────────────────────────────────────────────┐
-    │    LLMBackend.complete(messages, tools)                                  │
-    │    [Claude / GPT / Ollama / Gemini adapter]                              │
-    │    ← AgentResult.LLMError on failure → retry with backoff, then fallback │
-    └─────────────────────────────────────────────────────────────────────────┘
-          │
-          ▼
-    LLM response: either FinalAnswer or ToolCalls
-          │
-          ├── FinalAnswer → emit Success → loop ends
-          │
-          └── ToolCalls → for each tool call (can run in parallel with async):
-                │
-                ├── ToolRegistry.dispatch(toolCall)
-                │     ├── McpToolProvider → external MCP server call
-                │     ├── LocalTool → direct invocation
-                │     └── AgentTool → spawn child agent (structured concurrency)
-                │
-                ├── ToolResult → append to ConversationHistory
-                │
-                └── loop back to LLM CALL with updated history
-          │
-    AuditLog.record(agentRun)              ← async, does not block loop
-    EventBus.emit(AgentEvent)              ← async, notifies dashboard / metrics
-    OpenTelemetry span closed
-```
-
-**Key invariant:** The loop never throws. All failures are `AgentResult` sealed class variants. The caller always gets a typed result.
+In `KoreAutoConfiguration`, add a new inner class following the exact kore-kafka triple-gate:
 
 ```kotlin
-sealed class AgentResult {
-    data class Success(val output: String, val tokenUsage: TokenUsage) : AgentResult()
-    data class BudgetExceeded(val spent: TokenBudget, val limit: TokenBudget) : AgentResult()
-    data class ToolError(val toolName: String, val cause: Throwable) : AgentResult()
-    data class LLMError(val backend: String, val cause: Throwable) : AgentResult()
-    data class Cancelled(val reason: String) : AgentResult()
+@Configuration(proxyBeanMethods = false)
+@ConditionalOnClass(name = ["io.github.unityinflow.kore.budget.BudgetBreakerAdapter"])
+@ConditionalOnProperty(
+    prefix = "kore.budget",
+    name = ["enabled"],
+    havingValue = "true",
+    matchIfMissing = false,
+)
+class BudgetBreakerAutoConfiguration {
+    @Bean(destroyMethod = "close")
+    @ConditionalOnMissingBean(BudgetEnforcer::class)
+    fun budgetBreakerAdapter(
+        properties: KoreProperties,
+        eventBus: EventBus,
+        @Qualifier("koreBudgetScope") scope: CoroutineScope,
+    ): BudgetEnforcer =
+        io.github.unityinflow.kore.budget.BudgetBreakerAdapter(
+            eventBus = eventBus,
+            scope = scope,
+            defaultHardLimitTokens = properties.budget.defaultMaxTokens,
+        )
+
+    @Bean("koreBudgetScope", destroyMethod = "close")
+    @ConditionalOnMissingBean(name = ["koreBudgetScope"])
+    fun koreBudgetScope(): CoroutineScope =
+        CloseableCoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(4))
 }
 ```
 
----
+Note: unlike Kafka/RabbitMQ (which require `kore.event-bus.type=kafka`), budget-breaker uses `kore.budget.enabled=true` because it replaces a default rather than selecting among event bus adapters. When `kore-budget` is on the classpath but `kore.budget.enabled` is not set, `InMemoryBudgetEnforcer` remains active — same zero-config default.
 
-## Data Flow: MCP Client
+The `KoreProperties` `budget` section already has `defaultMaxTokens`. No new property namespace needed beyond `kore.budget.enabled`.
 
-```
-AgentLoop wants to call a tool registered from MCP
-    │
-    ▼
-ToolRegistry.dispatch("github_create_issue", args)
-    │
-    ▼
-McpClientAdapter.callTool("github_create_issue", args)
-    │
-    ├── looks up which McpClient owns "github_create_issue"
-    │   (populated during tools/list at connection init)
-    │
-    ▼
-McpClient.call("tools/call", { name: "github_create_issue", arguments: args })
-    │
-    [JSON-RPC 2.0 over STDIO or HTTP+SSE transport]
-    │
-    ▼
-MCP Server response: ToolResult content
-    │
-    ▼
-ToolResult back to AgentLoop
-```
-
----
-
-## Data Flow: Event Bus
-
-The event bus is purely in-process. `kore-core` defines the `EventBus` port:
+kore-spring `build.gradle.kts` additions:
 
 ```kotlin
-interface EventBus {
-    suspend fun emit(event: AgentEvent)
-    fun subscribe(): Flow<AgentEvent>
+compileOnly(project(":kore-budget"))
+// test classpath to fire the @ConditionalOnClass gate in auto-config tests:
+testImplementation(project(":kore-budget"))
+```
+
+The budget-breaker core library is a dependency of `kore-budget`, not of kore-spring.
+
+### Spring Boot starter status gate
+
+The budget-breaker Spring Boot starter (`budget-breaker-spring-boot-starter`) is still pending at v0.0.2. The `kore-budget` adapter depends on the core library only (`io.github.unityinflow:budget-breaker:0.0.1`), not the starter. The adapter is the Spring integration layer. This mirrors how kore-observability wraps OTel without pulling in the Spring Boot OTel starter.
+
+### New module: kore-budget structure
+
+```
+kore-budget/
+├── build.gradle.kts
+└── src/main/kotlin/io/github/unityinflow/kore/budget/
+    └── BudgetBreakerAdapter.kt
+```
+
+`build.gradle.kts` dependencies:
+
+```kotlin
+implementation(project(":kore-core"))
+implementation("io.github.unityinflow:budget-breaker:0.0.1")
+implementation(libs.coroutines.core)
+```
+
+---
+
+## Feature 2: Hierarchical Agents
+
+### Zero-dep constraint analysis
+
+`AgentLoop` and `AgentRunner` live in kore-core. `kotlinx-coroutines-core` is already a runtime dependency of kore-core. Structured concurrency for parent/child is purely a coroutines concept — no new dependencies required.
+
+### Where the API surfaces
+
+The parent/child relationship surfaces in two places:
+
+1. **kore-core port** — `ChildAgentProvider` interface and `NoOpChildAgentProvider` default
+2. **kore-core DSL** — `child { }` block in `AgentBuilder`
+3. **kore-core internal** — `ChildAgentDispatcher` implementation
+
+No module boundary is crossed. All changes are within kore-core.
+
+### ChildAgentProvider port in kore-core
+
+```kotlin
+// kore-core/src/main/kotlin/io/github/unityinflow/kore/core/port/ChildAgentProvider.kt
+fun interface ChildAgentProvider {
+    suspend fun spawn(
+        name: String,
+        task: AgentTask,
+        parentRunId: String,
+    ): AgentResult
+}
+
+object NoOpChildAgentProvider : ChildAgentProvider {
+    override suspend fun spawn(name: String, task: AgentTask, parentRunId: String): AgentResult =
+        AgentResult.LLMError(
+            backend = "none",
+            cause = UnsupportedOperationException("no child agent configured for '$name'")
+        )
 }
 ```
 
-Default implementation uses `MutableSharedFlow(extraBufferCapacity = 64)`. The dashboard and observability module subscribe. Kafka adapter lives in a separate optional module — it implements the same `EventBus` interface and is selected via Spring auto-configuration conditional.
+`AgentLoop` gains an optional constructor parameter:
 
-```
-AgentLoop
-    │ emit(AgentEvent.LLMCallCompleted(...))
-    ▼
-MutableSharedFlow<AgentEvent>
-    │
-    ├── TracingObserver.subscribe()   → closes OTel span, records metrics
-    ├── DashboardFeed.subscribe()     → pushes HTMX partial update via SSE
-    └── KafkaEventBusAdapter          → (opt-in) publishes to Kafka topic
-        (only wired when kore.events.kafka.enabled=true)
+```kotlin
+private val childAgentProvider: ChildAgentProvider = NoOpChildAgentProvider,
 ```
 
----
+This maintains the zero-dep core — `ChildAgentProvider` is a pure interface, `NoOpChildAgentProvider` is the default, so all existing agents work unchanged.
 
-## Data Flow: Hierarchical Agents
+### DSL surfacing
 
-Parent agents spawn child agents via `AgentTool`. Structured concurrency ensures child lifetimes are bounded by the parent:
+`AgentBuilder` gains a `child()` method that registers named child `AgentBuilder` instances. On `build()`, a `ChildAgentDispatcher` is constructed that holds a `Map<String, AgentRunner>` and implements `ChildAgentProvider` by looking up the named child runner.
 
-```
-ParentAgentLoop (CoroutineScope with SupervisorJob)
-    │
-    ├── calls ToolRegistry.dispatch("research_agent", task)
-    │
-    ▼
-AgentTool.invoke(task)
-    │ launch { childAgentLoop.run(task) }  ← child launched in parent's scope
-    │
-    ├── ChildAgentLoop runs independently
-    ├── Parent waits for child result (async/await)
-    ├── Parent cancelled → all children cancelled (structured concurrency)
-    └── Child failed → SupervisorJob → parent continues (sibling isolation)
+```kotlin
+// inside AgentBuilder
+private val childBuilders = mutableMapOf<String, AgentBuilder>()
+
+@KoreDsl
+fun child(name: String, block: AgentBuilder.() -> Unit) {
+    childBuilders[name] = AgentBuilder(name).apply(block)
+}
 ```
 
----
+On `AgentBuilder.build()`:
 
-## Component Communication Matrix
+```kotlin
+val childProvider = if (childBuilders.isEmpty()) NoOpChildAgentProvider
+                   else ChildAgentDispatcher(childBuilders, parentScope = /* scope created below */)
+val loop = AgentLoop(
+    ...
+    childAgentProvider = childProvider,
+)
+```
 
-| From | To | Mechanism | Direction |
-|------|----|-----------|-----------|
-| kore-spring | kore-core | Bean wiring | Config time |
-| kore-spring | kore-mcp | Bean wiring | Config time |
-| kore-spring | kore-observability | Bean wiring | Config time |
-| kore-spring | kore-storage | Bean wiring | Config time |
-| kore-spring | kore-skills | Bean wiring | Config time |
-| kore-core (AgentLoop) | LLMBackend port | Suspend function call | Runtime |
-| kore-core (AgentLoop) | ToolProvider port | Suspend function call | Runtime |
-| kore-core (AgentLoop) | EventBus port | SharedFlow emit | Runtime async |
-| kore-core (AgentLoop) | AuditLog port | Suspend function call | Runtime |
-| kore-core (AgentLoop) | BudgetEnforcer port | Suspend function call | Runtime |
-| kore-mcp | kore-core (ToolProvider port) | Implements port | Inward |
-| kore-observability | kore-core | Decorates AgentLoop | Inward |
-| kore-storage | kore-core (AuditLog port) | Implements port | Inward |
-| kore-skills | kore-core (SkillProvider port) | Implements port | Inward |
-| kore-dashboard | kore-core (EventBus) | Flow subscription | Inward |
-| kore-test | kore-core (LLMBackend port) | Implements port | Inward |
+### Structured concurrency: child scope from parent CoroutineScope
 
-**Dependency direction rule:** Every arrow points inward toward kore-core. kore-core has zero knowledge of its adapters.
+`AgentRunner` owns `CoroutineScope(SupervisorJob() + Dispatchers.Default)`. For parent cancellation to propagate to children, child `AgentRunner` scopes must be children of the parent scope's Job.
 
----
-
-## Concurrency Model
-
-### Per-Agent CoroutineScope
-
-Each running agent instance owns a `CoroutineScope` with a `SupervisorJob` + `Dispatchers.Default`. The `SupervisorJob` is critical: a tool call failing does not cancel the entire agent. The loop catches tool errors and converts them to `AgentResult.ToolError`.
+`AgentRunner` gains a secondary constructor that accepts an externally-owned `CoroutineScope`:
 
 ```kotlin
 class AgentRunner(
     private val loop: AgentLoop,
-    private val semaphore: Semaphore  // shared per LLM backend
+    scope: CoroutineScope? = null,
 ) {
-    private val scope = CoroutineScope(
-        SupervisorJob() +
-        Dispatchers.Default +
-        OpenTelemetryContextElement()  // propagate OTel across thread switches
-    )
-
-    fun run(task: AgentTask): Deferred<AgentResult> =
-        scope.async {
-            semaphore.withPermit {  // max N concurrent LLM calls per backend
-                loop.run(task)
-            }
-        }
+    private val scope = scope ?: CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    ...
 }
 ```
 
-### Semaphore-Based LLM Rate Limiting
-
-Each `LLMBackend` gets a configurable `Semaphore`. Default: 10 concurrent calls for cloud backends (Anthropic, OpenAI), 2 for local Ollama. Configured via `kore.backends.claude.maxConcurrency=10`.
-
-### Parallel Tool Calls
-
-When an LLM response contains multiple tool calls, they run concurrently inside `coroutineScope { }`:
+`ChildAgentDispatcher` constructs child runners with scopes that are children of the parent scope:
 
 ```kotlin
-val results: List<ToolResult> = coroutineScope {
-    toolCalls.map { call ->
-        async { toolRegistry.dispatch(call) }
-    }.awaitAll()
+class ChildAgentDispatcher(
+    private val childBuilders: Map<String, AgentBuilder>,
+    private val parentScope: CoroutineScope,
+) : ChildAgentProvider {
+    private val childRunners: Map<String, AgentRunner> by lazy {
+        childBuilders.mapValues { (_, builder) ->
+            val childScope = CoroutineScope(
+                parentScope.coroutineContext +
+                SupervisorJob(parentScope.coroutineContext.job)
+            )
+            builder.buildWithScope(childScope)
+        }
+    }
+
+    override suspend fun spawn(name: String, task: AgentTask, parentRunId: String): AgentResult {
+        val runner = childRunners[name]
+            ?: return AgentResult.LLMError(
+                backend = "none",
+                cause = RuntimeException("unknown child agent '$name'")
+            )
+        return runner.run(
+            task.copy(metadata = task.metadata + ("parent_run_id" to parentRunId))
+        ).await()
+    }
 }
+```
+
+`AgentBuilder.build()` passes its own scope to `ChildAgentDispatcher`. Top-level `AgentBuilder.build()` (no parent) creates its own scope as before — no breaking change.
+
+### Event attribution via parent run ID
+
+`AgentTask.metadata` already exists as `Map<String, String>`. Child tasks carry `"parent_run_id"` in metadata. `AgentLoop` emits `AgentStarted(agentId = childTask.id)` — the agentId is the child's own ID. No new fields on `AgentEvent` are required. The parent/child relationship is traceable via audit log metadata.
+
+OTel trace context propagation works automatically: `ObservableAgentRunner` injects `Context.current().asContextElement()` into its scope. Child agents launched within the parent scope inherit this context element, so child agent run spans are automatically nested under the parent agent run span without additional wiring.
+
+### AgentResult aggregation
+
+For v0.0.2, child results are returned to the `AgentLoop` via `ChildAgentProvider.spawn`. The loop includes child results in conversation history as tool results — a child agent call is modelled as a tool call where the "tool" is the child agent. `AgentResult.ToolError` is returned if the child fails; `BudgetExceeded` propagates. This reuses existing tool result handling in `AgentLoop.runLoop` without new sealed class variants.
+
+---
+
+## Feature 3: OBSV-03 — OTel Span on Skill Activation
+
+### Current state
+
+`AgentLoop.runLoop` already creates a span via the nullable `tracer: Tracer?`:
+
+```kotlin
+val span = tracer?.spanBuilder("kore.skill.activate")?.startSpan()
+val activatedPrompts = try {
+    skillRegistry.activateFor(...)
+} finally {
+    span?.end()
+}
+```
+
+The span is created and ended but:
+- No attributes are set (no skill names, no agent ID)
+- No event is emitted to `EventBus` for the activation
+- `EventBusSpanObserver` has a stub comment for OBSV-03
+
+`KoreSpans.SKILL_ACTIVATE = "kore.skill.activate"` is already defined in kore-observability.
+
+### Recommended approach for v0.0.2
+
+**Keep the existing in-loop span, augment it with attributes, and add a `SkillActivated` event to the bus for metrics.**
+
+This avoids replacing a working span with an event-driven lifecycle (which would introduce zero-duration spans since `SkillActivated` fires after activation completes). The bus event serves `EventBusMetricsObserver` for Micrometer counters. The span serves OTel tracing.
+
+In `AgentLoop.runLoop`, change:
+
+```kotlin
+val span = tracer?.spanBuilder("kore.skill.activate")?.startSpan()
+```
+
+to:
+
+```kotlin
+val span = tracer
+    ?.spanBuilder(KoreSpans.SKILL_ACTIVATE)
+    ?.setParent(Context.current())
+    ?.setAttribute(KoreAttrs.AGENT_ID, agentId)
+    ?.startSpan()
+```
+
+After `activatedPrompts` is collected, before `finally`:
+
+```kotlin
+if (activatedPrompts.isNotEmpty()) {
+    span?.setAttribute("kore.skill.count", activatedPrompts.size.toLong())
+    eventBus.emit(AgentEvent.SkillActivated(agentId = agentId, skillCount = activatedPrompts.size))
+    // existing system message prepend follows
+}
+```
+
+The `KoreSpans.SKILL_ACTIVATE` constant is defined in kore-observability which is a `compileOnly` dependency of kore-core. Since `AgentLoop` already uses `tracer?.spanBuilder("kore.skill.activate")` with a string literal, the refactor to use the constant requires no new `compileOnly` import — the string literal is replaced with the constant only if kore-observability is available. For safety, keep it as a string literal in kore-core and use the constant only in kore-observability. Alternatively, move the constants to a separate object in kore-core (no OTel dependency). The cleanest option: move `KoreSpans` to kore-core as a pure string-constants object (no OTel import needed).
+
+### New AgentEvent variant
+
+```kotlin
+@Serializable
+@SerialName("SkillActivated")
+data class SkillActivated(
+    val agentId: String,
+    val skillCount: Int,
+) : AgentEvent()
+```
+
+`skillCount` rather than a list of names keeps the event lean and avoids revealing internal skill naming in external event streams.
+
+### EventBusSpanObserver change
+
+Add a `SkillActivated` branch in `EventBusSpanObserver.start()`:
+
+```kotlin
+is AgentEvent.SkillActivated -> {
+    // Span lifecycle is managed in AgentLoop directly (D-11 graceful degradation).
+    // Observer role here: metrics counter only (see EventBusMetricsObserver).
+    // No span management in this observer to avoid double-span.
+}
+```
+
+Remove the "OBSV-03 stub" comment. This explicitly documents the design decision.
+
+### Span constant relocation (optional but clean)
+
+Move `KoreSpans` and `KoreAttrs` objects to kore-core as `KoreSpanNames` and `KoreAttrKeys` (pure string constants, no OTel import). kore-observability re-exports or delegates to them. This lets `AgentLoop` reference the constant without a `compileOnly` OTel import for the constant alone. This is a refactor with no behavioral impact; defer if scope is tight.
+
+---
+
+## Feature 4: kore-storage integrationTest Task + CI Step
+
+### Current state in kore-storage/build.gradle.kts
+
+```kotlin
+tasks.test {
+    useJUnitPlatform {
+        excludeTags("integration")
+    }
+}
+```
+
+No `integrationTest` task exists. The 7 Testcontainers tests are excluded from `test` and unrunnable in CI.
+
+kore-kafka already provides the exact template:
+
+```kotlin
+tasks.register<Test>("integrationTest") {
+    description = "Runs Testcontainers-backed integration tests for kore-kafka."
+    group = "verification"
+    useJUnitPlatform { includeTags("integration") }
+    shouldRunAfter(tasks.test)
+}
+```
+
+### kore-storage/build.gradle.kts addition
+
+```kotlin
+tasks.register<Test>("integrationTest") {
+    description = "Runs Testcontainers-backed integration tests for kore-storage."
+    group = "verification"
+    useJUnitPlatform { includeTags("integration") }
+    shouldRunAfter(tasks.test)
+}
+```
+
+No buildSrc convention plugin change needed — `integrationTest` is registered per-module. Adding it to `kore.publishing.gradle.kts` would force it on all publishable modules including those with no Testcontainers tests.
+
+### CI workflow addition
+
+```yaml
+integration-test:
+  runs-on: [arc-runner-unityinflow]
+  needs: build
+
+  steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+
+    - name: Integration Tests (kore-storage)
+      run: ./gradlew :kore-storage:integrationTest
+```
+
+Key decisions:
+- `needs: build` — integration tests run only after the unit test job passes. Testcontainers PostgreSQL image pulls are slow; avoid wasting time if unit tests are red.
+- Scoped to `:kore-storage:integrationTest` — not `./gradlew integrationTest` which tries all subprojects. kore-kafka uses identical scoping in README instructions.
+- `arc-runner-unityinflow` (X64 Hetzner) — Docker is available on these runners. `orangepi-runner` (ARM64) is excluded because Testcontainers ryuk + postgres ARM64 image availability is inconsistent.
+- No Docker Compose setup — Testcontainers manages the PostgreSQL container lifecycle.
+
+---
+
+## Component Boundary Map: New vs Modified
+
+```
+kore-core (zero-dep: coroutines + stdlib only)
+  MODIFIED files:
+  ├── AgentEvent.kt           + SkillActivated variant
+  ├── AgentLoop.kt            + SkillActivated emit; span setAttribute; childAgentProvider param
+  ├── AgentRunner.kt          + optional scope constructor param; buildWithScope factory
+  ├── dsl/AgentBuilder.kt     + child() DSL method; ChildAgentDispatcher wiring in build()
+  NEW files:
+  ├── port/ChildAgentProvider.kt
+  └── internal/ChildAgentDispatcher.kt
+
+kore-budget  (NEW MODULE)
+  NEW files:
+  ├── build.gradle.kts        depends on kore-core + budget-breaker:0.0.1
+  └── BudgetBreakerAdapter.kt implements BudgetEnforcer, subscribes to EventBus
+
+kore-spring
+  MODIFIED files:
+  ├── KoreAutoConfiguration.kt  + BudgetBreakerAutoConfiguration inner class
+  │                               + koreBudgetScope bean
+  └── build.gradle.kts          + compileOnly(project(":kore-budget"))
+  NEW test files:
+  └── BudgetBreakerAutoConfigurationTest.kt
+
+kore-observability
+  MODIFIED files:
+  └── EventBusSpanObserver.kt  + SkillActivated branch (stub removed)
+
+kore-storage
+  MODIFIED files:
+  └── build.gradle.kts         + integrationTest task registration
+
+.github/workflows/ci.yml
+  MODIFIED:
+  └── + integration-test job (needs: build; :kore-storage:integrationTest)
+
+settings.gradle.kts
+  MODIFIED:
+  └── + include(":kore-budget")
+```
+
+---
+
+## Data Flow Diagrams
+
+### budget-breaker adapter
+
+```
+AgentLoop.run(task)
+  → eventBus.emit(AgentStarted)
+      → BudgetBreakerAdapter coroutine: opens withBudget(agentId) scope
+
+AgentLoop iteration:
+  → budgetEnforcer.checkBudget(agentId)
+      → agentId !in breachedAgents → true (continue)
+  → [LLM call completes]
+  → budgetEnforcer.recordUsage(agentId, tokenUsage)
+      → budgetScopes[agentId].trackCall(input, output)
+      → if BudgetHardLimitException: breachedAgents += agentId
+  → budgetEnforcer.checkBudget(agentId)
+      → agentId in breachedAgents → false
+  → AgentResult.BudgetExceeded returned
+
+  → eventBus.emit(AgentCompleted)
+      → BudgetBreakerAdapter signals scope to close
+      → BudgetCircuitBreaker.reports[agentId] = finalReport
+```
+
+### hierarchical agent
+
+```
+Parent AgentLoop.run(task)
+  → LLM: { "tool": "child-agent:worker", "arguments": {...} }
+  → AgentLoop calls childAgentProvider.spawn("worker", childTask, parentRunId)
+      → ChildAgentDispatcher.childRunners["worker"].run(childTask).await()
+          → child runs in CoroutineScope(parentScope.job + SupervisorJob(parentScope.job))
+          → child cancels if parent's Job is cancelled
+          → child returns AgentResult
+      → childTask.metadata["parent_run_id"] = parentRunId  (audit trail)
+  → child AgentResult → ToolResult in parent history
+  → parent loop continues with child output in context
+```
+
+### OBSV-03 skill activation span
+
+```
+AgentLoop.runLoop()
+  → span = tracer?.spanBuilder("kore.skill.activate")
+              ?.setParent(Context.current())
+              ?.setAttribute("kore.agent.id", agentId)
+              ?.startSpan()
+  → activatedPrompts = skillRegistry.activateFor(...)
+  → span?.setAttribute("kore.skill.count", count)
+  → span?.end()    (in finally)
+  → eventBus.emit(AgentEvent.SkillActivated(agentId, skillCount))
+      → EventBusSpanObserver: no-op (span already closed)
+      → EventBusMetricsObserver: kore.skill.activations counter += 1
 ```
 
 ---
 
 ## Suggested Build Order
 
-The dependency graph determines order. Build innermost first.
+| Step | Scope | Rationale |
+|------|-------|-----------|
+| 1 | kore-storage: add `integrationTest` task | Smallest change; unblocks CI immediately; no kore-core touch |
+| 2 | ci.yml: add `integration-test` job | Follows from step 1; validates the task works on CI |
+| 3 | kore-core: add `AgentEvent.SkillActivated` | Isolated sealed class change; no downstream breakage |
+| 4 | kore-core `AgentLoop`: OBSV-03 span attrs + emit | Depends on step 3; contained in one method |
+| 5 | kore-observability `EventBusSpanObserver`: SkillActivated branch | Depends on steps 3–4 |
+| 6 | kore-budget: new module + `BudgetBreakerAdapter` | Independent of steps 1–5; can run in parallel |
+| 7 | kore-spring: `BudgetBreakerAutoConfiguration` | Depends on step 6 |
+| 8 | kore-core: `ChildAgentProvider` port + `NoOpChildAgentProvider` | Can start after step 3; zero-risk addition |
+| 9 | kore-core `AgentRunner`: optional scope param | Depends on step 8 |
+| 10 | kore-core `ChildAgentDispatcher` | Depends on steps 8–9 |
+| 11 | kore-core `AgentBuilder`: `child { }` DSL + wiring | Depends on steps 9–10; final kore-core change |
 
-### Phase 1: kore-core + kore-mcp (Month 4)
-
-Build these together because the agent loop and MCP client are validated as a pair. The agent loop without tools is untestable at the domain level. With MockLLMBackend from kore-test, you can run the full loop immediately.
-
-```
-kore-core ──→ kore-test (simultaneously — test utilities built alongside core)
-kore-core ──→ kore-mcp (depends on kore-core ports)
-```
-
-Deliverable: agent loop runs, calls Claude via an adapter, calls an MCP tool, returns `AgentResult.Success`.
-
-### Phase 2: kore-observability + kore-storage (Month 5)
-
-These are pure adapters — they implement ports defined in kore-core. No new agent loop logic. Both can be built in parallel.
-
-```
-kore-core ──→ kore-observability (implements AuditLog + hooks into EventBus)
-kore-core ──→ kore-storage       (implements AuditLog + PostgreSQL)
-```
-
-Deliverable: every LLM call is a named OTel span. Agent runs persist to PostgreSQL.
-
-### Phase 3: kore-spring + kore-dashboard + kore-skills (Month 6)
-
-kore-spring wires everything. kore-dashboard reads from EventBus (kore-core) and kore-storage. kore-skills adds the activation engine.
-
-```
-kore-core + all adapters ──→ kore-spring
-kore-core (EventBus)     ──→ kore-dashboard
-kore-core                ──→ kore-skills
-```
-
-Deliverable: `implementation("dev.unityinflow:kore-spring-boot-starter:0.1.0")` in a Spring Boot project — agent runs with zero additional wiring.
-
-### Full Build Order Summary
-
-```
-1. kore-core          ← no external deps, domain types + port interfaces
-2. kore-test          ← depends on kore-core only (build with core)
-3. kore-mcp           ← depends on kore-core
-4. kore-observability ← depends on kore-core
-5. kore-storage       ← depends on kore-core
-6. kore-skills        ← depends on kore-core
-7. kore-dashboard     ← depends on kore-core, kore-storage
-8. kore-spring        ← depends on all above (integration glue)
-```
-
----
-
-## Patterns to Follow
-
-### Pattern 1: Port Interface in kore-core, Implementation in Adapter Module
-
-```kotlin
-// In kore-core — zero external dependencies
-interface LLMBackend {
-    val name: String
-    suspend fun complete(
-        messages: List<ConversationMessage>,
-        tools: List<ToolDefinition>,
-        config: LLMConfig
-    ): LLMResponse
-}
-
-// In kore-mcp — depends on kore-core + MCP SDK
-class ClaudeAnthropicBackend(
-    private val client: AnthropicClient,
-    private val semaphore: Semaphore
-) : LLMBackend {
-    override val name = "claude"
-    override suspend fun complete(...): LLMResponse = semaphore.withPermit {
-        // implementation
-    }
-}
-```
-
-### Pattern 2: AgentResult Sealed Class — No Exceptions Escaping the Loop
-
-Never throw from `AgentLoop.run()`. All expected failures are modeled as `AgentResult` subtypes. The loop catches internal exceptions and converts:
-
-```kotlin
-} catch (e: LLMRateLimitException) {
-    AgentResult.LLMError(backend = llmBackend.name, cause = e)
-} catch (e: ToolTimeoutException) {
-    AgentResult.ToolError(toolName = currentTool, cause = e)
-} catch (e: CancellationException) {
-    throw e  // always rethrow CancellationException — structured concurrency requires it
-}
-```
-
-### Pattern 3: LLM Retry + Fallback Chain
-
-```kotlin
-class ResilientLLMBackend(
-    private val primary: LLMBackend,
-    private val fallbacks: List<LLMBackend>,
-    private val retryPolicy: RetryPolicy
-) : LLMBackend {
-    override suspend fun complete(...): LLMResponse {
-        return retryWithFallback(listOf(primary) + fallbacks) { backend ->
-            backend.complete(messages, tools, config)
-        }
-    }
-}
-```
-
-### Pattern 4: OpenTelemetry Context Propagation Across Coroutines
-
-Every `CoroutineScope` managing agent work must include `OpenTelemetryContextElement`. This is the only reliable way to preserve OTel context across thread switches when coroutines suspend.
-
-```kotlin
-val agentScope = CoroutineScope(
-    SupervisorJob() + Dispatchers.Default + OpenTelemetryContextElement()
-)
-```
-
-### Pattern 5: SharedFlow EventBus as Default
-
-```kotlin
-class InProcessEventBus : EventBus {
-    private val _events = MutableSharedFlow<AgentEvent>(
-        extraBufferCapacity = 64,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST
-    )
-    override suspend fun emit(event: AgentEvent) { _events.emit(event) }
-    override fun subscribe(): Flow<AgentEvent> = _events.asSharedFlow()
-}
-```
-
-`DROP_OLDEST` backpressure strategy is intentional: dashboard lagging behind should not backpressure the agent loop.
+Steps 1–2 and 6–7 can proceed in parallel with steps 3–5 and 8–11. Steps 8–11 are the highest-risk block (most kore-core surface area) and should be done last to avoid rebase conflicts.
 
 ---
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Adapter Code in kore-core
+### Putting adapter logic in kore-spring
 
-**What goes wrong:** Importing `AnthropicClient` or `org.springframework.*` in kore-core.
-**Why bad:** kore-core becomes unrunnable without external JARs. kore-test stops being lightweight.
-**Instead:** Keep kore-core's only dependencies as `kotlinx.coroutines-core` + Kotlin stdlib. All framework imports live in adapter modules.
+`BudgetBreakerAdapter` must live in `kore-budget`, not inline in `KoreAutoConfiguration`. kore-spring's `build.gradle.kts` uses `compileOnly(project(...))` for all adapter modules. Inlining adapter code breaks this boundary and makes kore-spring's runtime classpath depend on budget-breaker when the jar is absent.
 
-### Anti-Pattern 2: Exceptions as Control Flow from AgentLoop
+### Class literal in @ConditionalOnClass
 
-**What goes wrong:** `throw BudgetExceededException()` escaping the loop.
-**Why bad:** Callers must know exception types; coroutine cancellation interacts badly with non-`CancellationException` throws; composability breaks.
-**Instead:** Return `AgentResult.BudgetExceeded`. Throw only `CancellationException` (and always re-throw it).
+```kotlin
+// WRONG — eager classloading crashes context when kore-budget is absent:
+@ConditionalOnClass(BudgetBreakerAdapter::class)
 
-### Anti-Pattern 3: Blocking Calls on Coroutine Dispatchers
+// CORRECT — string form, resolved only when class is present:
+@ConditionalOnClass(name = ["io.github.unityinflow.kore.budget.BudgetBreakerAdapter"])
+```
 
-**What goes wrong:** `Thread.sleep()`, JDBC blocking calls, or `Response.execute()` on `Dispatchers.Default`.
-**Why bad:** Starves the coroutine thread pool. Agent throughput collapses under load.
-**Instead:** All blocking I/O inside `withContext(Dispatchers.IO) { ... }`. JDBC via R2DBC or `withContext(Dispatchers.IO)` explicitly.
+This pitfall is already documented in `KoreAutoConfiguration.kt` comments and applies equally to the new budget-breaker inner class.
 
-### Anti-Pattern 4: GlobalScope for Agent Coroutines
+### Independent CoroutineScope per child AgentRunner
 
-**What goes wrong:** `GlobalScope.launch { agentLoop.run(task) }`.
-**Why bad:** No structured concurrency — agents leak on application shutdown. Cancellation doesn't propagate. No parent-child relationship for hierarchical agents.
-**Instead:** All agents run in scopes managed by `AgentRunner` which is a Spring-managed singleton with a lifecycle-aware scope.
+```kotlin
+// WRONG — child scope is independent; parent cancellation does not propagate:
+val childScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-### Anti-Pattern 5: MutableSharedFlow With Zero Buffer in EventBus
+// CORRECT — child Job is a child of parent Job:
+val childScope = CoroutineScope(
+    parentScope.coroutineContext + SupervisorJob(parentScope.coroutineContext.job)
+)
+```
 
-**What goes wrong:** `MutableSharedFlow<AgentEvent>()` with default `extraBufferCapacity = 0`.
-**Why bad:** `emit()` suspends if no collectors are active or collectors are slow. This backpressures the agent loop — a dashboard bug stalls all agents.
-**Instead:** `extraBufferCapacity = 64, onBufferOverflow = DROP_OLDEST`.
+### Registering integrationTest in the kore.publishing convention plugin
 
----
+`kore.publishing.gradle.kts` handles Maven publishing only. Adding `integrationTest` there applies it to kore-core, kore-observability, and every other publishable module — none of which have Testcontainers tests. Register per-module where tests actually exist.
 
-## Scalability Considerations
+### Adding budget-breaker as a runtime dependency of kore-core
 
-| Concern | Single JVM (default) | Scaled-out (opt-in) |
-|---------|---------------------|---------------------|
-| LLM concurrency | Semaphore per backend | Same — semaphore is per-node |
-| Event distribution | SharedFlow in-process | Kafka EventBus adapter |
-| Audit log | PostgreSQL (single writer) | Same — R2DBC connection pool |
-| Agent state | In-memory per JVM | External session store (kore-storage extension) |
-| MCP server routing | Single endpoint | Load balancer in front of stateless instances |
+`BudgetEnforcer` is the port. `BudgetBreakerAdapter` is the adapter. Port and adapter are in different modules (kore-core vs kore-budget). The dependency graph flows one way: `kore-budget -> kore-core`. Any inversion breaks the hexagonal architecture.
 
 ---
 
-## Sources
+## Confidence Assessment
 
-- MCP Architecture (official): [https://modelcontextprotocol.io/docs/learn/architecture](https://modelcontextprotocol.io/docs/learn/architecture) — HIGH confidence
-- MCP Transport (STDIO vs Streamable HTTP): same official source — HIGH confidence
-- Hexagonal Architecture Kotlin/Gradle reference: [https://github.com/dustinsand/hex-arch-kotlin-spring-boot](https://github.com/dustinsand/hex-arch-kotlin-spring-boot) — HIGH confidence
-- Kotlin SupervisorJob and structured concurrency: [https://medium.com/@adityamishra2217/understanding-supervisorscope-supervisorjob-coroutinescope-and-job-in-kotlin](https://medium.com/@adityamishra2217/understanding-supervisorscope-supervisorjob-coroutinescope-and-job-in-kotlin-a-deep-dive-into-bcd0b80f8c6f) — HIGH confidence
-- Semaphore-based LLM rate limiting: [https://blog.shreyaspatil.dev/leveraging-the-semaphore-concept-in-coroutines-to-limit-the-parallelism](https://blog.shreyaspatil.dev/leveraging-the-semaphore-concept-in-coroutines-to-limit-the-parallelism) — HIGH confidence
-- OTel context propagation across coroutines: [https://oneuptime.com/blog/post/2026-02-06-opentelemetry-kotlin-coroutines-spring-boot/view](https://oneuptime.com/blog/post/2026-02-06-opentelemetry-kotlin-coroutines-spring-boot/view) — HIGH confidence (February 2026 source, current)
-- Orchestrator-worker agent patterns: [https://arize.com/blog/orchestrator-worker-agents-a-practical-comparison-of-common-agent-frameworks/](https://arize.com/blog/orchestrator-worker-agents-a-practical-comparison-of-common-agent-frameworks/) — MEDIUM confidence (multi-framework comparison, language-agnostic)
-- ReAct agent loop: [https://www.letta.com/blog/letta-v1-agent](https://www.letta.com/blog/letta-v1-agent) — MEDIUM confidence
-- Spring WebFlux Kotlin coroutines: [https://spring.io/blog/2019/04/12/going-reactive-with-spring-coroutines-and-kotlin-flow/](https://spring.io/blog/2019/04/12/going-reactive-with-spring-coroutines-and-kotlin-flow/) — HIGH confidence (Spring official)
-- SharedFlow event bus: [https://elizarov.medium.com/shared-flows-broadcast-channels-899b675e805c](https://elizarov.medium.com/shared-flows-broadcast-channels-899b675e805c) — HIGH confidence (Roman Elizarov, Kotlin coroutines lead)
-- Koog (JetBrains Kotlin agent framework, comparison reference): [https://blog.jetbrains.com/kotlin/2025/09/the-kotlin-ai-stack-build-ai-agents-with-koog-code-smarter-with-junie-and-more/](https://blog.jetbrains.com/kotlin/2025/09/the-kotlin-ai-stack-build-ai-agents-with-koog-code-smarter-with-junie-and-more/) — MEDIUM confidence (JetBrains official but limited architectural detail)
+| Area | Confidence | Basis |
+|------|------------|-------|
+| budget-breaker adapter module placement | HIGH | Read kore-kafka/kore-rabbitmq structure; matches established pattern exactly |
+| Auto-config triple-gate (`@ConditionalOnClass` string + `@ConditionalOnProperty` + `@ConditionalOnMissingBean`) | HIGH | Read full `KoreAutoConfiguration.kt`; pattern applied verbatim |
+| `BudgetBreakerAdapter` using `withBudget` scope via EventBus subscription | MEDIUM | budget-breaker `BudgetCircuitBreaker` and `BudgetScope` read; lifecycle bridging requires careful implementation |
+| Hierarchical agent structured concurrency via child scope | HIGH | `AgentRunner.kt` read; standard coroutines `SupervisorJob(parent.job)` pattern |
+| OBSV-03 in-loop span + bus event split | HIGH | `AgentLoop.kt` and `EventBusSpanObserver.kt` read; existing nullable tracer path already in place |
+| kore-storage `integrationTest` Gradle task | HIGH | kore-kafka `build.gradle.kts` provides identical template |
+| CI `integration-test` job | HIGH | `ci.yml` read; arc-runner-unityinflow confirmed for Docker workloads |
+
+---
+
+*Integration architecture research for: kore-runtime v0.0.2 Hardening & Hierarchy*
+*Researched: 2026-06-12*

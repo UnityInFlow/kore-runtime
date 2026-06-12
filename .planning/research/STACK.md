@@ -1,256 +1,339 @@
 # Technology Stack
 
-**Project:** kore-runtime
-**Researched:** 2026-04-10
-**Overall confidence:** HIGH (most claims verified against official docs or release pages)
+**Project:** kore-runtime — v0.0.2 Hardening & Hierarchy (delta from v0.0.1)
+**Researched:** 2026-06-12
+**Confidence:** HIGH
+
+> This document covers only the FOUR new capabilities in v0.0.2. The full v0.0.1 stack
+> (Kotlin 2.3, Spring Boot 4.0.5, Ktor 3.2, Exposed 1.0, OTel, etc.) remains unchanged.
+> Do not alter any version already pinned in `gradle/libs.versions.toml` unless noted below.
 
 ---
 
-## Recommended Stack
+## Feature 1 — Real budget-breaker Adapter
 
-### Language and Runtime
+### Artifact Coordinates (verified: Maven Central, 2026-06-12)
 
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| Kotlin | 2.3.x (stable as of Dec 2025) | Primary language | Coroutines, sealed classes, DSLs, data classes. Kotlin 2.3 is fully compatible with Gradle 9. Kotlin 2.0+ required by project constraints. |
-| JVM | 21 (LTS) | Target JVM | LTS release. Virtual threads available. Spring Boot 4 requires Java 17 minimum, recommends 21. |
-| Gradle | 9.4.1 (stable Mar 2026) | Build tool | Kotlin DSL is now the default. Gradle 9 embeds Kotlin 2.2 runtime, supports version catalogs natively. Kotlin DSL required by project constraints — never Groovy. |
-
-### Core Runtime Framework
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| Spring Boot | 4.0.5 (stable, latest patch Mar 2026) | Application container, auto-config | Spring Boot 4 ships with Spring Framework 7, native OpenTelemetry starter, first-class Kotlin serialization, JVM 21 support. The kore-spring module is a Spring Boot auto-configuration starter — Spring Boot is non-negotiable for that module. |
-| Spring WebFlux | bundled with Boot 4 | Reactive HTTP endpoints | Coroutine-native: `suspend` functions and `Flow` return types work natively in `@RestController`. Reactor runs under the hood but surfaces as idiomatic Kotlin. Required for non-blocking SSE endpoints (MCP transport). |
-| kotlinx-coroutines-core | 1.10.2 | Structured concurrency, agent loops | Stable companion to Kotlin 2.1. `CoroutineScope`, `Semaphore`, `Flow`, `Channel` — all primitives needed for the agent loop. Coroutines-reactor bridge (`kotlinx-coroutines-reactor`) for Spring WebFlux integration. |
-| kotlinx-coroutines-reactor | 1.10.2 | Bridge Reactor ↔ coroutines | Required to call `suspend` functions from Reactor publishers and vice versa. Included in the coroutines BOM. |
-
-### LLM Client Libraries
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| anthropic-sdk-java | 2.20.0 (beta) | Claude backend adapter | Official Anthropic Java SDK. Kotlin-compatible. Maven: `com.anthropic:anthropic-java`. Wraps this behind `LLMBackend` interface — callers never touch the SDK directly. |
-| openai-java (official) | 4.30.0 (beta) | GPT backend adapter | Official OpenAI Java SDK. Written partly in Kotlin internally. Maven: `com.openai:openai-java`. Same port-adapter boundary applies. |
-| LangChain4j | 1.0.x (GA, May 2025) | Ollama and Gemini adapters | LangChain4j 1.0 reached GA in May 2025. Its `langchain4j-ollama` and `langchain4j-google-ai-gemini` modules are the pragmatic choice for Ollama and Gemini. Avoids writing low-level HTTP clients for these two. DO NOT use LangChain4j as the primary agent framework — use it only as an HTTP transport adapter behind the `LLMBackend` interface. Using LangChain4j for agent orchestration would conflict with kore's own agent loop architecture. |
-| Ktor HTTP Client (bundled) | 3.2+ | Raw HTTP escape hatch | If a provider adds an endpoint that LangChain4j doesn't support yet, use Ktor client directly. Already a transitive dep through kore-dashboard. |
-
-**Decision note on Koog:** JetBrains released Koog (0.7.3, Alpha) at KotlinConf 2025 — a Kotlin-native coroutine-first agent framework that supports Claude, OpenAI, Ollama, Gemini, and others. Koog is Alpha and a JetBrains incubator project. kore is building a runtime, not adopting someone else's runtime. Koog could be used as a reference implementation for coroutine agent loop patterns, but should not be added as a dependency.
-
-**Decision note on Spring AI:** Spring AI 2.0.0-M2 supports Claude, GPT, Ollama, Gemini natively. Acceptable alternative to LangChain4j for provider adapters. However, Spring AI is opinionated about the agent model and would leak Spring-specific types into the `LLMBackend` interface. LangChain4j's `ChatLanguageModel` is a thinner abstraction that maps more cleanly to a port interface. If Spring AI stabilizes its interfaces before kore-core is written, reconsider.
-
-### MCP Protocol
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| io.modelcontextprotocol:kotlin-sdk | 0.11.1 | MCP client + server | Official MCP Kotlin SDK. Maintained in collaboration with JetBrains. Kotlin Multiplatform. Supports ALL required transports: StdioClientTransport, SseClientTransport, StreamableHttpClientTransport on the client side; StdioServerTransport and Ktor-based SSE/WebSocket on the server side. Coroutine-native. Maven: `io.modelcontextprotocol:kotlin-sdk:0.11.1`. This is the only credible JVM MCP implementation that is both official and coroutine-native. |
-
-**Note:** A separate `io.modelcontextprotocol.sdk:mcp` Java SDK exists (backed by Spring). Do NOT use it — it is Reactor-based and would introduce a second reactive model alongside the coroutine model. The Kotlin SDK already depends on Ktor for transport, which aligns with the dashboard module.
-
-### Dashboard
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| Ktor (embedded server) | 3.2.0+ | HTTP server for HTMX dashboard | Ktor 3.2 added a first-class HTMX module (`ktor-server-htmx`) with tight integration with the routing DSL. Coroutine-native throughout. Lightweight — avoids pulling in full Spring Boot for the dashboard module. kore-dashboard is an optional side-car, not the main application server. |
-| Ktor HTMX module | 3.2.0+ | HTMX-aware routing | `hx {}` DSL block, automatic HTMX header handling. No JavaScript build step. Exactly what the constraints require. |
-| kotlinx.html | bundled | Server-side HTML DSL | Kotlin-idiomatic HTML generation. No template engine needed. Works with Ktor and produces type-safe HTML. |
-
-### Database
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| JetBrains Exposed | 1.0.x (GA, Jan 2026) | ORM + SQL DSL for audit log | Exposed 1.0 reached GA in January 2026, introducing a stable API (no breaking changes until 2.0), R2DBC support, GraalVM native image support, and Spring Boot 3 + 4 compatibility. Kotlin-first by design — no JPA annotation noise. Use the DSL API (not DAO) for reactive paths. |
-| exposed-r2dbc | 1.0.x | Reactive PostgreSQL driver bridge | R2DBC support was the headline feature of Exposed 1.0. Required for non-blocking audit log writes in the WebFlux/coroutine context. |
-| r2dbc-postgresql | 1.0.7.RELEASE | Reactive PostgreSQL driver | The standard reactive PostgreSQL driver. Used by exposed-r2dbc under the hood. |
-| Flyway | 12.x (latest: 12.3.0) | Database migrations | Spring Boot 4 changed Flyway auto-configuration — use `spring-boot-starter-flyway`, not just `flyway-core`. Flyway 12 is the current major version. SQL migration files in `src/main/resources/db/migration`. |
-
-**Why not jOOQ:** jOOQ is an excellent choice for complex SQL and database-first schemas. For kore's audit log (simple INSERT + SELECT queries, schema-first via Flyway migrations), Exposed provides equal safety with much less setup. jOOQ requires code generation from the schema; Exposed does not. If query complexity grows, jOOQ is a credible migration target.
-
-### Observability
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| opentelemetry-sdk | 2.x (via Spring Boot 4 starter) | Distributed tracing spans | Spring Boot 4 ships `spring-boot-starter-opentelemetry` — this is the new recommended path (replaces the previous community starter). Includes the OTel API, Micrometer tracing bridge, and OTLP exporters. |
-| micrometer-core | 1.16+ (bundled via Boot 4) | Metrics: counters, timers, gauges | Micrometer is the metrics facade. Spring Boot 4 includes Micrometer 1.16. Use the Observation API (`ObservationRegistry`) rather than raw meters — it handles both metrics and tracing in one call. |
-| micrometer-tracing | bundled | Trace context propagation | Spring Boot 4 replaces Sleuth with Micrometer Tracing. Bridges to OpenTelemetry exporter. |
-
-**Note on OTel Kotlin SDK:** OpenTelemetry released a Kotlin Multiplatform SDK in early 2026, primarily targeting Android/mobile. For a Spring Boot server application, use the Java SDK via the Spring Boot starter — it is more mature and has zero-code instrumentation via the Java agent.
-
-### Testing
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| JUnit 5 (JUnit Platform) | 5.12+ (bundled via Boot 4) | Test runner | Required by project constraints. Spring Boot 4 includes JUnit 5. |
-| Kotest (assertions only) | 6.1.11 (stable Apr 2026) | Fluent assertion matchers | `kotest-assertions-core` gives `shouldBe`, `shouldContain`, `shouldBeInstanceOf` and power-assert integration. Use as assertion library alongside JUnit 5 as runner — NOT as the test framework (no Kotest `FunSpec` etc.). This avoids learning a second test framework while getting Kotlin-idiomatic assertions. Kotest 6.1.11 requires Kotlin 2.2 and JDK 11+. |
-| Testcontainers | 1.20+ | PostgreSQL integration tests | Industry standard for spinning up real PostgreSQL in CI. Spring Boot 4 has a known issue with Testcontainers auto-detection for Postgres (`ConnectionDetailsFactory` error) — use `@ServiceConnection` explicitly rather than auto-detection until fixed. |
-| MockK | 1.14+ | Mocking Kotlin classes | Kotlin-aware mocking library. Works with coroutines (`coEvery`, `coVerify`). Required for `MockLLMBackend` in kore-test. Mockito has poor Kotlin ergonomics — never use it on this project. |
-| kotlinx-coroutines-test | 1.10.2 | Coroutine testing utilities | `runTest`, `TestCoroutineDispatcher`, `advanceTimeBy`. Required for any suspend function test. Same version as coroutines-core. |
-
-### Code Quality
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| ktlint | 1.5.0 (via kotlinter-gradle plugin) | Code formatting + style | ktlint 1.5 is supported by `kotlinter-gradle` (the lighter, faster alternative to `JLLeitschuh/ktlint-gradle`). Required before every commit per project constraints. |
-| kotlinter-gradle | 5.x | Gradle plugin wrapper for ktlint | `id("org.jmailen.kotlinter")` in `build.gradle.kts`. Adds `lintKotlin` and `formatKotlin` tasks. Simpler setup than JLLeitschuh plugin which has fallen behind on maintenance. |
-
-### Serialization
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| kotlinx.serialization (kotlinx-serialization-json) | 1.8+ | JSON serialization | Spring Boot 4 makes `kotlinx.serialization` a first-class citizen with a dedicated starter (`spring-boot-starter-kotlinx-serialization-json`). For Kotlin data classes with no inheritance complexity, it is strictly superior to Jackson: zero reflection, compile-time safety, no annotation ceremony. Use for all kore-internal DTOs and API responses. |
-| Jackson (jackson-module-kotlin) | 3.x (bundled via Boot 4) | Fallback for Java interop | Jackson 3 is included in Spring Boot 4 with new group ID (`tools.jackson`). Keep it on the classpath as fallback for Java types that predate kotlinx.serialization. Do not configure it as primary JSON handler. |
-
-### Event Bus
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| Kotlin Flow (kotlinx-coroutines-core) | 1.10.2 | Default in-process event bus | `SharedFlow` and `StateFlow` provide hot stream semantics for agent events. Zero additional dependencies. Cancellation-aware via structured concurrency. This is the default per project constraints. |
-| Spring Messaging (opt-in) | bundled | Kafka / RabbitMQ adapter contracts | When opt-in adapters are built, use Spring Messaging abstractions so the adapter boundary is uniform. Do not add Kafka or RabbitMQ as hard dependencies. |
-
-### Publishing
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| Gradle Maven Publish Plugin | bundled with Gradle 9 | Maven Central publication | Standard plugin for JVM library publishing. Combined with `signing` plugin for GPG signing. Required for Sonatype Maven Central. |
-| Sonatype Portal Publisher | community plugin | Automates Central uploads | `com.gradleup.nmcp` (New Maven Central Publisher) or `io.github.gradle-nexus.publish-plugin` are the two current options. The new Sonatype Central portal (launched 2024) requires different upload mechanics than the old Nexus. Use `com.gradleup.nmcp` — it targets the new portal API directly. |
-
----
-
-## Alternatives Considered
-
-| Category | Recommended | Alternative | Why Not |
-|----------|-------------|-------------|---------|
-| Agent framework layer | Custom (kore's own loop) | Koog (JetBrains, Alpha) | kore IS the agent runtime. Adopting Koog would mean building a wrapper around someone else's runtime, not a runtime. Koog is also Alpha status. |
-| Agent framework layer | Custom | LangChain4j agentic modules | Same problem. LangChain4j 1.0 introduced `langchain4j-agentic` but its agent model conflicts with kore's coroutine-per-agent architecture. |
-| LLM adapters (Ollama/Gemini) | LangChain4j adapters | Spring AI | Spring AI ties provider adapters to the Spring AI `ChatClient` abstraction which would leak into kore's `LLMBackend` port. LangChain4j's `ChatLanguageModel` is simpler and thinner. |
-| MCP client/server | official kotlin-sdk | io.modelcontextprotocol.sdk:mcp (Java) | Java SDK is Reactor-based. Would introduce a second reactive model. Kotlin SDK is coroutine-native and maintained by JetBrains. |
-| Dashboard server | Ktor (embedded) | Spring Boot MVC / Thymeleaf | Spring Boot already used for kore-spring. A second Spring context for the dashboard adds overhead. Ktor embedded server is lighter, coroutine-native, and now has a first-class HTMX module. |
-| ORM | Exposed | jOOQ | jOOQ requires schema code generation. Overhead not justified for kore's simple audit log schema. Exposed 1.0 is now stable with R2DBC support. |
-| ORM | Exposed | Spring Data R2DBC | Spring Data R2DBC is fine but adds Spring Data annotations and reactive types to the entity layer. Exposed provides a cleaner Kotlin DSL without that coupling. |
-| Mocking | MockK | Mockito | Mockito has poor Kotlin ergonomics (open classes, final classes, no `suspend` support without plugins). MockK is Kotlin-native. |
-| Code style | ktlint via kotlinter | Detekt | Detekt is a static analysis tool, not a formatter. ktlint enforces formatting. They are complementary — Detekt can be added later for complexity rules if needed. |
-| Serialization (primary) | kotlinx.serialization | Jackson | Spring Boot 4 makes kotlinx.serialization first-class. For pure Kotlin data classes, it is safer (compile-time, no reflection). Jackson remains as fallback. |
-
----
-
-## Installation — Gradle Coordinates Reference
+| Coordinate | Value |
+|------------|-------|
+| GroupId | `io.github.unityinflow` |
+| ArtifactId | `budget-breaker` |
+| Version | **0.0.1** |
+| Published | Maven Central (Sonatype Central Portal) |
+| Runtime deps | `kotlinx-coroutines-core-jvm:1.10.1`, `kotlin-stdlib:2.1.0` |
 
 ```kotlin
-// build.gradle.kts (root)
+// kore-budget (new module) build.gradle.kts
+implementation("io.github.unityinflow:budget-breaker:0.0.1")
+```
 
-plugins {
-    kotlin("jvm") version "2.3.0"
-    kotlin("plugin.serialization") version "2.3.0"
-    id("org.jmailen.kotlinter") version "5.0.0"
-    id("org.springframework.boot") version "4.0.5" apply false
-    id("io.spring.dependency-management") version "1.1.7" apply false
-}
+The `0.0.1` artifact is the only published release. The local source tree shows
+`version=0.1.0` in `gradle.properties` — that is the post-release snapshot, not yet
+published. Gate on `0.0.1` only.
 
-// kore-core/build.gradle.kts
-dependencies {
-    // Coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.10.2")
+### budget-breaker Public API Surface (read from source, v0.0.1 tag)
 
-    // LLM clients
-    implementation("com.anthropic:anthropic-java:2.20.0")
-    implementation("com.openai:openai-java:4.30.0")
-    implementation("dev.langchain4j:langchain4j-ollama:1.0.1")       // version confirm at release time
-    implementation("dev.langchain4j:langchain4j-google-ai-gemini:1.0.1")
+Everything the adapter needs lives in package `io.github.unityinflow.budget`:
 
-    // MCP
-    implementation("io.modelcontextprotocol:kotlin-sdk:0.11.1")
+| Class / Function | Role |
+|-----------------|------|
+| `BudgetCircuitBreaker(defaultBudget, pricing, onSoftLimit)` | Top-level entry point. Holds one `TokenTracker` per in-flight agent. |
+| `suspend fun BudgetCircuitBreaker.withBudget(agentId, budget, block)` | Wraps an agent run in a budget-tracked `coroutineScope`. Single concurrent call per `agentId` enforced — second call throws `IllegalArgumentException`. |
+| `suspend fun BudgetScope.trackCall(promptTokens, completionTokens)` | Call after each LLM response. Checks soft/hard limits. Throws `BudgetHardLimitException` on hard limit breach. |
+| `AgentBudget(model, hardLimitTokens, softLimitTokens)` | Budget configuration value object. Defaults: model=`claude-sonnet-4-6`, hard=100 000, soft=80 000. |
+| `BudgetHardLimitException` | Thrown (not a sealed result) when hard limit exceeded. Caught by the adapter, mapped to `AgentResult.BudgetExceeded`. |
+| `BudgetReport` | Data class with `totalTokens`, `estimatedCostUsd`, `hardLimitBreached`, `softLimitBreachCount`. Retrieve via `getReport(agentId)`. |
+| `SharedFlow<BudgetEvent>` via `BudgetCircuitBreaker.events` | Reactive event stream: `CallTracked`, `SoftLimitReached`, `HardLimitExceeded`. Subscribe for dashboard integration. |
 
-    // Serialization
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
+**Mismatch with kore's `BudgetEnforcer` port:**
 
-    // Testing
-    testImplementation("org.junit.jupiter:junit-jupiter:5.12.0")
-    testImplementation("io.kotest:kotest-assertions-core:6.1.11")
-    testImplementation("io.mockk:mockk:1.14.0")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
-}
+kore's port has three methods — `recordUsage`, `checkBudget`, `getUsage`. budget-breaker does
+NOT expose these directly; it uses a DSL-scope model (`withBudget { trackCall() }`).
+The adapter must bridge the two:
 
-// kore-storage/build.gradle.kts
-dependencies {
-    implementation("org.jetbrains.exposed:exposed-core:1.0.0")
-    implementation("org.jetbrains.exposed:exposed-r2dbc:1.0.0")
-    implementation("org.postgresql:r2dbc-postgresql:1.0.7.RELEASE")
-    implementation("org.flywaydb:flyway-core:12.3.0")
-    implementation("org.flywaydb:flyway-database-postgresql:12.3.0")
-}
+- `recordUsage(agentId, usage)` → calls `scope.trackCall(usage.inputTokens.toLong(), usage.outputTokens.toLong())`. The adapter holds a `BudgetScope` per active `agentId` (stored in a `ConcurrentHashMap`). The scope is created when the first `recordUsage` arrives.
+- `checkBudget(agentId)` → `true` while no `BudgetHardLimitException` has been thrown for this scope. The simplest implementation tracks a per-agent boolean flag set by catching `BudgetHardLimitException` from `trackCall`.
+- `getUsage(agentId)` → `breaker.getReport(agentId)?.let { TokenUsage(it.promptTokens.toInt(), it.completionTokens.toInt()) } ?: TokenUsage(0, 0)`.
 
-// kore-dashboard/build.gradle.kts
-dependencies {
-    implementation("io.ktor:ktor-server-cio:3.2.0")
-    implementation("io.ktor:ktor-server-htmx:3.2.0")
-    implementation("io.ktor:ktor-server-html-builder:3.2.0")
-}
+The `withBudget` scope wrapper is **not usable** from the `BudgetEnforcer` port because the port's `recordUsage` / `checkBudget` are called from inside `AgentLoop.runLoop`, not from a wrapping block. The adapter uses `BudgetCircuitBreaker` as a tracker only (create `TokenTracker` directly, or use `BudgetCircuitBreaker.withBudget` wrapping at the `AgentRunner` level — see Architecture section below).
 
-// kore-spring/build.gradle.kts
-plugins {
-    id("org.springframework.boot") version "4.0.5"
-    id("io.spring.dependency-management") version "1.1.7"
-}
-dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-webflux")
-    implementation("org.springframework.boot:spring-boot-starter-opentelemetry")
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("org.springframework.boot:spring-boot-starter-flyway")
-    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
-}
+**Recommended adapter boundary:** Create a new module `kore-budget` (mirrors `kore-kafka`, `kore-rabbitmq` as opt-in modules). `BudgetBreakerAdapter` implements `BudgetEnforcer`, holds a `BudgetCircuitBreaker`, and delegates. kore-spring gains a `BudgetBreakerAutoConfiguration` inner class gated on `@ConditionalOnClass(name=["io.github.unityinflow.budget.BudgetCircuitBreaker"])` + `@ConditionalOnMissingBean(BudgetEnforcer::class)`. `InMemoryBudgetEnforcer` remains as the zero-dep default when budget-breaker is absent.
 
-// kore-test/build.gradle.kts
-dependencies {
-    api("io.mockk:mockk:1.14.0")
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
-    api("io.kotest:kotest-assertions-core:6.1.11")
-    testImplementation("org.testcontainers:postgresql:1.20.0")
+**Version constraint:** budget-breaker 0.0.1 uses `kotlinx-coroutines-core:1.10.1`. kore uses
+`1.10.2`. The coroutines library guarantees patch-level backward compatibility; no shading or
+exclusion needed. Gradle resolves to the higher version (`1.10.2`) by default.
+
+---
+
+## Feature 2 — Hierarchical Agents (Parent Spawns Children)
+
+### Coroutine Primitives — What to Use
+
+`AgentRunner` already uses `CoroutineScope(SupervisorJob() + Dispatchers.Default)`.
+`SupervisorJob` is already the right choice at the runner level: one agent failure does not
+cancel sibling agents. No version change required — all primitives are in `kotlinx-coroutines-core:1.10.2`.
+
+The parent/child agent hierarchy requires a NEW API surface on top of what v0.0.1 shipped:
+
+| Primitive | Where | Why |
+|-----------|-------|-----|
+| `CoroutineScope` passed as `AgentContext` field or constructor arg | `AgentLoop` / new `HierarchicalAgentRunner` | Child agents must be launched in the **parent's** coroutine scope — not a new independent scope. Cancelling the parent's `Job` then propagates automatically to all children (structured concurrency). |
+| `Job` (regular, NOT `SupervisorJob`) for child agents | Child launch site | A child agent failure should propagate to the parent. Use `Job`, not `SupervisorJob`, when launching children from within a parent agent loop. If isolation is desired, use `supervisorScope { }` at the call site instead. |
+| `supervisorScope { }` (function) | Optional: parent launching independent workers | When a parent wants to spawn children that can each fail independently without cancelling siblings, wrap their launches in `supervisorScope { }`. This is NOT the default — the default parent/child model uses plain `Job`. |
+| `coroutineScope { }` (function) | Tool dispatch (already used in `AgentLoop`) | Already present. Cancels all children on the first failure. Used for parallel tool dispatch. |
+| `Deferred<AgentResult>` via `async { }` | Child agent handle | `AgentRunner.run()` already returns `Deferred<AgentResult>`. Parent agent can `await()` results. |
+
+**Concrete pattern — passing scope to child:**
+
+```kotlin
+// Parent's AgentLoop receives a CoroutineScope for sub-agent spawning.
+// The scope IS the parent coroutine's scope — cancellation propagates down.
+class AgentLoop(
+    // existing params...
+    private val childAgentRunner: AgentRunner? = null,   // null = leaf agent
+)
+
+// Inside runLoop, parent spawns child:
+val childResult: AgentResult = childAgentRunner
+    ?.run(childTask)
+    ?.await()
+    ?: AgentResult.ToolError("no child runner", RuntimeException("no child runner"))
+```
+
+**What NOT to do:** Do not create a new `CoroutineScope(SupervisorJob())` inside the parent agent loop for child agents. That would be an unstructured scope — cancelling the parent would not cancel children. The child runner's scope must be a child `Job` of the parent coroutine context.
+
+**`Job` vs `SupervisorJob` decision table:**
+
+| Scenario | Use |
+|----------|-----|
+| `AgentRunner` top-level scope (peer agents) | `SupervisorJob` — peer failures must not cancel each other (already correct in v0.0.1) |
+| Parent agent spawning child agents (hierarchy) | Plain `Job` as child of parent scope — parent cancellation cascades down |
+| Parent launching independent workers that should isolate | `supervisorScope { }` at the spawn site |
+
+No new library dependencies required for hierarchical agents. Everything is in `kotlinx-coroutines-core:1.10.2`.
+
+---
+
+## Feature 3 — OBSV-03: OTel Span on Skill Activation
+
+### What Already Exists (do not re-add)
+
+- `opentelemetry-api:1.49.0` — `compileOnly` in kore-core, `compileOnly` in kore-observability
+- `opentelemetry-extension-kotlin:1.61.0` — `implementation` in kore-observability; provides `asContextElement()` for coroutine context propagation
+- `KoreTracer.withSpan(name, kind, attrs, block)` — already implemented in `kore-observability/KoreTracer.kt`
+- `KoreSpans.SKILL_ACTIVATE = "kore.skill.activate"` — constant already defined
+- `AgentLoop.tracer` nullable `Tracer?` parameter — already in constructor; the loop already creates a `kore.skill.activate` span around `skillRegistry.activateFor()`
+
+**Finding: the span already fires in `AgentLoop.runLoop` (lines 97–106 of AgentLoop.kt).** OBSV-03 is partially implemented. What's missing:
+
+1. `AgentEvent.SkillActivated` event is not emitted. The `EventBusSpanObserver` has a comment at line 25: "OBSV-03 stub: SkillActivated event handling will be added in Phase 3 when kore-skills emits the event."
+2. `AgentEvent` sealed class has no `SkillActivated` variant.
+3. The span in `AgentLoop` is created/ended inline (not via `KoreTracer.withSpan`), and does not set skill-identifying attributes.
+
+### Changes Needed
+
+**In kore-core (`AgentEvent.kt`):** Add `SkillActivated` variant:
+
+```kotlin
+@Serializable
+@SerialName("SkillActivated")
+data class SkillActivated(
+    val agentId: String,
+    val skillNames: List<String>,
+) : AgentEvent()
+```
+
+No new library dependencies — `@Serializable` is already `compileOnly`.
+
+**In kore-core (`AgentLoop.kt`):** Upgrade the existing inline span to emit the event and use skill name attributes. The `tracer` parameter already provides `Tracer?`; use `KoreTracer` (which lives in kore-observability) is NOT possible from kore-core (that would add a runtime dependency). Use the raw OTel API directly as already done:
+
+```kotlin
+val span = tracer
+    ?.spanBuilder(KoreSpans.SKILL_ACTIVATE)   // wait — KoreSpans lives in kore-observability
+    ?.startSpan()
+```
+
+**Problem:** `KoreSpans` lives in `kore-observability`, not `kore-core`. The existing code references `KoreSpans` from within `AgentLoop` (kore-core) — this is a compile-time cross-module reference that works only because kore-core already has `compileOnly("io.opentelemetry:opentelemetry-api")` but does NOT have `compileOnly(project(":kore-observability"))`.
+
+**Confirmed by re-reading the code:** `AgentLoop.kt` line 97 uses a string literal `"kore.skill.activate"` directly, not `KoreSpans.SKILL_ACTIVATE`. The span constant approach is fine.
+
+**In kore-observability (`EventBusSpanObserver.kt`):** Add `SkillActivated` branch:
+
+```kotlin
+is AgentEvent.SkillActivated -> {
+    tracer.withSpan(
+        name = KoreSpans.SKILL_ACTIVATE,
+        attrs = mapOf(KoreAttrs.AGENT_ID to event.agentId),
+    ) { span ->
+        event.skillNames.forEachIndexed { i, name ->
+            span.setAttribute("kore.skill.name.$i", name)
+        }
+    }
 }
 ```
 
-**Note:** Confirm exact minor versions of LangChain4j 1.0.x patch releases at build time — the search revealed 1.0.0 GA shipped May 2025; the project uses `1.0.x` (latest patch). Anthropic SDK (`2.20.0`) and OpenAI SDK (`4.30.0`) are beta; pin exact versions and upgrade deliberately.
+`KoreTracer.withSpan` already exists and handles `asContextElement()` for coroutine context propagation. No new API surface or dependency needed.
+
+**Attribute for skill name:** Not in the existing `KoreAttrs` object. Add:
+
+```kotlin
+const val SKILL_NAME = "kore.skill.name"
+```
+
+### OTel API Needed (no version change)
+
+The existing `opentelemetry-api:1.49.0` (already `compileOnly` in kore-observability) provides all required types:
+- `Tracer.spanBuilder(name)` → `SpanBuilder.startSpan()` — already used
+- `Span.setAttribute(key, value)` — already used
+- `Span.end()` — already used
+
+The `opentelemetry-extension-kotlin:1.61.0` provides `asContextElement()` — already `implementation` in kore-observability. No version bump needed.
+
+**No new OTel dependencies required for OBSV-03.**
 
 ---
 
-## Confidence Assessment
+## Feature 4 — kore-storage `integrationTest` Gradle Task
 
-| Component | Confidence | Source |
-|-----------|------------|--------|
-| Kotlin 2.3 / JVM 21 / Gradle 9.4.1 | HIGH | Official release pages verified |
-| Spring Boot 4.0.5 | HIGH | spring.io official release blog |
-| kotlinx-coroutines 1.10.2 | HIGH | GitHub releases page verified |
-| MCP kotlin-sdk 0.11.1 | HIGH | Official SDK docs page (kotlin.sdk.modelcontextprotocol.io) verified |
-| Anthropic Java SDK 2.20.0 | HIGH | Maven Central / GitHub releases verified |
-| OpenAI Java SDK 4.30.0 | HIGH | Maven Central verified |
-| LangChain4j 1.0.x | HIGH | Official docs + InfoQ news release confirmed May 2025 |
-| Exposed 1.0 | HIGH | Official JetBrains blog post Jan 2026 |
-| Flyway 12.3.0 | HIGH | GitHub releases + Maven Central |
-| Kotest 6.1.11 | HIGH | GitHub releases verified |
-| Ktor 3.2.0 + HTMX module | HIGH | Official Kotlin blog post Jun 2025 |
-| OTel via Boot 4 starter | HIGH | spring.io blog Nov 2025 |
-| Koog (NOT used) | HIGH | JetBrains blog confirmed Alpha status |
+### Recommended Pattern: `jvm-test-suite` Plugin (Gradle 9.4.1)
+
+The `jvm-test-suite` plugin (`id("jvm-test-suite")`) is incubating but stable in Gradle 9.x.
+It provides a first-class `testing { suites { } }` DSL that is the idiomatic Gradle 9 way to
+model integration test source sets. The alternative (manual `sourceSets.create("integrationTest")` +
+manual task wiring) requires ~30 lines of boilerplate versus ~10 with the plugin.
+
+**Recommended configuration for `kore-storage/build.gradle.kts`:**
+
+```kotlin
+plugins {
+    // ... existing plugins ...
+    `jvm-test-suite`
+}
+
+testing {
+    suites {
+        // Default "test" suite — keep existing excludeTags("integration") behavior
+        val test by getting(JvmTestSuite::class) {
+            useJUnitJupiter()
+        }
+
+        // New integration test suite — runs Testcontainers tests
+        val integrationTest by registering(JvmTestSuite::class) {
+            useJUnitJupiter()
+            // Shares the main source set classpath (project() = the compiled main classes)
+            dependencies {
+                implementation(project())
+                // Testcontainers already in the test config — must redeclare for this suite
+                implementation(libs.testcontainers.postgresql)
+                implementation(libs.testcontainers.junit5)
+                implementation(libs.coroutines.test)
+                implementation(libs.kotest.assertions)
+                implementation(libs.serialization.core)
+                runtimeOnly("org.junit.platform:junit-platform-launcher")
+            }
+            targets {
+                all {
+                    testTask.configure {
+                        shouldRunAfter(test)   // run unit tests first
+                        useJUnitPlatform {
+                            includeTags("integration")   // only @Tag("integration") tests
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+**Key behavior:**
+- The `integrationTest` suite creates its own source set (`src/integrationTest/kotlin`). Since the existing integration tests are in `src/test/kotlin` with `@Tag("integration")`, you do NOT need to move files — configure `testTask` to filter by tag instead. The source set can be configured to point at `src/test/kotlin` (via `sources.kotlin.srcDirs`) or simply keep the tests in `src/test` and use tag filtering.
+- `jvm-test-suite` does NOT auto-attach to `check`. You must explicitly wire it if needed: `tasks.named("check") { dependsOn(testing.suites.named("integrationTest")) }`. For CI, add it as a separate step instead.
+- The `test` task retains `excludeTags("integration")` — unit tests stay fast.
+
+**Simpler alternative (no source set split):** Register a manual Gradle task of type `Test` that reuses the existing `test` source set but filters by tag. This is fewer moving parts and does not require the incubating `jvm-test-suite` plugin:
+
+```kotlin
+val integrationTest by tasks.registering(Test::class) {
+    description = "Runs Testcontainers integration tests (requires Docker)."
+    group = "verification"
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    useJUnitPlatform {
+        includeTags("integration")
+    }
+    shouldRunAfter(tasks.test)
+}
+```
+
+**Recommendation: use the manual `Test` task approach.** Reasons:
+1. No file migration — existing test files stay in `src/test/kotlin`.
+2. No incubating plugin risk.
+3. Zero additional dependency declarations — reuses the existing `test` classpath.
+4. Gradle 9.4.1 compatible — `tasks.registering(Test::class)` is stable API.
+5. The only thing that changes in `kore-storage/build.gradle.kts` is: (a) remove `excludeTags("integration")` from the existing `tasks.test` block (or keep it — it is harmless since `integrationTest` filters by `includeTags`), and (b) add the `integrationTest` task registration.
+
+### CI Step Addition
+
+Add to `.github/workflows/ci.yml` in the `build` job after the `Test` step:
+
+```yaml
+- name: Integration Tests (kore-storage)
+  run: ./gradlew :kore-storage:integrationTest
+```
+
+This step requires Docker on the runner to spin up PostgreSQL via Testcontainers.
+`arc-runner-unityinflow` (Hetzner x64) has Docker available. The `orangepi-runner` (ARM64)
+does not need this step — the `arm64-build` job can skip it.
+
+**No new Gradle plugin version required.** `Test` task type is part of `gradle-core` in 9.4.1.
+
+---
+
+## Version Compatibility Summary (v0.0.2 additions only)
+
+| Dependency | Version | Scope | Module | Notes |
+|------------|---------|-------|--------|-------|
+| `io.github.unityinflow:budget-breaker` | 0.0.1 | `implementation` | kore-budget (new) | Transitive: coroutines 1.10.1 (Gradle upgrades to 1.10.2) |
+| All other dependencies | unchanged | — | — | No version bumps needed |
+
+---
+
+## What NOT to Add
+
+| Avoid | Why | What to Do Instead |
+|-------|-----|--------------------|
+| `budget-breaker-spring-boot-starter` (if/when published) | Not yet published; Spring Boot starter for budget-breaker is pending. Gate auto-config on `@ConditionalOnClass` against `BudgetCircuitBreaker` (the core class) so the starter can add value later without changing kore-spring. | Use `BudgetCircuitBreaker` from the core artifact directly in `BudgetBreakerAdapter`. |
+| Any new OTel dependency for OBSV-03 | All required OTel API is already on the classpath via existing `compileOnly` declarations. Adding `opentelemetry-sdk` at runtime would conflict with the host application's SDK. | Use existing `opentelemetry-api` compileOnly + `opentelemetry-extension-kotlin` already in kore-observability. |
+| `jvm-test-suite` incubating plugin for integrationTest | Requires source set migration; higher churn for no gain over manual `Test` task. | Manual `tasks.registering(Test::class)` with `includeTags("integration")`. |
+| New `CoroutineScope` with `SupervisorJob` for child agents | Would break structured concurrency — parent cancellation would not propagate. | Pass parent coroutine scope to child runner; child uses plain `Job`. |
+| Upgrading `kotlinx-coroutines` to 1.10.x beyond 1.10.2 | No feature needed beyond what 1.10.2 provides. | Pin at 1.10.2 until a specific fix is needed. |
+
+---
+
+## Module Map for v0.0.2
+
+| New/Changed | Module | What |
+|-------------|--------|------|
+| New module | `kore-budget` | `BudgetBreakerAdapter` implementing `BudgetEnforcer` port; `implementation("io.github.unityinflow:budget-breaker:0.0.1")` |
+| Changed | `kore-core` | Add `AgentEvent.SkillActivated`; wire `eventBus.emit(SkillActivated)` after skill activation in `AgentLoop`; add `childAgentRunner` optional param |
+| Changed | `kore-observability` | Add `SkillActivated` branch in `EventBusSpanObserver`; add `KoreAttrs.SKILL_NAME` |
+| Changed | `kore-spring` | Add `BudgetBreakerAutoConfiguration` inner class; `compileOnly(project(":kore-budget"))` |
+| Changed | `kore-storage` | Add `integrationTest` task; keep existing `@Tag("integration")` annotations |
+| Changed | `.github/workflows/ci.yml` | Add `integrationTest` step for `kore-storage` in `build` job |
 
 ---
 
 ## Sources
 
-- [LangChain4j GitHub](https://github.com/langchain4j/langchain4j/)
-- [LangChain4j 1.0 GA — InfoQ](https://www.infoq.com/news/2025/05/java-news-roundup-may12-2025/)
-- [LangChain4j vs Spring AI 2026](https://www.javacodegeeks.com/2026/03/choosing-a-java-llm-integration-strategy-in-2026-spring-ai-1-1-vs-langchain4j-vs-direct-api-calls.html)
-- [MCP Kotlin SDK — official docs](https://kotlin.sdk.modelcontextprotocol.io/)
-- [MCP Kotlin SDK — GitHub](https://github.com/modelcontextprotocol/kotlin-sdk)
-- [Koog — JetBrains AI Blog](https://blog.jetbrains.com/ai/2025/05/meet-koog-empowering-kotlin-developers-to-build-ai-agents/)
-- [Koog — GitHub (0.7.3 Alpha)](https://github.com/JetBrains/koog)
-- [Spring Boot 4.0.0 available](https://spring.io/blog/2025/11/20/spring-boot-4-0-0-available-now/)
-- [Spring Boot 4.0.5 patch](https://spring.io/blog/2026/03/26/spring-boot-4-0-5-available-now/)
-- [Kotlin Spring Boot 4 serialization](https://spring.io/blog/2025/12/18/next-level-kotlin-support-in-spring-boot-4/)
-- [OpenTelemetry with Spring Boot](https://spring.io/blog/2025/11/18/opentelemetry-with-spring-boot/)
-- [Exposed 1.0 released](https://blog.jetbrains.com/kotlin/2026/01/exposed-1-0-is-now-available/)
-- [Ktor 3.2.0 with HTMX](https://blog.jetbrains.com/kotlin/2025/06/ktor-3-2-0-is-now-available/)
-- [kotlinx-coroutines GitHub](https://github.com/Kotlin/kotlinx.coroutines)
-- [Kotest releases](https://github.com/kotest/kotest/releases)
-- [Gradle 9.4.1 releases](https://gradle.org/releases/)
-- [Anthropic Java SDK](https://github.com/anthropics/anthropic-sdk-java)
-- [OpenAI Java SDK](https://github.com/openai/openai-java)
-- [Flyway Spring Boot 4.x changes](https://pranavkhodanpur.medium.com/flyway-migrations-in-spring-boot-4-x-what-changed-and-how-to-configure-it-correctly-dbe290fa4d47)
-- [First JVM-native agent frameworks — Java Code Geeks](https://www.javacodegeeks.com/2026/03/the-first-jvm-native-ai-agent-frameworks-and-why-rod-johnson-built-one-of-them.html)
+- `io.github.unityinflow:budget-breaker:0.0.1` coordinates — [Maven Central](https://central.sonatype.com/artifact/io.github.unityinflow/budget-breaker/0.0.1) — HIGH confidence (verified)
+- budget-breaker source code — local at `../05-budget-breaker/` (tag `v0.0.1`) — HIGH confidence (source of truth)
+- `kotlinx.coroutines` SupervisorJob / Job hierarchy — [official API docs](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-coroutine-scope/) — HIGH confidence
+- Gradle `jvm-test-suite` plugin — [official userguide](https://docs.gradle.org/current/userguide/jvm_test_suite_plugin.html) — HIGH confidence
+- kore-core `AgentLoop.kt`, `AgentEvent.kt`, `BudgetEnforcer.kt` — read directly from source — HIGH confidence
+- kore-observability `KoreTracer.kt`, `EventBusSpanObserver.kt` — read directly from source — HIGH confidence
+- `opentelemetry-extension-kotlin:1.61.0` `asContextElement()` — already in use in kore-observability — HIGH confidence
+
+---
+*Stack research for: kore-runtime v0.0.2 Hardening & Hierarchy (delta only)*
+*Researched: 2026-06-12*
