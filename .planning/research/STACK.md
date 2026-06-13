@@ -1,339 +1,250 @@
-# Technology Stack
+# Stack Research
 
-**Project:** kore-runtime — v0.0.2 Hardening & Hierarchy (delta from v0.0.1)
+**Domain:** kore-runtime v0.0.2 Hardening & Hierarchy (delta from v0.0.1)
 **Researched:** 2026-06-12
 **Confidence:** HIGH
 
-> This document covers only the FOUR new capabilities in v0.0.2. The full v0.0.1 stack
-> (Kotlin 2.3, Spring Boot 4.0.5, Ktor 3.2, Exposed 1.0, OTel, etc.) remains unchanged.
-> Do not alter any version already pinned in `gradle/libs.versions.toml` unless noted below.
+> This document covers ONLY the four new v0.0.2 capabilities. The full v0.0.1 stack
+> (Kotlin 2.3.0, Spring Boot 4.0.5, Ktor 3.2, Exposed 1.0, OTel, MCP SDK 0.11.0, etc.)
+> is validated and unchanged. Do not alter versions pinned in `gradle/libs.versions.toml`
+> except where noted below.
 
----
+## Headline Findings
 
-## Feature 1 — Real budget-breaker Adapter
+1. **`io.github.unityinflow:budget-breaker` — only `0.0.1` is on Maven Central** (verified
+   directly against `repo1.maven.org` metadata, lastUpdated 2026-05-11). The local repo at
+   `../05-budget-breaker` is at version `0.1.0` with tag `v0.1.0` created but **not published**.
+   `budget-breaker-spring-boot-starter` returns **404 on Central — not published at any version**.
+2. **Hierarchical agents need ZERO new dependencies** — `kotlinx-coroutines-core` (already
+   pinned at 1.10.2) provides everything: `coroutineScope`, `supervisorScope`, `Job`
+   hierarchy, cancellation propagation.
+3. **OBSV-03 needs ZERO new dependencies — but the `SkillActivated` event does not exist yet.**
+   Verified by grep: `kore-core`'s `AgentEvent` sealed class has no `SkillActivated` variant and
+   `kore-skills` emits no events. The span constant `KoreSpans.SKILL_ACTIVATE = "kore.skill.activate"`
+   already exists in `KoreTracer.kt`. OBSV-03 is therefore an event-plumbing task (kore-core +
+   kore-skills + kore-observability), not a dependency task.
+4. **integrationTest task needs ZERO new dependencies** — Testcontainers deps are already
+   `testImplementation` on kore-storage; the 7 tests are already `@Tag("integration")`-ed.
+   Recommend a tag-filtered second `Test` task (no source-set surgery). Bump Testcontainers
+   1.20.0 → 1.21.4 (latest 1.x); do NOT move to Testcontainers 2.x in this milestone.
 
-### Artifact Coordinates (verified: Maven Central, 2026-06-12)
+## Recommended Stack
 
-| Coordinate | Value |
-|------------|-------|
-| GroupId | `io.github.unityinflow` |
-| ArtifactId | `budget-breaker` |
-| Version | **0.0.1** |
-| Published | Maven Central (Sonatype Central Portal) |
-| Runtime deps | `kotlinx-coroutines-core-jvm:1.10.1`, `kotlin-stdlib:2.1.0` |
+### New Dependencies (the only ones)
 
-```kotlin
-// kore-budget (new module) build.gradle.kts
-implementation("io.github.unityinflow:budget-breaker:0.0.1")
-```
+| Technology | Version | Purpose | Why Recommended |
+|------------|---------|---------|-----------------|
+| `io.github.unityinflow:budget-breaker` | **0.0.1** (published) — see "0.1.0 decision" below | Real `BudgetEnforcer` adapter behind the existing port | Tool 05 core library. Coroutine-aware token circuit breaker with soft/hard limits, `SharedFlow<BudgetEvent>`, and `ModelPricing` cost estimation. Only-version-on-Central verified via repo1 maven-metadata.xml. |
 
-The `0.0.1` artifact is the only published release. The local source tree shows
-`version=0.1.0` in `gradle.properties` — that is the post-release snapshot, not yet
-published. Gate on `0.0.1` only.
+That is the entire new-dependency list. Everything else in this milestone reuses pinned libraries.
 
-### budget-breaker Public API Surface (read from source, v0.0.1 tag)
+### Version Bumps (optional but recommended)
 
-Everything the adapter needs lives in package `io.github.unityinflow.budget`:
+| Library | Current pin | Bump to | Why |
+|---------|-------------|---------|-----|
+| `org.testcontainers:postgresql` / `:junit-jupiter` | 1.20.0 | **1.21.4** | Latest 1.x line (verified repo1 metadata `<release>1.21.4</release>`). Bug fixes + newer Docker engine compatibility — relevant because these tests will now actually run in CI on the ARC runners. Drop-in upgrade within 1.x. |
+| `kotlinx-coroutines-core` / `-test` | 1.10.2 | 1.11.0 (optional) | 1.11.0 is the latest stable (verified repo1 `<release>1.11.0</release>`). **Not required** for hierarchical agents — 1.10.2 has every primitive needed. Bump only if you want to stay current; bump core and test together. budget-breaker 0.0.1 was built against coroutines 1.10.1 — binary compatible with both. |
 
-| Class / Function | Role |
-|-----------------|------|
-| `BudgetCircuitBreaker(defaultBudget, pricing, onSoftLimit)` | Top-level entry point. Holds one `TokenTracker` per in-flight agent. |
-| `suspend fun BudgetCircuitBreaker.withBudget(agentId, budget, block)` | Wraps an agent run in a budget-tracked `coroutineScope`. Single concurrent call per `agentId` enforced — second call throws `IllegalArgumentException`. |
-| `suspend fun BudgetScope.trackCall(promptTokens, completionTokens)` | Call after each LLM response. Checks soft/hard limits. Throws `BudgetHardLimitException` on hard limit breach. |
-| `AgentBudget(model, hardLimitTokens, softLimitTokens)` | Budget configuration value object. Defaults: model=`claude-sonnet-4-6`, hard=100 000, soft=80 000. |
-| `BudgetHardLimitException` | Thrown (not a sealed result) when hard limit exceeded. Caught by the adapter, mapped to `AgentResult.BudgetExceeded`. |
-| `BudgetReport` | Data class with `totalTokens`, `estimatedCostUsd`, `hardLimitBreached`, `softLimitBreachCount`. Retrieve via `getReport(agentId)`. |
-| `SharedFlow<BudgetEvent>` via `BudgetCircuitBreaker.events` | Reactive event stream: `CallTracked`, `SoftLimitReached`, `HardLimitExceeded`. Subscribe for dashboard integration. |
+### budget-breaker 0.0.1 — Actual API Surface (read from source at tag v0.0.1)
 
-**Mismatch with kore's `BudgetEnforcer` port:**
+Package `io.github.unityinflow.budget`:
 
-kore's port has three methods — `recordUsage`, `checkBudget`, `getUsage`. budget-breaker does
-NOT expose these directly; it uses a DSL-scope model (`withBudget { trackCall() }`).
-The adapter must bridge the two:
+| Type | Members (0.0.1) | Notes for the adapter |
+|------|-----------------|----------------------|
+| `BudgetCircuitBreaker` | ctor`(defaultBudget: AgentBudget, pricing: ModelPricing, onSoftLimit: ((BudgetReport) -> Unit)?)`; `suspend fun <T> withBudget(agentId, budget = default, block: suspend BudgetScope.() -> T): T`; `fun getReport(agentId): BudgetReport?`; `val events: SharedFlow<BudgetEvent>` | `withBudget` wraps the block in `coroutineScope { }`; hard-limit breach throws `BudgetHardLimitException` out of the block |
+| `BudgetScope` | `suspend fun trackCall(promptTokens: Long, completionTokens: Long)` — internal ctor, only obtainable inside `withBudget` | Emits `CallTracked`, then `HardLimitExceeded`+throw, then first-time `SoftLimitReached`+callback |
+| `TokenTracker` | **public ctor**`(agentId: String, budget: AgentBudget)`; `add(prompt, completion)`; `isAboveSoftLimit()`; `isAboveHardLimit()`; `percentUsed()`; `promptTokens/completionTokens/totalTokens` | Key escape hatch — usable standalone without `withBudget` (see adapter strategy) |
+| `AgentBudget` | `data class (model = "claude-sonnet-4-6", hardLimitTokens = 100_000, softLimitTokens = 80_000)` with init validation | Maps from kore agent config |
+| `ModelPricing` | ctor`(overrides: Map<String, PriceConfig>)`; `estimateCost(model, promptTokens, completionTokens): Double`; built-in Claude/GPT/Gemini defaults | Unchanged between 0.0.1 and 0.1.0 (verified via git diff) |
+| `BudgetEvent` (sealed) | `SoftLimitReached(agentId, tokensUsed, budgetTokens, percentUsed)` · `HardLimitExceeded(agentId, tokensUsed, budgetTokens, estimatedCostUsd)` · `CallTracked(agentId, tokensUsed, promptTokens, completionTokens)` | 0.0.1's `CallTracked` has **no `model` field** (added in 0.1.0) |
+| `BudgetException` (sealed) | `BudgetSoftLimitException`, `BudgetHardLimitException(agentId, tokensUsed, budgetTokens, estimatedCostUsd)` | `BudgetHardLimitException` → map to `AgentResult.BudgetExceeded` |
+| `BudgetReport` | data class: agentId, model, prompt/completion/total tokens, estimatedCostUsd, softLimitBreachCount, hardLimitBreached, durationMs, percentUsed | Feed the dashboard cost summary |
 
-- `recordUsage(agentId, usage)` → calls `scope.trackCall(usage.inputTokens.toLong(), usage.outputTokens.toLong())`. The adapter holds a `BudgetScope` per active `agentId` (stored in a `ConcurrentHashMap`). The scope is created when the first `recordUsage` arrives.
-- `checkBudget(agentId)` → `true` while no `BudgetHardLimitException` has been thrown for this scope. The simplest implementation tracks a per-agent boolean flag set by catching `BudgetHardLimitException` from `trackCall`.
-- `getUsage(agentId)` → `breaker.getReport(agentId)?.let { TokenUsage(it.promptTokens.toInt(), it.completionTokens.toInt()) } ?: TokenUsage(0, 0)`.
+**What 0.1.0 adds (local HEAD, NOT yet on Central):** `getAllReports(): Map<String, BudgetSnapshot>`
+(live in-flight snapshots), `subscriptions: StateFlow<Int>` (collector-ready synchronization),
+`getActiveTrackerCount()`, `getTotalSoftBreaches()`, `getTotalHardBreaches()`, `modelOf()`,
+`BudgetSnapshot` class, `CallTracked.model`, `TokenTracker.model/hardLimitTokens/softLimitTokens/softLimitBreachCount`,
+and a fail-fast concurrency contract on duplicate `agentId` in concurrent `withBudget` calls.
 
-The `withBudget` scope wrapper is **not usable** from the `BudgetEnforcer` port because the port's `recordUsage` / `checkBudget` are called from inside `AgentLoop.runLoop`, not from a wrapping block. The adapter uses `BudgetCircuitBreaker` as a tracker only (create `TokenTracker` directly, or use `BudgetCircuitBreaker.withBudget` wrapping at the `AgentRunner` level — see Architecture section below).
+**The 0.1.0 decision:** budget-breaker `v0.1.0` is tagged locally and release-ready (its v1.0
+milestone was archived 2026-06-12). Pushing the tag publishes core via the existing nmcp CI.
+**Recommendation: publish budget-breaker 0.1.0 core first, then build the kore adapter against
+0.1.0.** The observability surface (`getAllReports`, `subscriptions`, live snapshots) is exactly
+what kore's dashboard/metrics want, and the duplicate-agentId fail-fast matters once hierarchical
+agents multiply concurrent runs. Fallback: if publishing is blocked, code the adapter strictly
+against the 0.0.1 subset above — it compiles against both.
 
-**Recommended adapter boundary:** Create a new module `kore-budget` (mirrors `kore-kafka`, `kore-rabbitmq` as opt-in modules). `BudgetBreakerAdapter` implements `BudgetEnforcer`, holds a `BudgetCircuitBreaker`, and delegates. kore-spring gains a `BudgetBreakerAutoConfiguration` inner class gated on `@ConditionalOnClass(name=["io.github.unityinflow.budget.BudgetCircuitBreaker"])` + `@ConditionalOnMissingBean(BudgetEnforcer::class)`. `InMemoryBudgetEnforcer` remains as the zero-dep default when budget-breaker is absent.
+### Hierarchical Agents — Coroutine Primitives (no new deps)
 
-**Version constraint:** budget-breaker 0.0.1 uses `kotlinx-coroutines-core:1.10.1`. kore uses
-`1.10.2`. The coroutines library guarantees patch-level backward compatibility; no shading or
-exclusion needed. Gradle resolves to the higher version (`1.10.2`) by default.
+All from `kotlinx-coroutines-core` already on kore-core's runtime classpath (the ONLY runtime
+dep — zero-dep core constraint is preserved):
 
----
+| Primitive | Use |
+|-----------|-----|
+| `coroutineScope { }` | Parent agent's body — children launched inside it; parent completes only when all children complete; any child failure cancels siblings + parent |
+| `supervisorScope { }` | Alternative when one child agent's failure should NOT cancel sibling agents — parent cancellation still propagates down. Recommended default for supervisor/worker patterns; surface the choice in the DSL (e.g. `childFailure = CANCEL_SIBLINGS / ISOLATE`) |
+| `launch` / `async` | Spawn child agents; `async` when the parent consumes child `AgentResult`s |
+| `Job` hierarchy + `CancellationException` | Cancelling the parent's `Job` cancels all children automatically — this is the entire "cancelling parent cancels children" requirement; no bookkeeping needed if children are launched from the parent's scope |
+| `joinAll` / `awaitAll` | Parent waits for child completion |
 
-## Feature 2 — Hierarchical Agents (Parent Spawns Children)
+**The one rule that makes the feature work:** child agents MUST be launched from the parent
+agent's own `CoroutineScope` (the scope `AgentLoop` already runs in), never from a fresh
+`CoroutineScope(...)`, `GlobalScope`, or a scope with an unrelated `Job` — any of those detach
+the child from the cancellation tree and silently break the requirement.
 
-### Coroutine Primitives — What to Use
+**Interaction with budget-breaker:** `withBudget`'s internal `coroutineScope` composes correctly
+with this — a parent's hard-limit `BudgetHardLimitException` cancels the parent scope, which
+cancels child agents. If each child gets its own budget, note 0.0.1 has no duplicate-agentId
+guard (0.1.0 does) — derive child agentIds (`parent.child-1`) to avoid tracker collisions.
 
-`AgentRunner` already uses `CoroutineScope(SupervisorJob() + Dispatchers.Default)`.
-`SupervisorJob` is already the right choice at the runner level: one agent failure does not
-cancel sibling agents. No version change required — all primitives are in `kotlinx-coroutines-core:1.10.2`.
+### OBSV-03 Skill-Activation Span (no new deps)
 
-The parent/child agent hierarchy requires a NEW API surface on top of what v0.0.1 shipped:
+Existing pins suffice: `otel-extension-kotlin` 1.61.0, `otel-api` (compileOnly, version via
+Spring Boot 4 BOM), decorator pattern in kore-observability.
 
-| Primitive | Where | Why |
-|-----------|-------|-----|
-| `CoroutineScope` passed as `AgentContext` field or constructor arg | `AgentLoop` / new `HierarchicalAgentRunner` | Child agents must be launched in the **parent's** coroutine scope — not a new independent scope. Cancelling the parent's `Job` then propagates automatically to all children (structured concurrency). |
-| `Job` (regular, NOT `SupervisorJob`) for child agents | Child launch site | A child agent failure should propagate to the parent. Use `Job`, not `SupervisorJob`, when launching children from within a parent agent loop. If isolation is desired, use `supervisorScope { }` at the call site instead. |
-| `supervisorScope { }` (function) | Optional: parent launching independent workers | When a parent wants to spawn children that can each fail independently without cancelling siblings, wrap their launches in `supervisorScope { }`. This is NOT the default — the default parent/child model uses plain `Job`. |
-| `coroutineScope { }` (function) | Tool dispatch (already used in `AgentLoop`) | Already present. Cancels all children on the first failure. Used for parallel tool dispatch. |
-| `Deferred<AgentResult>` via `async { }` | Child agent handle | `AgentRunner.run()` already returns `Deferred<AgentResult>`. Parent agent can `await()` results. |
+What actually has to change (verified against source):
 
-**Concrete pattern — passing scope to child:**
+1. **kore-core:** add `AgentEvent.SkillActivated(agentId, skillName, …)` sealed variant —
+   it does not exist today (`AgentEvent` has Agent/LLM/Tool Started/Completed variants only).
+   Annotate `@Serializable` like siblings; remember kotlinx-serialization-core is `compileOnly`
+   on kore-core, so downstream test modules touching the new variant need
+   `testImplementation(libs.serialization.core)` (this exact gap caused the post-v0.0.1
+   `NoClassDefFoundError`s — see knowledge base).
+2. **kore-skills / agent loop:** publish the event at the activation site (where
+   `PatternMatcher`/`SkillRegistryAdapter` resolves a skill into the run) via the existing
+   `EventBus` port.
+3. **kore-observability:** handle the new variant in `EventBusSpanObserver.start()`'s `when` —
+   the `KoreSpans.SKILL_ACTIVATE` constant is already defined and KDoc in that file already
+   marks the OBSV-03 stub. Skill activation is synchronous pattern matching, so emit ONE event
+   and create a start+end span at handle time (no open-span map entry needed → no leak-guard
+   changes). Add a `KoreAttrs.SKILL_NAME` attribute constant alongside the existing attrs.
 
-```kotlin
-// Parent's AgentLoop receives a CoroutineScope for sub-agent spawning.
-// The scope IS the parent coroutine's scope — cancellation propagates down.
-class AgentLoop(
-    // existing params...
-    private val childAgentRunner: AgentRunner? = null,   // null = leaf agent
-)
+### kore-storage integrationTest Task — Gradle 9 Pattern (no new deps)
 
-// Inside runLoop, parent spawns child:
-val childResult: AgentResult = childAgentRunner
-    ?.run(childTask)
-    ?.await()
-    ?: AgentResult.ToolError("no child runner", RuntimeException("no child runner"))
-```
+Current state (verified): the 7 Testcontainers tests live in `src/test`, tagged
+`"integration"`, excluded via `tasks.test { useJUnitPlatform { excludeTags("integration") } }`.
 
-**What NOT to do:** Do not create a new `CoroutineScope(SupervisorJob())` inside the parent agent loop for child agents. That would be an unstructured scope — cancelling the parent would not cancel children. The child runner's scope must be a child `Job` of the parent coroutine context.
-
-**`Job` vs `SupervisorJob` decision table:**
-
-| Scenario | Use |
-|----------|-----|
-| `AgentRunner` top-level scope (peer agents) | `SupervisorJob` — peer failures must not cancel each other (already correct in v0.0.1) |
-| Parent agent spawning child agents (hierarchy) | Plain `Job` as child of parent scope — parent cancellation cascades down |
-| Parent launching independent workers that should isolate | `supervisorScope { }` at the spawn site |
-
-No new library dependencies required for hierarchical agents. Everything is in `kotlinx-coroutines-core:1.10.2`.
-
----
-
-## Feature 3 — OBSV-03: OTel Span on Skill Activation
-
-### What Already Exists (do not re-add)
-
-- `opentelemetry-api:1.49.0` — `compileOnly` in kore-core, `compileOnly` in kore-observability
-- `opentelemetry-extension-kotlin:1.61.0` — `implementation` in kore-observability; provides `asContextElement()` for coroutine context propagation
-- `KoreTracer.withSpan(name, kind, attrs, block)` — already implemented in `kore-observability/KoreTracer.kt`
-- `KoreSpans.SKILL_ACTIVATE = "kore.skill.activate"` — constant already defined
-- `AgentLoop.tracer` nullable `Tracer?` parameter — already in constructor; the loop already creates a `kore.skill.activate` span around `skillRegistry.activateFor()`
-
-**Finding: the span already fires in `AgentLoop.runLoop` (lines 97–106 of AgentLoop.kt).** OBSV-03 is partially implemented. What's missing:
-
-1. `AgentEvent.SkillActivated` event is not emitted. The `EventBusSpanObserver` has a comment at line 25: "OBSV-03 stub: SkillActivated event handling will be added in Phase 3 when kore-skills emits the event."
-2. `AgentEvent` sealed class has no `SkillActivated` variant.
-3. The span in `AgentLoop` is created/ended inline (not via `KoreTracer.withSpan`), and does not set skill-identifying attributes.
-
-### Changes Needed
-
-**In kore-core (`AgentEvent.kt`):** Add `SkillActivated` variant:
-
-```kotlin
-@Serializable
-@SerialName("SkillActivated")
-data class SkillActivated(
-    val agentId: String,
-    val skillNames: List<String>,
-) : AgentEvent()
-```
-
-No new library dependencies — `@Serializable` is already `compileOnly`.
-
-**In kore-core (`AgentLoop.kt`):** Upgrade the existing inline span to emit the event and use skill name attributes. The `tracer` parameter already provides `Tracer?`; use `KoreTracer` (which lives in kore-observability) is NOT possible from kore-core (that would add a runtime dependency). Use the raw OTel API directly as already done:
-
-```kotlin
-val span = tracer
-    ?.spanBuilder(KoreSpans.SKILL_ACTIVATE)   // wait — KoreSpans lives in kore-observability
-    ?.startSpan()
-```
-
-**Problem:** `KoreSpans` lives in `kore-observability`, not `kore-core`. The existing code references `KoreSpans` from within `AgentLoop` (kore-core) — this is a compile-time cross-module reference that works only because kore-core already has `compileOnly("io.opentelemetry:opentelemetry-api")` but does NOT have `compileOnly(project(":kore-observability"))`.
-
-**Confirmed by re-reading the code:** `AgentLoop.kt` line 97 uses a string literal `"kore.skill.activate"` directly, not `KoreSpans.SKILL_ACTIVATE`. The span constant approach is fine.
-
-**In kore-observability (`EventBusSpanObserver.kt`):** Add `SkillActivated` branch:
-
-```kotlin
-is AgentEvent.SkillActivated -> {
-    tracer.withSpan(
-        name = KoreSpans.SKILL_ACTIVATE,
-        attrs = mapOf(KoreAttrs.AGENT_ID to event.agentId),
-    ) { span ->
-        event.skillNames.forEachIndexed { i, name ->
-            span.setAttribute("kore.skill.name.$i", name)
-        }
-    }
-}
-```
-
-`KoreTracer.withSpan` already exists and handles `asContextElement()` for coroutine context propagation. No new API surface or dependency needed.
-
-**Attribute for skill name:** Not in the existing `KoreAttrs` object. Add:
-
-```kotlin
-const val SKILL_NAME = "kore.skill.name"
-```
-
-### OTel API Needed (no version change)
-
-The existing `opentelemetry-api:1.49.0` (already `compileOnly` in kore-observability) provides all required types:
-- `Tracer.spanBuilder(name)` → `SpanBuilder.startSpan()` — already used
-- `Span.setAttribute(key, value)` — already used
-- `Span.end()` — already used
-
-The `opentelemetry-extension-kotlin:1.61.0` provides `asContextElement()` — already `implementation` in kore-observability. No version bump needed.
-
-**No new OTel dependencies required for OBSV-03.**
-
----
-
-## Feature 4 — kore-storage `integrationTest` Gradle Task
-
-### Recommended Pattern: `jvm-test-suite` Plugin (Gradle 9.4.1)
-
-The `jvm-test-suite` plugin (`id("jvm-test-suite")`) is incubating but stable in Gradle 9.x.
-It provides a first-class `testing { suites { } }` DSL that is the idiomatic Gradle 9 way to
-model integration test source sets. The alternative (manual `sourceSets.create("integrationTest")` +
-manual task wiring) requires ~30 lines of boilerplate versus ~10 with the plugin.
-
-**Recommended configuration for `kore-storage/build.gradle.kts`:**
-
-```kotlin
-plugins {
-    // ... existing plugins ...
-    `jvm-test-suite`
-}
-
-testing {
-    suites {
-        // Default "test" suite — keep existing excludeTags("integration") behavior
-        val test by getting(JvmTestSuite::class) {
-            useJUnitJupiter()
-        }
-
-        // New integration test suite — runs Testcontainers tests
-        val integrationTest by registering(JvmTestSuite::class) {
-            useJUnitJupiter()
-            // Shares the main source set classpath (project() = the compiled main classes)
-            dependencies {
-                implementation(project())
-                // Testcontainers already in the test config — must redeclare for this suite
-                implementation(libs.testcontainers.postgresql)
-                implementation(libs.testcontainers.junit5)
-                implementation(libs.coroutines.test)
-                implementation(libs.kotest.assertions)
-                implementation(libs.serialization.core)
-                runtimeOnly("org.junit.platform:junit-platform-launcher")
-            }
-            targets {
-                all {
-                    testTask.configure {
-                        shouldRunAfter(test)   // run unit tests first
-                        useJUnitPlatform {
-                            includeTags("integration")   // only @Tag("integration") tests
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-```
-
-**Key behavior:**
-- The `integrationTest` suite creates its own source set (`src/integrationTest/kotlin`). Since the existing integration tests are in `src/test/kotlin` with `@Tag("integration")`, you do NOT need to move files — configure `testTask` to filter by tag instead. The source set can be configured to point at `src/test/kotlin` (via `sources.kotlin.srcDirs`) or simply keep the tests in `src/test` and use tag filtering.
-- `jvm-test-suite` does NOT auto-attach to `check`. You must explicitly wire it if needed: `tasks.named("check") { dependsOn(testing.suites.named("integrationTest")) }`. For CI, add it as a separate step instead.
-- The `test` task retains `excludeTags("integration")` — unit tests stay fast.
-
-**Simpler alternative (no source set split):** Register a manual Gradle task of type `Test` that reuses the existing `test` source set but filters by tag. This is fewer moving parts and does not require the incubating `jvm-test-suite` plugin:
+**Recommended: tag-filtered second `Test` task on the existing test source set** — zero file
+moves, ~10 lines in `kore-storage/build.gradle.kts`:
 
 ```kotlin
 val integrationTest by tasks.registering(Test::class) {
-    description = "Runs Testcontainers integration tests (requires Docker)."
+    description = "Runs the Testcontainers-backed integration tests (requires Docker)."
     group = "verification"
+    useJUnitPlatform { includeTags("integration") }
     testClassesDirs = sourceSets["test"].output.classesDirs
     classpath = sourceSets["test"].runtimeClasspath
-    useJUnitPlatform {
-        includeTags("integration")
-    }
     shouldRunAfter(tasks.test)
 }
+// Deliberately NOT wired into `check` — CI invokes it as an explicit step;
+// local `./gradlew build` stays Docker-free.
 ```
 
-**Recommendation: use the manual `Test` task approach.** Reasons:
-1. No file migration — existing test files stay in `src/test/kotlin`.
-2. No incubating plugin risk.
-3. Zero additional dependency declarations — reuses the existing `test` classpath.
-4. Gradle 9.4.1 compatible — `tasks.registering(Test::class)` is stable API.
-5. The only thing that changes in `kore-storage/build.gradle.kts` is: (a) remove `excludeTags("integration")` from the existing `tasks.test` block (or keep it — it is harmless since `integrationTest` filters by `includeTags`), and (b) add the `integrationTest` task registration.
+**Alternative considered — JVM Test Suite plugin** (`testing { suites { register<JvmTestSuite>("integrationTest") } }`):
+the idiomatic Gradle 9 direction with a separate `src/integrationTest` source set, and the
+Kotlin JVM plugin handles the extra source set fine. Rejected for this milestone because it
+forces moving the 7 test files, re-declaring all Testcontainers/Exposed/serialization deps in
+suite scope, and the API is still `@Incubating` in Gradle 9. Revisit if integration tests
+spread to more modules (kore-kafka/kore-rabbitmq already have tagged container tests too).
 
-### CI Step Addition
-
-Add to `.github/workflows/ci.yml` in the `build` job after the `Test` step:
+**CI step** (`.github/workflows/ci.yml`):
 
 ```yaml
-- name: Integration Tests (kore-storage)
-  run: ./gradlew :kore-storage:integrationTest
+  integration-test:
+    runs-on: [arc-runner-unityinflow]
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./gradlew :kore-storage:integrationTest
 ```
 
-This step requires Docker on the runner to spin up PostgreSQL via Testcontainers.
-`arc-runner-unityinflow` (Hetzner x64) has Docker available. The `orangepi-runner` (ARM64)
-does not need this step — the `arm64-build` job can skip it.
+**Critical CI risk to verify FIRST:** Testcontainers needs a reachable Docker daemon. ARC
+(Actions Runner Controller) runners run inside Kubernetes pods — Docker is only available if
+the scale set is configured in `dind` mode (or with an external Docker host via `DOCKER_HOST`
++ `TESTCONTAINERS_HOST_OVERRIDE`). Confirm the `arc-runner-unityinflow` scale set's
+`containerMode` before planning; if it is not `dind`, that infra change is a prerequisite
+task for this milestone, not an afterthought. (Testcontainers' own docs call out ARC/dind as
+the supported pattern for k8s-hosted runners.)
 
-**No new Gradle plugin version required.** `Test` task type is part of `gradle-core` in 9.4.1.
+## Integration Points (hexagonal fit)
 
----
+| New piece | Where it lives | How it plugs in |
+|-----------|----------------|-----------------|
+| `BudgetBreakerEnforcer` adapter | **New module `kore-budget`** (mirrors the kore-kafka/kore-rabbitmq adapter-module pattern) — `implementation("io.github.unityinflow:budget-breaker:<ver>")` | Implements the existing `BudgetEnforcer` port from kore-core. kore-core untouched. |
+| Spring wiring | kore-spring | Same triple-gate as Kafka/RabbitMQ: `@ConditionalOnClass(name = ["io.github.unityinflow.budget.BudgetCircuitBreaker"])` + `@ConditionalOnMissingBean(BudgetEnforcer::class)` + explicit property (e.g. `kore.budget.type=budget-breaker`). Context tests assert at bean-definition level. |
+| Child-agent API | kore-core DSL + AgentLoop | Pure kotlinx.coroutines; no port changes. New DSL surface (e.g. `spawn { agent(...) }` inside a parent) is a kore-core API addition. |
+| `SkillActivated` span | kore-core (event) → kore-skills (emit) → kore-observability (span) | Existing `EventBus` port + existing `KoreSpans.SKILL_ACTIVATE` constant. |
+| integrationTest | kore-storage build + CI | Build-logic only. |
 
-## Version Compatibility Summary (v0.0.2 additions only)
+**Adapter shape — the one real design decision.** kore's `BudgetEnforcer` port is
+record/check style (`recordUsage` / `checkBudget` / `getUsage`), while budget-breaker's primary
+API is scope-based (`withBudget { trackCall(...) }` — `BudgetScope` has an internal constructor
+and is unreachable outside `withBudget`). Two honest strategies:
 
-| Dependency | Version | Scope | Module | Notes |
-|------------|---------|-------|--------|-------|
-| `io.github.unityinflow:budget-breaker` | 0.0.1 | `implementation` | kore-budget (new) | Transitive: coroutines 1.10.1 (Gradle upgrades to 1.10.2) |
-| All other dependencies | unchanged | — | — | No version bumps needed |
+- **(a) Tracker-based adapter (recommended for this milestone):** the adapter keeps a
+  `ConcurrentHashMap<String, TokenTracker>` (`TokenTracker` is public with a public
+  constructor), maps `recordUsage` → `tracker.add(...)`, `checkBudget` →
+  `!tracker.isAboveHardLimit()`, and uses `ModelPricing.estimateCost` for cost reporting.
+  Fits the port exactly, never throws into the loop (`AgentResult.BudgetExceeded` flow
+  preserved), drop-in replacement for `InMemoryBudgetEnforcer`. Downside: bypasses
+  `BudgetCircuitBreaker.events` (no `SharedFlow` emissions).
+- **(b) `withBudget`-wrapping at the loop boundary:** wrap each agent run in
+  `breaker.withBudget(agentId) { ... }` to get hard-limit scope cancellation + the events
+  Flow (bridgeable onto kore's `EventBus`). This is the deeper integration and composes
+  beautifully with hierarchical cancellation, but it changes how `AgentLoop` is invoked
+  (beyond the port) and turns `BudgetHardLimitException` into an exception path the loop must
+  catch and convert to `AgentResult.BudgetExceeded`. Defer to v0.1.0 unless the planner wants
+  the events Flow now.
 
----
+## Installation
 
-## What NOT to Add
+```kotlin
+// gradle/libs.versions.toml additions
+// [versions]
+// budget-breaker = "0.0.1"   # or "0.1.0" once the v0.1.0 tag is pushed/published
+// [libraries]
+// budget-breaker = { module = "io.github.unityinflow:budget-breaker", version.ref = "budget-breaker" }
 
-| Avoid | Why | What to Do Instead |
-|-------|-----|--------------------|
-| `budget-breaker-spring-boot-starter` (if/when published) | Not yet published; Spring Boot starter for budget-breaker is pending. Gate auto-config on `@ConditionalOnClass` against `BudgetCircuitBreaker` (the core class) so the starter can add value later without changing kore-spring. | Use `BudgetCircuitBreaker` from the core artifact directly in `BudgetBreakerAdapter`. |
-| Any new OTel dependency for OBSV-03 | All required OTel API is already on the classpath via existing `compileOnly` declarations. Adding `opentelemetry-sdk` at runtime would conflict with the host application's SDK. | Use existing `opentelemetry-api` compileOnly + `opentelemetry-extension-kotlin` already in kore-observability. |
-| `jvm-test-suite` incubating plugin for integrationTest | Requires source set migration; higher churn for no gain over manual `Test` task. | Manual `tasks.registering(Test::class)` with `includeTags("integration")`. |
-| New `CoroutineScope` with `SupervisorJob` for child agents | Would break structured concurrency — parent cancellation would not propagate. | Pass parent coroutine scope to child runner; child uses plain `Job`. |
-| Upgrading `kotlinx-coroutines` to 1.10.x beyond 1.10.2 | No feature needed beyond what 1.10.2 provides. | Pin at 1.10.2 until a specific fix is needed. |
+// kore-budget/build.gradle.kts
+dependencies {
+    implementation(project(":kore-core"))
+    implementation(libs.budget.breaker)
+    implementation(libs.coroutines.core)
+}
 
----
+// Version bump in libs.versions.toml
+// testcontainers = "1.21.4"   (from 1.20.0)
+```
 
-## Module Map for v0.0.2
+## What NOT to Use
 
-| New/Changed | Module | What |
-|-------------|--------|------|
-| New module | `kore-budget` | `BudgetBreakerAdapter` implementing `BudgetEnforcer` port; `implementation("io.github.unityinflow:budget-breaker:0.0.1")` |
-| Changed | `kore-core` | Add `AgentEvent.SkillActivated`; wire `eventBus.emit(SkillActivated)` after skill activation in `AgentLoop`; add `childAgentRunner` optional param |
-| Changed | `kore-observability` | Add `SkillActivated` branch in `EventBusSpanObserver`; add `KoreAttrs.SKILL_NAME` |
-| Changed | `kore-spring` | Add `BudgetBreakerAutoConfiguration` inner class; `compileOnly(project(":kore-budget"))` |
-| Changed | `kore-storage` | Add `integrationTest` task; keep existing `@Tag("integration")` annotations |
-| Changed | `.github/workflows/ci.yml` | Add `integrationTest` step for `kore-storage` in `build` job |
+| Avoid | Why | Use Instead |
+|-------|-----|-------------|
+| `io.github.unityinflow:budget-breaker-spring-boot-starter` | **Not published to Maven Central (404 verified)** — finished locally 2026-06-12 but pending release. Also: kore-spring already owns its conditional-wiring idiom; depending on a second auto-config that registers its own `BudgetCircuitBreaker`, SLF4J logger, Actuator endpoint, and Micrometer binder beans would double-register observability kore already provides | Direct dep on `budget-breaker` core in `kore-budget`; kore-spring constructs the `BudgetCircuitBreaker`/`TokenTracker` wiring itself. When the starter ships, both use `@ConditionalOnMissingBean` so they coexist |
+| Testcontainers 2.x (2.0.5 is latest) | Major-version migration: artifacts renamed (`postgresql` → `testcontainers-postgresql`), package relocations, JUnit 4 support removed, container constructors require explicit images. Pure scope creep for "make 7 existing tests run in CI" | Stay on 1.x, bump to 1.21.4 |
+| `GlobalScope` / fresh `CoroutineScope(Job())` for child agents | Detaches children from the parent's Job — parent cancellation silently stops propagating, which is the entire feature | Launch children from the parent agent's existing scope (`coroutineScope`/`supervisorScope` inside the loop) |
+| New OTel dependencies for OBSV-03 | `otel-api` (compileOnly) + `otel-extension-kotlin` 1.61.0 already cover span creation; the span-name constant already exists | Extend `EventBusSpanObserver`'s `when` block |
+| JVM Test Suite plugin for this milestone | Still `@Incubating` in Gradle 9; forces moving the 7 tagged test files + duplicating dependency declarations into suite scope | Tag-filtered second `Test` task on the existing `test` source set |
+| Custom parent/child Job bookkeeping (maps of child Jobs, manual cancel loops) | Structured concurrency already guarantees cancellation propagation; manual registries reintroduce leak bugs the runtime exists to avoid | The `Job` hierarchy itself |
 
----
+## Version Compatibility
+
+| Package A | Compatible With | Notes |
+|-----------|-----------------|-------|
+| budget-breaker 0.0.1 | kotlinx-coroutines 1.10.x and 1.11.0 | Built against 1.10.1; only uses stable coroutine/Flow APIs (verified from source) |
+| budget-breaker 0.0.1 | JVM 21 / Kotlin 2.3 consumers | Built with Kotlin 2.1.21, toolchain 21; Kotlin 2.3 consumes 2.1-compiled libs fine (backward compat) |
+| Testcontainers 1.21.4 | JUnit 5.12 (`org.testcontainers:junit-jupiter`) | Same artifact coordinates as 1.20.0 — drop-in |
+| kotlinx-coroutines 1.11.0 (if bumped) | Kotlin 2.3.0 | 1.11.0 targets Kotlin 2.2+; bump `coroutines` and `coroutines-test` refs together |
+| `SkillActivated` event addition | kore downstream test modules | New `@Serializable` sealed variant ⇒ any module's tests touching `AgentEvent` exhaustively need `testImplementation(libs.serialization.core)` (compileOnly-on-core propagation gotcha, already documented in debug knowledge base) |
 
 ## Sources
 
-- `io.github.unityinflow:budget-breaker:0.0.1` coordinates — [Maven Central](https://central.sonatype.com/artifact/io.github.unityinflow/budget-breaker/0.0.1) — HIGH confidence (verified)
-- budget-breaker source code — local at `../05-budget-breaker/` (tag `v0.0.1`) — HIGH confidence (source of truth)
-- `kotlinx.coroutines` SupervisorJob / Job hierarchy — [official API docs](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-coroutine-scope/) — HIGH confidence
-- Gradle `jvm-test-suite` plugin — [official userguide](https://docs.gradle.org/current/userguide/jvm_test_suite_plugin.html) — HIGH confidence
-- kore-core `AgentLoop.kt`, `AgentEvent.kt`, `BudgetEnforcer.kt` — read directly from source — HIGH confidence
-- kore-observability `KoreTracer.kt`, `EventBusSpanObserver.kt` — read directly from source — HIGH confidence
-- `opentelemetry-extension-kotlin:1.61.0` `asContextElement()` — already in use in kore-observability — HIGH confidence
+- `repo1.maven.org/maven2/io/github/unityinflow/budget-breaker/maven-metadata.xml` — only version 0.0.1, lastUpdated 2026-05-11 — **HIGH (authoritative)**
+- `repo1.maven.org` 404 for `budget-breaker-spring-boot-starter` — starter unpublished — **HIGH**
+- Local source `../05-budget-breaker` (tag `v0.0.1` vs HEAD `0.1.0` git diff): full API surface, starter auto-config beans, coroutines 1.10.1 dep — **HIGH (primary source)**
+- Local source `08-kore-runtime`: `BudgetEnforcer` port, `EventBusSpanObserver` OBSV-03 stub + `KoreSpans.SKILL_ACTIVATE`, `AgentEvent` variants (no `SkillActivated`), kore-storage `excludeTags("integration")`, `libs.versions.toml` pins — **HIGH (primary source)**
+- `repo1.maven.org` metadata: kotlinx-coroutines-core `<release>1.11.0</release>`, org.testcontainers:postgresql `<release>1.21.4</release>` — **HIGH**
+- GitHub releases (kotlinx.coroutines, testcontainers-java) for 1.11.0 stable status and Testcontainers 2.x breaking-change summary — **MEDIUM** (fetch-model date attribution unreliable; version facts cross-checked against repo1)
 
 ---
-*Stack research for: kore-runtime v0.0.2 Hardening & Hierarchy (delta only)*
+*Stack research for: kore-runtime v0.0.2 Hardening & Hierarchy*
 *Researched: 2026-06-12*
