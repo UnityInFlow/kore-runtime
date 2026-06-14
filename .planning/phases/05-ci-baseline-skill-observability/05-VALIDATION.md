@@ -1,8 +1,8 @@
 ---
 phase: 5
 slug: ci-baseline-skill-observability
-status: draft
-nyquist_compliant: false
+status: approved
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-06-14
 ---
@@ -47,9 +47,16 @@ created: 2026-06-14
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| TBD (populated by planner/Nyquist audit) | — | — | — | — | — | — | — | — | ⬜ pending |
+| 05-01-01 | 01 | 1 | CI-01 | — | N/A (build config) | gradle | `./gradlew :kore-storage:tasks --all \| grep -q integrationTest && ./gradlew :kore-storage:lintKotlin` | ✅ | ⬜ pending |
+| 05-01-02 | 01 | 1 | CI-02 | — | docker pre-flight = config-error signal, not security control | ci-config | `python3` yaml assertion on `.github/workflows/ci.yml` (runs-on arc-runner, needs build, docker info, no ubuntu-latest) | ✅ | ⬜ pending |
+| 05-02-01 | 02 | 1 | OBSV-03, OBSV-04 | T-05-02 | event payload excludes prompts (no sensitive-content leak to bus) | unit | `./gradlew :kore-skills:test :kore-skills:lintKotlin` | ✅ | ⬜ pending |
+| 05-02-02 | 02 | 1 | OBSV-03, OBSV-04 | — | non-PII skill names only on span/event | unit | `./gradlew :kore-core:test :kore-core:lintKotlin` | ✅ | ⬜ pending |
+| 05-04-01 | 04 | 1 | OBSV-03 | — | N/A | unit | `./gradlew :kore-observability:test --tests "*KoreTracer*" :kore-observability:lintKotlin` | ✅ | ⬜ pending |
+| 05-03-01 | 03 | 2 | OBSV-04 | — | observer branch handles event (no silent `else -> Unit` drop) | unit | `./gradlew :kore-observability:test --tests "*EventBusMetricsObserver*" :kore-observability:lintKotlin :kore-dashboard:compileKotlin :kore-dashboard:lintKotlin` | ✅ | ⬜ pending |
+| 05-03-02 | 03 | 2 | OBSV-03 | — | span parented under `kore.agent.run` via ObservableAgentRunner | integration | `./gradlew :kore-observability:test --tests "*ObservableAgentRunner*" :kore-observability:lintKotlin` | ✅ | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+*Sampling continuity: every task carries an `<automated>` verify — no 3-consecutive-task gap. No watch-mode flags.*
 
 ---
 
@@ -71,11 +78,11 @@ created: 2026-06-14
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 60s (unit)
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references (none — existing infra covers all reqs)
+- [x] No watch-mode flags
+- [x] Feedback latency < 60s (unit)
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-06-14
