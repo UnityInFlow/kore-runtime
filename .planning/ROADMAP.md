@@ -38,7 +38,12 @@ Full milestone details: [milestones/v0.0.1-ROADMAP.md](milestones/v0.0.1-ROADMAP
   2. CI runs the integration tests on arc-runner-unityinflow with a `docker info` pre-flight check, and the job asserts tests actually executed (no silent 0-test pass)
   3. A skill activation produces a `kore.skill.activate` OTel span correctly parented under the agent-run span, carrying skill name/count/duration attributes (visible in any OTel backend)
   4. A skill activation emits `AgentEvent.SkillActivated` on the event bus, observable by metrics observers (e.g., `EventBusSpanObserver` / `EventBusMetricsObserver`)
-**Plans**: TBD
+**Plans**: 4 plans (2 waves)
+Plans:
+- [ ] 05-01-PLAN.md — integrationTest Gradle task (fail-loud zero-test guard) + integration-test CI job with docker pre-flight (CI-01, CI-02) [wave 1]
+- [ ] 05-02-PLAN.md — breaking SkillRegistry port → List<ActivatedSkill> + AgentLoop kore.skill.activate span attrs + AgentEvent.SkillActivated emission (OBSV-03/04 emission side) [wave 1]
+- [ ] 05-04-PLAN.md — KoreAttrs skill key constants + KoreTracer.withSpan string-array attribute branch (OBSV-03 support side) [wave 1]
+- [ ] 05-03-PLAN.md — observer SkillActivated branches (metrics counter/duration, span no-op, dashboard) + span-parenting test through ObservableAgentRunner (OBSV-03/04) [wave 2, depends on 05-02]
 
 ### Phase 6: Real Budget Enforcement
 **Goal**: Developers get actual hard-stop token-budget enforcement by adding the new `kore-budget` module backed by `io.github.unityinflow:budget-breaker` — replacing the InMemoryBudgetEnforcer stub behind the existing `BudgetEnforcer` port
@@ -73,6 +78,6 @@ Phases execute in numeric order: 5 → 6 → 7 (Phase 6 has no dependency on Pha
 | 2. Observability & Storage    | v0.0.1 | 3/3 | Complete | 2026-04-13 |
 | 3. Skills, Spring & Dashboard | v0.0.1 | 5/5 | Complete | 2026-04-14 |
 | 4. Event Bus & Publishing     | v0.0.1 | 6/6 | Complete | 2026-04-15 |
-| 5. CI Baseline & Skill Observability | v0.0.2 | 0/? | Not started | - |
+| 5. CI Baseline & Skill Observability | v0.0.2 | 0/4 | Not started | - |
 | 6. Real Budget Enforcement           | v0.0.2 | 0/? | Not started | - |
 | 7. Hierarchical Agents               | v0.0.2 | 0/? | Not started | - |
