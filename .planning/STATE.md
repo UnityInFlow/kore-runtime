@@ -2,9 +2,10 @@
 gsd_state_version: 1.0
 milestone: v0.0.2
 milestone_name: Hardening & Hierarchy
-status: roadmap_created
-last_updated: "2026-06-12T19:47:22.528Z"
-last_activity: 2026-06-12
+status: Roadmap created — ready for `/gsd-plan-phase 5`
+stopped_at: Phase 5 context gathered
+last_updated: "2026-06-14T09:03:23.467Z"
+last_activity: 2026-06-12 — v0.0.2 roadmap created (Phases 5-7, 11 requirements mapped)
 progress:
   total_phases: 3
   completed_phases: 0
@@ -32,6 +33,7 @@ Last activity: 2026-06-12 — v0.0.2 roadmap created (Phases 5-7, 11 requirement
 Progress: [░░░░░░░░░░] 0% (0/3 phases)
 
 **Milestone phase structure:**
+
 - Phase 5: CI Baseline & Skill Observability (CI-01, CI-02, OBSV-03, OBSV-04)
 - Phase 6: Real Budget Enforcement (BUDG-05, BUDG-06, BUDG-07) — independent of Phase 5
 - Phase 7: Hierarchical Agents (HIER-01..04) — must follow Phase 5 (shared AgentLoop.kt)
@@ -177,6 +179,6 @@ Items acknowledged and deferred at milestone close on 2026-04-26.
 
 ## Session Continuity
 
-Last session: 2026-06-12 (v0.0.2 roadmap created)
-Stopped at: Roadmap for v0.0.2 written (Phases 5-7) — next: `/gsd-plan-phase 5`
-Resume file: None
+Last session: 2026-06-14T09:03:23.461Z
+Stopped at: Phase 5 context gathered
+Resume file: .planning/phases/05-ci-baseline-skill-observability/05-CONTEXT.md
