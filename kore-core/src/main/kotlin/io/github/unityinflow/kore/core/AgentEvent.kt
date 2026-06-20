@@ -62,4 +62,23 @@ sealed class AgentEvent {
         val agentId: String,
         val result: AgentResult,
     ) : AgentEvent()
+
+    /**
+     * Emitted once per agent run when at least one skill matched (D-05 / D-07).
+     *
+     * Carries the activated skill [skillNames] and the activation [durationMs];
+     * the count is derivable from `skillNames.size`. Prompts are DELIBERATELY
+     * excluded (D-06) — they can be KBs and may carry sensitive content
+     * unsuitable for broker (Kafka/RabbitMQ) transport (threat T-05-03). The
+     * always-emitted `kore.skill.activate` span covers the 0-match case (D-04);
+     * this event is the bus-side, ≥1-match-only counterpart (deliberate
+     * span-always / event-on-match asymmetry).
+     */
+    @Serializable
+    @SerialName("SkillActivated")
+    data class SkillActivated(
+        val agentId: String,
+        val skillNames: List<String>,
+        val durationMs: Long,
+    ) : AgentEvent()
 }

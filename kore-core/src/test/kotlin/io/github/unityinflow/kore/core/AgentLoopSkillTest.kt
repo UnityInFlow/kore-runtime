@@ -3,18 +3,28 @@ package io.github.unityinflow.kore.core
 import io.github.unityinflow.kore.core.internal.InMemoryAuditLog
 import io.github.unityinflow.kore.core.internal.InMemoryBudgetEnforcer
 import io.github.unityinflow.kore.core.internal.InProcessEventBus
+import io.github.unityinflow.kore.core.port.ActivatedSkill
+import io.github.unityinflow.kore.core.port.EventBus
 import io.github.unityinflow.kore.core.port.LLMBackend
 import io.github.unityinflow.kore.core.port.NoOpSkillRegistry
 import io.github.unityinflow.kore.core.port.SkillRegistry
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
+import io.kotest.matchers.longs.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.yield
 import org.junit.jupiter.api.Test
 
 class AgentLoopSkillTest {
@@ -53,12 +63,13 @@ class AgentLoopSkillTest {
         backend: LLMBackend,
         skillRegistry: SkillRegistry = NoOpSkillRegistry,
         tracer: io.opentelemetry.api.trace.Tracer? = null,
+        eventBus: EventBus = InProcessEventBus(),
     ): AgentLoop =
         AgentLoop(
             llmBackend = backend,
             toolProviders = emptyList(),
             budgetEnforcer = InMemoryBudgetEnforcer(),
-            eventBus = InProcessEventBus(),
+            eventBus = eventBus,
             auditLog = InMemoryAuditLog(),
             skillRegistry = skillRegistry,
             tracer = tracer,
@@ -85,7 +96,7 @@ class AgentLoopSkillTest {
                     override suspend fun activateFor(
                         taskContent: String,
                         availableTools: List<String>,
-                    ): List<String> = listOf("You are an expert")
+                    ): List<ActivatedSkill> = listOf(ActivatedSkill(name = "expert", prompt = "You are an expert"))
                 }
             val loop = makeLoop(backend, skillRegistry = skillRegistry)
 
@@ -104,7 +115,7 @@ class AgentLoopSkillTest {
                     override suspend fun activateFor(
                         taskContent: String,
                         availableTools: List<String>,
-                    ): List<String> = emptyList()
+                    ): List<ActivatedSkill> = emptyList()
                 }
             val loop = makeLoop(backend, skillRegistry = skillRegistry)
 
@@ -144,7 +155,7 @@ class AgentLoopSkillTest {
                     override suspend fun activateFor(
                         taskContent: String,
                         availableTools: List<String>,
-                    ): List<String> = listOf("skill prompt")
+                    ): List<ActivatedSkill> = listOf(ActivatedSkill(name = "demo-skill", prompt = "skill prompt"))
                 }
 
             val backendA = RecordingBackend(doneResponse())
@@ -168,5 +179,132 @@ class AgentLoopSkillTest {
             // And skill prompt still got injected
             backendB.firstCallHistory[0].role shouldBe ConversationMessage.Role.System
             backendB.firstCallHistory[0].content shouldBe "skill prompt"
+        }
+
+    @Test
+    fun `Test 7 - span carries names_count_duration attrs on at-least-one match`() =
+        runTest {
+            val exporter = InMemorySpanExporter.create()
+            val provider =
+                SdkTracerProvider
+                    .builder()
+                    .addSpanProcessor(SimpleSpanProcessor.create(exporter))
+                    .build()
+            val tracer = provider.get("kore-core-test")
+
+            val skillRegistry =
+                object : SkillRegistry {
+                    override suspend fun activateFor(
+                        taskContent: String,
+                        availableTools: List<String>,
+                    ): List<ActivatedSkill> =
+                        listOf(
+                            ActivatedSkill(name = "code-review", prompt = "p1"),
+                            ActivatedSkill(name = "security-audit", prompt = "p2"),
+                        )
+                }
+
+            val loop = makeLoop(RecordingBackend(doneResponse()), skillRegistry = skillRegistry, tracer = tracer)
+            loop.run(AgentTask(id = "t7", input = "review code")).shouldBeInstanceOf<AgentResult.Success>()
+
+            val span = exporter.finishedSpanItems.first { it.name == "kore.skill.activate" }
+            span.attributes.get(AttributeKey.stringArrayKey("kore.skill.names")) shouldContainExactly
+                listOf("code-review", "security-audit")
+            span.attributes.get(AttributeKey.longKey("kore.skill.count")) shouldBe 2L
+            (span.attributes.get(AttributeKey.longKey("kore.skill.duration_ms")) ?: -1L) shouldBeGreaterThanOrEqual 0L
+        }
+
+    @Test
+    fun `Test 8 - SkillActivated event emitted once on at-least-one match`() =
+        runTest {
+            val bus = InProcessEventBus()
+            val collected = mutableListOf<AgentEvent>()
+            val job = backgroundScope.launch { bus.subscribe().toList(collected) }
+            runCurrent() // ensure the collector is subscribed before run() emits
+
+            val skillRegistry =
+                object : SkillRegistry {
+                    override suspend fun activateFor(
+                        taskContent: String,
+                        availableTools: List<String>,
+                    ): List<ActivatedSkill> = listOf(ActivatedSkill(name = "code-review", prompt = "p1"))
+                }
+
+            val loop = makeLoop(RecordingBackend(doneResponse()), skillRegistry = skillRegistry, eventBus = bus)
+            loop.run(AgentTask(id = "t8", input = "review code"))
+            yield()
+            runCurrent()
+            job.cancel()
+
+            val skillEvents = collected.filterIsInstance<AgentEvent.SkillActivated>()
+            skillEvents.size shouldBe 1
+            skillEvents.first().agentId shouldBe "t8"
+            skillEvents.first().skillNames shouldContainExactly listOf("code-review")
+            skillEvents.first().durationMs shouldBeGreaterThanOrEqual 0L
+        }
+
+    @Test
+    fun `Test 9 - no SkillActivated event on zero match but span still emitted with count zero`() =
+        runTest {
+            val exporter = InMemorySpanExporter.create()
+            val provider =
+                SdkTracerProvider
+                    .builder()
+                    .addSpanProcessor(SimpleSpanProcessor.create(exporter))
+                    .build()
+            val tracer = provider.get("kore-core-test")
+
+            val bus = InProcessEventBus()
+            val collected = mutableListOf<AgentEvent>()
+            val job = backgroundScope.launch { bus.subscribe().toList(collected) }
+            runCurrent()
+
+            val loop =
+                makeLoop(
+                    RecordingBackend(doneResponse()),
+                    skillRegistry = NoOpSkillRegistry,
+                    tracer = tracer,
+                    eventBus = bus,
+                )
+            loop.run(AgentTask(id = "t9", input = "hello world"))
+            yield()
+            runCurrent()
+            job.cancel()
+
+            // D-07: no event emitted on 0-match.
+            collected.filterIsInstance<AgentEvent.SkillActivated>().shouldBeEmpty()
+            // D-04: span still emitted with count=0 and empty names.
+            val span = exporter.finishedSpanItems.first { it.name == "kore.skill.activate" }
+            span.attributes.get(AttributeKey.longKey("kore.skill.count")) shouldBe 0L
+            span.attributes.get(AttributeKey.stringArrayKey("kore.skill.names")) shouldContainExactly emptyList()
+        }
+
+    @Test
+    fun `Test 10 - span still finished when activateFor throws`() =
+        runTest {
+            val exporter = InMemorySpanExporter.create()
+            val provider =
+                SdkTracerProvider
+                    .builder()
+                    .addSpanProcessor(SimpleSpanProcessor.create(exporter))
+                    .build()
+            val tracer = provider.get("kore-core-test")
+
+            val throwingRegistry =
+                object : SkillRegistry {
+                    override suspend fun activateFor(
+                        taskContent: String,
+                        availableTools: List<String>,
+                    ): List<ActivatedSkill> = throw IllegalStateException("boom")
+                }
+
+            val loop = makeLoop(RecordingBackend(doneResponse()), skillRegistry = throwingRegistry, tracer = tracer)
+            // The loop never throws (INVARIANT); activateFor's throw surfaces as an LLMError result.
+            loop.run(AgentTask(id = "t10", input = "go")).shouldBeInstanceOf<AgentResult.LLMError>()
+
+            // Pitfall 5: span is still ended even though activateFor threw.
+            val span = exporter.finishedSpanItems.firstOrNull { it.name == "kore.skill.activate" }
+            span shouldNotBe null
+            span?.attributes?.get(AttributeKey.longKey("kore.skill.count")) shouldBe 0L
         }
 }

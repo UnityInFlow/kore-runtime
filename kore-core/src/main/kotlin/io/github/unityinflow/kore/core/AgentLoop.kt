@@ -1,5 +1,6 @@
 package io.github.unityinflow.kore.core
 
+import io.github.unityinflow.kore.core.port.ActivatedSkill
 import io.github.unityinflow.kore.core.port.AuditLog
 import io.github.unityinflow.kore.core.port.BudgetEnforcer
 import io.github.unityinflow.kore.core.port.EventBus
@@ -7,7 +8,9 @@ import io.github.unityinflow.kore.core.port.LLMBackend
 import io.github.unityinflow.kore.core.port.NoOpSkillRegistry
 import io.github.unityinflow.kore.core.port.SkillRegistry
 import io.github.unityinflow.kore.core.port.ToolProvider
+import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.trace.Tracer
+import io.opentelemetry.context.Context
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -91,25 +94,56 @@ class AgentLoop(
 
         // D-10 skill injection hook: activate matching skills and prepend
         // their prompts as a System message BEFORE the first LLM call.
-        // D-11: when a tracer is supplied, wrap activation in a
-        // "kore.skill.activate" span. Graceful degradation when tracer is null.
+        // OBSV-03: when a tracer is supplied, wrap activation in a
+        // "kore.skill.activate" span carrying kore.skill.names/count/duration_ms.
+        // The span is ALWAYS emitted when a tracer is present, including count=0
+        // and even when activateFor throws (D-04 / Pitfall 5). Graceful
+        // degradation when tracer is null. kore-core cannot import KoreAttrs from
+        // kore-observability, so the literal key strings are used here (KoreAttrs
+        // is the mirror source-of-truth — Plan 05-04 adds those constants).
         val userMessage = history.first { it.role == ConversationMessage.Role.User }
-        val span = tracer?.spanBuilder("kore.skill.activate")?.startSpan()
-        val activatedPrompts =
+        val span =
+            tracer
+                ?.spanBuilder(SKILL_ACTIVATE_SPAN)
+                ?.setParent(Context.current()) // parents under kore.agent.run (OBSV-03)
+                ?.startSpan()
+        val startNanos = System.nanoTime()
+        // Holder is read inside `finally` so attributes are computable even if
+        // activateFor throws (default stays empty → count=0, names=[]). val-only.
+        val activatedHolder = arrayOfNulls<List<ActivatedSkill>>(1)
+        val activated: List<ActivatedSkill> =
             try {
-                skillRegistry.activateFor(
-                    taskContent = userMessage.content,
-                    availableTools = toolDefs.map { it.name },
-                )
+                skillRegistry
+                    .activateFor(
+                        taskContent = userMessage.content,
+                        availableTools = toolDefs.map { it.name },
+                    ).also { activatedHolder[0] = it }
             } finally {
-                span?.end()
+                val durMs = (System.nanoTime() - startNanos) / 1_000_000
+                val names = activatedHolder[0].orEmpty().map { it.name }
+                span?.apply {
+                    setAttribute(AttributeKey.stringArrayKey("kore.skill.names"), names)
+                    setAttribute(AttributeKey.longKey("kore.skill.count"), names.size.toLong())
+                    setAttribute(AttributeKey.longKey("kore.skill.duration_ms"), durMs)
+                    end()
+                }
             }
-        if (activatedPrompts.isNotEmpty()) {
+        // Span always emits (observability/debuggability); the SkillActivated
+        // event below emits only on ≥1 match (broker frugality) — D-07 asymmetry.
+        if (activated.isNotEmpty()) {
             history.add(
                 0,
                 ConversationMessage(
                     role = ConversationMessage.Role.System,
-                    content = activatedPrompts.joinToString("\n\n"),
+                    content = activated.joinToString("\n\n") { it.prompt },
+                ),
+            )
+            val durMs = (System.nanoTime() - startNanos) / 1_000_000
+            eventBus.emit(
+                AgentEvent.SkillActivated(
+                    agentId = agentId,
+                    skillNames = activated.map { it.name },
+                    durationMs = durMs,
                 ),
             )
         }
@@ -248,4 +282,13 @@ class AgentLoop(
         toolProviders.firstOrNull { provider ->
             provider.listTools().any { it.name == toolName }
         }
+
+    private companion object {
+        /**
+         * Skill-activation span name. kore-core cannot depend on
+         * kore-observability, so this literal mirrors `KoreSpans.SKILL_ACTIVATE`
+         * (the observability-side source of truth).
+         */
+        const val SKILL_ACTIVATE_SPAN = "kore.skill.activate"
+    }
 }

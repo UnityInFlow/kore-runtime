@@ -70,6 +70,20 @@ class AgentEventSerializationTest {
     }
 
     @Test
+    fun `SkillActivated roundtrip preserves type discriminator and fields`() {
+        val original: AgentEvent =
+            AgentEvent.SkillActivated(
+                agentId = "a1",
+                skillNames = listOf("code-review", "security-audit"),
+                durationMs = 7,
+            )
+        val encoded = json.encodeToString(AgentEvent.serializer(), original)
+        encoded shouldContain "\"type\":\"SkillActivated\""
+        encoded shouldContain "\"skillNames\":[\"code-review\",\"security-audit\"]"
+        json.decodeFromString(AgentEvent.serializer(), encoded) shouldBe original
+    }
+
+    @Test
     fun `AgentCompleted roundtrip preserves type discriminator`() {
         val original: AgentEvent =
             AgentEvent.AgentCompleted(
