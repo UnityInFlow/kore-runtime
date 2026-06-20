@@ -1,13 +1,14 @@
 ---
 phase: 05-ci-baseline-skill-observability
 verified: 2026-06-20T00:00:00Z
-status: human_needed
+status: passed
 score: 4/4 must-haves verified
 overrides_applied: 0
+human_verification_resolved: "Both Docker-gated UAT items user-attested PASS on 2026-06-20 (05-UAT.md): CI-01 live integrationTest run against real PostgreSQL, and CI-02 CI integration-test job on arc-runner-unityinflow. Verification moves human_needed → passed."
 re_verification:
   previous_status: human_needed
   previous_score: 4/4
-  gaps_closed: []
+  gaps_closed: ["CI-01 live integrationTest run (UAT test 1 — user-attested pass)", "CI-02 CI integration-test job on arc-runner-unityinflow (UAT test 2 — user-attested pass)"]
   gaps_remaining: []
   regressions: []
   note: "Previous VERIFICATION.md had no `gaps:` section — re-run as full verification with the prior report treated as a prior to falsify. All four success criteria re-confirmed against the live codebase; criteria 3 and 4 machine-verified by a fresh `--rerun-tasks` test run (not cached). No regressions."
@@ -24,8 +25,8 @@ human_verification:
 
 **Phase Goal:** kore-storage's Testcontainers integration tests run in CI, and skill activations emit both an OTel span and an event-bus event — closing the last gaps in CI correctness and the span hierarchy.
 **Verified:** 2026-06-20
-**Status:** human_needed
-**Re-verification:** Yes — prior report had no `gaps:` section; re-run as full verification. Criteria 3 and 4 re-proven with a fresh (non-cached) test run.
+**Status:** passed (both Docker-gated UAT items user-attested pass — see 05-UAT.md)
+**Re-verification:** Yes — prior report had no `gaps:` section; re-run as full verification. Criteria 3 and 4 re-proven with a fresh (non-cached) test run; criteria 1 and 2 closed by user UAT attestation.
 
 ## Goal Achievement
 
