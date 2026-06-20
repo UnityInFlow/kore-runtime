@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v0.0.2
 milestone_name: Hardening & Hierarchy
 status: executing
-stopped_at: Phase 5 context gathered
-last_updated: "2026-06-20T17:17:22.707Z"
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-06-20T17:17:48.431Z"
 last_activity: 2026-06-20 -- Completed Phase 05 Plan 01 (integrationTest task + CI job)
 progress:
   total_phases: 3
@@ -156,8 +156,8 @@ Recent decisions affecting current work:
 - [Phase 05-ci-baseline-skill-observability]: integrationTest zero-test guard uses addTestListener(TestListener) + AtomicInteger (val holding mutable state), not afterSuite — afterSuite is deprecated Gradle 9 / removed Gradle 10 / config-cache-incompatible (D-10)
 - [Phase 05-ci-baseline-skill-observability]: integrationTest reuses existing src/test source set (no src/integrationTest move, D-09) and is decoupled from check/build so default ./gradlew build stays fast and Docker-free (D-11)
 - [Phase 05-ci-baseline-skill-observability]: integration-test CI job on [arc-runner-unityinflow] needs:build with a docker info pre-flight emitting ::error title=Docker unavailable:: as a RUNNER CONFIG ERROR before tests run (D-14); zero-test assertion lives entirely in the Gradle guard, no CI-side XML parsing (D-15)
-- [Phase ?]: [Phase 05-ci-baseline-skill-observability]: kore-storage integrationTest zero-test guard uses addTestListener(TestListener) + AtomicInteger + doLast throwing GradleException (NOT afterSuite — removed in Gradle 10 / config-cache-incompatible); task reuses src/test source set (D-09), decoupled from build/check (D-11)
-- [Phase ?]: [Phase 05-ci-baseline-skill-observability]: integration-test CI job on self-hosted [arc-runner-unityinflow], needs:build, with a docker info pre-flight failing as a RUNNER CONFIG ERROR (D-14); zero-test assertion lives in the Gradle guard, no CI-side XML parsing (D-15)
+- [Phase 05-ci-baseline-skill-observability]: kore-storage integrationTest zero-test guard uses addTestListener(TestListener) + AtomicInteger + doLast throwing GradleException (NOT afterSuite — removed in Gradle 10 / config-cache-incompatible); task reuses src/test source set (D-09), decoupled from build/check (D-11)
+- [Phase 05-ci-baseline-skill-observability]: integration-test CI job on self-hosted [arc-runner-unityinflow], needs:build, with a docker info pre-flight failing as a RUNNER CONFIG ERROR (D-14); zero-test assertion lives in the Gradle guard, no CI-side XML parsing (D-15)
 
 ### Pending Todos
 
@@ -185,6 +185,6 @@ Items acknowledged and deferred at milestone close on 2026-04-26.
 
 ## Session Continuity
 
-Last session: 2026-06-14T09:03:23.461Z
-Stopped at: Phase 5 context gathered
-Resume file: .planning/phases/05-ci-baseline-skill-observability/05-CONTEXT.md
+Last session: 2026-06-20T17:17:48.424Z
+Stopped at: Completed 05-01-PLAN.md
+Resume file: None
