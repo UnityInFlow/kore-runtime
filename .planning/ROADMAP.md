@@ -30,41 +30,51 @@ Full milestone details: [milestones/v0.0.1-ROADMAP.md](milestones/v0.0.1-ROADMAP
 ## Phase Details
 
 ### Phase 5: CI Baseline & Skill Observability
+
 **Goal**: kore-storage's Testcontainers integration tests run in CI, and skill activations emit both an OTel span and an event-bus event — closing the last gaps in CI correctness and the span hierarchy
 **Depends on**: Phase 4 (v0.0.1 complete)
 **Requirements**: CI-01, CI-02, OBSV-03, OBSV-04
 **Success Criteria** (what must be TRUE):
+
   1. Developer can run `./gradlew :kore-storage:integrationTest` and watch the 7 Testcontainers tests execute against real PostgreSQL — the task fails loudly if 0 tests run
   2. CI runs the integration tests on arc-runner-unityinflow with a `docker info` pre-flight check, and the job asserts tests actually executed (no silent 0-test pass)
   3. A skill activation produces a `kore.skill.activate` OTel span correctly parented under the agent-run span, carrying skill name/count/duration attributes (visible in any OTel backend)
   4. A skill activation emits `AgentEvent.SkillActivated` on the event bus, observable by metrics observers (e.g., `EventBusSpanObserver` / `EventBusMetricsObserver`)
+
 **Plans**: 4 plans (2 waves)
 Plans:
-- [ ] 05-01-PLAN.md — integrationTest Gradle task (fail-loud zero-test guard) + integration-test CI job with docker pre-flight (CI-01, CI-02) [wave 1]
+
+- [x] 05-01-PLAN.md — integrationTest Gradle task (fail-loud zero-test guard) + integration-test CI job with docker pre-flight (CI-01, CI-02) [wave 1]
 - [ ] 05-02-PLAN.md — breaking SkillRegistry port → List<ActivatedSkill> + AgentLoop kore.skill.activate span attrs + AgentEvent.SkillActivated emission (OBSV-03/04 emission side) [wave 1]
 - [ ] 05-04-PLAN.md — KoreAttrs skill key constants + KoreTracer.withSpan string-array attribute branch (OBSV-03 support side) [wave 1]
 - [ ] 05-03-PLAN.md — observer SkillActivated branches (metrics counter/duration, span no-op, dashboard) + span-parenting test through ObservableAgentRunner (OBSV-03/04) [wave 2, depends on 05-02]
 
 ### Phase 6: Real Budget Enforcement
+
 **Goal**: Developers get actual hard-stop token-budget enforcement by adding the new `kore-budget` module backed by `io.github.unityinflow:budget-breaker` — replacing the InMemoryBudgetEnforcer stub behind the existing `BudgetEnforcer` port
 **Depends on**: Phase 4 (v0.0.1 complete) — independent of Phase 5, no shared files
 **Requirements**: BUDG-05, BUDG-06, BUDG-07
 **Success Criteria** (what must be TRUE):
+
   1. Developer can add the `kore-budget` dependency and set `kore.budget.enabled=true` to get real budget-breaker enforcement auto-configured; without the dependency, `InMemoryBudgetEnforcer` remains the default and existing apps behave identically
   2. An agent run that hits its hard budget limit ends with `AgentResult.BudgetExceeded` — `BudgetHardLimitException` never escapes the `BudgetEnforcer` port (proven by a test that drives the adapter to the hard limit)
   3. Concurrent agents have isolated budgets keyed by `AgentTask.id` (UUID) — two agents running simultaneously never interfere with each other's budgets or collide on `withBudget` ids
+
 **Plans**: TBD
 
 ### Phase 7: Hierarchical Agents
+
 **Goal**: Parent agents spawn child agents via the spawn model (child runs as a tool call) with structured concurrency, bounded depth, and traceable run trees — the largest kore-core change, sequenced last so AgentLoop.kt edits land on top of Phase 5's OBSV-03 changes
 **Depends on**: Phase 5 (both modify AgentLoop.kt — hierarchy rebases on the OBSV-03 span work)
 **Requirements**: HIER-01, HIER-02, HIER-03, HIER-04
 **Success Criteria** (what must be TRUE):
+
   1. Developer can declare a child agent via `child { }` inside the `agent { }` DSL; the child runs as a tool call and its result feeds back into the parent loop as a `ToolResult`
   2. Cancelling a parent agent cancels all running child agents — verified by a cancellation-propagation test (child cancelled promptly after parent cancellation)
   3. Child spawning beyond the configurable `maxDepth` (default 5) yields a `ToolError` — unbounded recursion is impossible
   4. Audit log records `parent_run_id` on child agent runs, so a developer can trace a full run tree from the database
   5. Existing single-agent definitions compile and run unchanged — all new `AgentLoop`/`AgentTask` parameters have defaults (binary compatibility preserved)
+
 **Plans**: TBD
 
 ## Progress
@@ -78,6 +88,6 @@ Phases execute in numeric order: 5 → 6 → 7 (Phase 6 has no dependency on Pha
 | 2. Observability & Storage    | v0.0.1 | 3/3 | Complete | 2026-04-13 |
 | 3. Skills, Spring & Dashboard | v0.0.1 | 5/5 | Complete | 2026-04-14 |
 | 4. Event Bus & Publishing     | v0.0.1 | 6/6 | Complete | 2026-04-15 |
-| 5. CI Baseline & Skill Observability | v0.0.2 | 0/4 | Not started | - |
+| 5. CI Baseline & Skill Observability | v0.0.2 | 1/4 | In Progress|  |
 | 6. Real Budget Enforcement           | v0.0.2 | 0/? | Not started | - |
 | 7. Hierarchical Agents               | v0.0.2 | 0/? | Not started | - |

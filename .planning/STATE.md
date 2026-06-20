@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v0.0.2
 milestone_name: Hardening & Hierarchy
-status: Roadmap created — ready for `/gsd-plan-phase 5`
+status: executing
 stopped_at: Phase 5 context gathered
-last_updated: "2026-06-14T09:03:23.467Z"
-last_activity: 2026-06-12 — v0.0.2 roadmap created (Phases 5-7, 11 requirements mapped)
+last_updated: "2026-06-20T17:16:14.658Z"
+last_activity: 2026-06-20 -- Completed Phase 05 Plan 01 (integrationTest task + CI job)
 progress:
   total_phases: 3
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 4
+  completed_plans: 1
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-12)
 
 **Core value:** A developer adds one Spring Boot dependency, writes an `agent { }` block, and has a production-ready agent running with observability and budget control.
-**Current focus:** Milestone v0.0.2 Hardening & Hierarchy — Phase 5 (CI Baseline & Skill Observability)
+**Current focus:** Phase 05 — ci-baseline-skill-observability
 
 ## Current Position
 
-Phase: 5 of 7 (CI Baseline & Skill Observability)
-Plan: 4 plans created (05-01..05-04), none executed
-Status: Planned — ready for `/gsd-execute-phase 5`
-Last activity: 2026-06-20 — confirmed Phase 5 discuss+research+plan complete; ready to execute
+Phase: 05 (ci-baseline-skill-observability) — EXECUTING
+Plan: 3 of 4
+Status: Ready to execute
+Last activity: 2026-06-20 -- Completed Phase 05 Plan 01 (integrationTest task + CI job)
 
 Progress: [░░░░░░░░░░] 0% (0/3 phases)
 
@@ -76,6 +76,7 @@ Progress: [░░░░░░░░░░] 0% (0/3 phases)
 | Phase 04-event-bus-publishing P03 | 7min | 2 tasks | 6 files |
 | Phase 04-event-bus-publishing P04 | 12min | 2 tasks | 6 files |
 | Phase 04-event-bus-publishing P05 | 5min | 2 tasks | 14 files |
+| Phase 05-ci-baseline-skill-observability P01 | 2min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -152,6 +153,9 @@ Recent decisions affecting current work:
 - [Phase 04-event-bus-publishing]: buildSrc/kore.publishing precompiled script convention plugin applies java-library + maven-publish + signing + com.gradleup.nmcp with full POM template; java-library required at convention-plugin level because maven-publish alone doesn't expose java{} extension to precompiled scripts
 - [Phase 04-event-bus-publishing]: Root applies id("com.gradleup.nmcp.aggregation") WITHOUT version (not via alias) — buildSrc already puts nmcp marker on classpath so alias() conflicts with Gradle's unknown-classpath-version guard; pinning preserved via buildSrc implementation dep
 - [Phase 04-event-bus-publishing]: Signing guarded by env-var null check so publishToMavenLocal succeeds locally without GPG; Pitfall 11 defended via --no-configuration-cache on publish commands (documented in convention plugin KDoc)
+- [Phase 05-ci-baseline-skill-observability]: integrationTest zero-test guard uses addTestListener(TestListener) + AtomicInteger (val holding mutable state), not afterSuite — afterSuite is deprecated Gradle 9 / removed Gradle 10 / config-cache-incompatible (D-10)
+- [Phase 05-ci-baseline-skill-observability]: integrationTest reuses existing src/test source set (no src/integrationTest move, D-09) and is decoupled from check/build so default ./gradlew build stays fast and Docker-free (D-11)
+- [Phase 05-ci-baseline-skill-observability]: integration-test CI job on [arc-runner-unityinflow] needs:build with a docker info pre-flight emitting ::error title=Docker unavailable:: as a RUNNER CONFIG ERROR before tests run (D-14); zero-test assertion lives entirely in the Gradle guard, no CI-side XML parsing (D-15)
 
 ### Pending Todos
 
@@ -160,7 +164,7 @@ None yet.
 ### Blockers/Concerns
 
 - ~~budget-breaker (Tool 05) not yet shipped~~ — RESOLVED: `io.github.unityinflow:budget-breaker:0.0.1` published to Maven Central (verified 2026-06-12). Phase 6 builds the real adapter. Note: `budget-breaker-spring-boot-starter` still unpublished — kore-budget auto-config gates on core library class presence only.
-- Docker availability on arc-runner-unityinflow not pre-verified — Phase 5 CI job must include `docker info` pre-flight step (failure mode is config error, not test failure).
+- Docker availability on arc-runner-unityinflow not pre-verified — the Phase 5 `integration-test` CI job now includes a `docker info` pre-flight (commit 24e17a2) that fails loudly as a config error before tests run. First PR CI run is the manual verification that Docker is actually installed on the runner.
 - `BudgetBreakerAdapter` lifecycle bridging is MEDIUM confidence (event-subscription model for `withBudget` scopes) — fallback to `TokenTracker` low-level API documented in research SUMMARY.md.
 
 ## Deferred Items
