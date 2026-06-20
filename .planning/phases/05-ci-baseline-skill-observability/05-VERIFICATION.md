@@ -4,13 +4,20 @@ verified: 2026-06-20T00:00:00Z
 status: human_needed
 score: 4/4 must-haves verified
 overrides_applied: 0
+re_verification:
+  previous_status: human_needed
+  previous_score: 4/4
+  gaps_closed: []
+  gaps_remaining: []
+  regressions: []
+  note: "Previous VERIFICATION.md had no `gaps:` section — re-run as full verification with the prior report treated as a prior to falsify. All four success criteria re-confirmed against the live codebase; criteria 3 and 4 machine-verified by a fresh `--rerun-tasks` test run (not cached). No regressions."
 human_verification:
-  - test: "Run `./gradlew :kore-storage:integrationTest` on a Docker-equipped host (or wait for the first PR CI run on arc-runner-unityinflow)"
-    expected: "All 13 @Tag(\"integration\") Testcontainers tests spin up real PostgreSQL and execute with >0 tests run; no GradleException; BUILD SUCCESSFUL. The zero-test guard does NOT fire."
-    why_human: "The agent host has no Docker daemon. Testcontainers requires a live Docker daemon to start a real PostgreSQL container — the 'tests actually execute against real PostgreSQL' clause of CI-01 cannot be exercised by static code inspection. Task registration, tag filter, and fail-loud guard ARE verified by inspection."
+  - test: "Run `./gradlew :kore-storage:integrationTest` on a Docker-equipped host (or observe the first PR CI run on arc-runner-unityinflow)"
+    expected: "All 13 @Tag(\"integration\") Testcontainers tests spin up real PostgreSQL and execute with >0 tests run; no GradleException from the zero-test guard; BUILD SUCCESSFUL."
+    why_human: "This host has no Docker daemon. Testcontainers requires a live daemon to start a real PostgreSQL container — the 'tests actually execute against real PostgreSQL' clause of CI-01 cannot be exercised by static inspection. Task registration, tag filter, and the AtomicInteger/TestListener/GradleException fail-loud guard ARE verified by inspection and task discovery."
   - test: "Trigger the CI `integration-test` job (open a PR or push to main) and observe the run on arc-runner-unityinflow"
-    expected: "The `docker info` pre-flight passes (Docker reachable), then `./gradlew :kore-storage:integrationTest` runs the integration tests green. If Docker were absent, the pre-flight would fail loudly with the 'RUNNER CONFIG ERROR, not a test failure' annotation BEFORE any test runs."
-    why_human: "CI job execution against a self-hosted runner with a live Docker daemon is inherently first-PR-gated and cannot be reproduced on this host. The job shape, runner, needs:build, docker pre-flight, and gradle task invocation ARE verified by inspecting ci.yml."
+    expected: "The `docker info` pre-flight passes, then `./gradlew :kore-storage:integrationTest` runs green. If Docker were absent, the pre-flight fails loudly with the `::error title=Docker unavailable::...RUNNER CONFIG ERROR, not a test failure...` annotation and exit 1 BEFORE any test runs."
+    why_human: "CI execution against a self-hosted runner with a live Docker daemon is first-PR-gated and not reproducible on this host. Job shape, runner label, needs:build, docker pre-flight, and the gradle task invocation ARE verified by inspecting ci.yml."
 ---
 
 # Phase 5: CI Baseline & Skill Observability Verification Report
@@ -18,34 +25,34 @@ human_verification:
 **Phase Goal:** kore-storage's Testcontainers integration tests run in CI, and skill activations emit both an OTel span and an event-bus event — closing the last gaps in CI correctness and the span hierarchy.
 **Verified:** 2026-06-20
 **Status:** human_needed
-**Re-verification:** No — initial verification
+**Re-verification:** Yes — prior report had no `gaps:` section; re-run as full verification. Criteria 3 and 4 re-proven with a fresh (non-cached) test run.
 
 ## Goal Achievement
 
 ### Observable Truths
 
-| # | Truth | Status | Evidence |
-|---|-------|--------|----------|
-| 1 | Developer can run `./gradlew :kore-storage:integrationTest` and the Testcontainers tests execute against real PostgreSQL; the task fails loudly if 0 tests run | ✓ VERIFIED (wiring) / ? human (live Docker run) | `kore-storage/build.gradle.kts:51-95`: `tasks.register<Test>("integrationTest")` reuses `src/test` source set, `useJUnitPlatform { includeTags("integration") }`, zero-test guard via `AtomicInteger` + `addTestListener(TestListener)` + `doLast { throw GradleException(...) }` when `executed.get() == 0`. Task confirmed registered/discoverable: `./gradlew :kore-storage:tasks --all` lists `integrationTest` (BUILD SUCCESSFUL). 3 test classes all carry `@Tag("integration")` + `@Testcontainers`. Live run against real PostgreSQL → human (no Docker on host). |
-| 2 | CI runs the integration tests on arc-runner-unityinflow with a `docker info` pre-flight, asserting tests actually executed | ✓ VERIFIED (wiring) / ? human (live CI run) | `.github/workflows/ci.yml:53-78`: `integration-test` job, `runs-on: [arc-runner-unityinflow]`, `needs: build`, `docker info` pre-flight that emits a `::error title=Docker unavailable::...RUNNER CONFIG ERROR, not a test failure...` annotation and `exit 1` before tests, then `./gradlew :kore-storage:integrationTest`. "Tests actually executed" assertion is the in-Gradle zero-test guard (D-15 — no CI-side XML parsing). YAML parses; assertion script OK. Live CI run → human. |
-| 3 | A skill activation produces a `kore.skill.activate` OTel span parented under the agent-run span, carrying name/count/duration attributes | ✓ VERIFIED | `AgentLoop.kt:105-130`: span built with `tracer?.spanBuilder(SKILL_ACTIVATE_SPAN)?.setParent(Context.current())?.startSpan()`; in `finally` sets `kore.skill.names` (stringArrayKey), `kore.skill.count` (longKey), `kore.skill.duration_ms` (longKey) and ends — always emits, incl. count=0 and on throw. Parenting proven by `ObservableAgentRunnerTest.kt:164-197`: drives a real loop through `ObservableAgentRunner`, asserts `skillSpan.parentSpanContext.spanId == agentRunSpan.spanContext.spanId` + same traceId + names attribute present. `KoreAttrs.SKILL_NAMES/COUNT/DURATION_MS` constants + `withSpan` `is List<*>` string-array branch in `KoreTracer.kt:42-44,85`. |
-| 4 | A skill activation emits `AgentEvent.SkillActivated` on the event bus, observable by metrics observers | ✓ VERIFIED | `AgentEvent.kt:77-83`: `@Serializable @SerialName("SkillActivated") data class SkillActivated(agentId, skillNames, durationMs)`. `AgentLoop.kt:133-149`: emitted only when `activated.isNotEmpty()` (D-07 asymmetry). `EventBusMetricsObserver.kt:80-90`: explicit `is AgentEvent.SkillActivated ->` branch increments `kore.skills.activated` per skill name + records `kore.skills.activate.duration`. `EventBusSpanObserver.kt:107` explicit no-op; `EventBusDashboardObserver.kt:90` explicit no-op. Counter-moved proven by `EventBusMetricsObserverTest.kt:155-193`. |
+| # | Truth (Success Criterion) | Status | Evidence |
+|---|---------------------------|--------|----------|
+| 1 | `./gradlew :kore-storage:integrationTest` runs the Testcontainers tests against real PostgreSQL and fails loudly if 0 tests run | ✓ VERIFIED (mechanism) / ? human (live Docker run) | `kore-storage/build.gradle.kts:51-95`: `tasks.register<Test>("integrationTest")` reuses `src/test` (`testClassesDirs`/`classpath` from `sourceSets["test"]`), `useJUnitPlatform { includeTags("integration") }`, zero-test guard = `val executed = AtomicInteger(0)` + `addTestListener(TestListener.afterTest{ incrementAndGet() })` + `doLast { if (executed.get()==0) throw GradleException(...) }`. Decoupled from build/check; unit `test` still `excludeTags("integration")` (lines 39-43). 3 classes carry `@Tag("integration")`+`@Testcontainers` (13 `@Test` total). Live containerized run → human (no Docker daemon on host). |
+| 2 | CI runs the integration tests on arc-runner-unityinflow with a `docker info` pre-flight and asserts tests actually executed (no silent 0-test pass) | ✓ VERIFIED (mechanism) / ? human (live CI run) | `.github/workflows/ci.yml:52-78`: `integration-test` job, `runs-on: [arc-runner-unityinflow]`, `needs: build`, `docker info` pre-flight emitting `::error title=Docker unavailable::...RUNNER CONFIG ERROR, not a test failure...` + `exit 1` before tests, then `run: ./gradlew :kore-storage:integrationTest`. "Tests actually executed" assertion is the in-Gradle zero-test guard (no CI-side XML parsing). No `ubuntu-latest`. Live CI run on self-hosted runner → human. |
+| 3 | A skill activation produces a `kore.skill.activate` OTel span parented under the agent-run span, carrying skill name/count/duration attributes | ✓ VERIFIED (machine) | `AgentLoop.kt:106-130`: `tracer?.spanBuilder(SKILL_ACTIVATE_SPAN)?.setParent(Context.current())?.startSpan()`; in `finally` sets `kore.skill.names` (stringArrayKey), `kore.skill.count` (longKey), `kore.skill.duration_ms` (longKey) and `end()` — always emits incl. count=0 and on throw. `SKILL_ACTIVATE_SPAN = "kore.skill.activate"` (line 292). Parenting proven by `ObservableAgentRunnerTest.kt:164-197` (`skillSpan.parentSpanContext.spanId shouldBe agentRunSpan.spanContext.spanId`, same traceId, names attr present). `KoreAttrs.SKILL_NAMES/COUNT/DURATION_MS` (KoreTracer.kt:42-44) match the literal keys; `is List<*>` → stringArrayKey branch (line 85). Fresh test run PASS: AgentLoopSkillTest 10/0/0, ObservableAgentRunnerTest 9/0/0, KoreTracerTest 8/0/0. |
+| 4 | A skill activation emits `AgentEvent.SkillActivated` on the event bus, observable by metrics observers | ✓ VERIFIED (machine) | `AgentEvent.kt:77-83`: `@Serializable @SerialName("SkillActivated") data class SkillActivated(agentId, skillNames, durationMs)`. `AgentLoop.kt:133-149`: emitted only when `activated.isNotEmpty()` (D-07 asymmetry vs always-on span). `EventBusMetricsObserver.kt:80`: `is AgentEvent.SkillActivated ->` increments `kore.skills.activated` per skill + records duration. `EventBusSpanObserver.kt:107` explicit `-> Unit` no-op; `EventBusDashboardObserver.kt:90` explicit `-> Unit` no-op. Fresh test run PASS: EventBusMetricsObserverTest 5/0/0, AgentEventSerializationTest 7/0/0 (JSON round-trip), SkillRegistryAdapterTest 7/0/0. |
 
-**Score:** 4/4 truths verified at code level. Truths 1 and 2 have an additional live-Docker dimension routed to human verification (the wiring/guard/job-shape is fully verified; only the actual containerized run is human-gated).
+**Score:** 4/4 truths verified. Criteria 3 and 4 are fully machine-verified by fresh (non-cached, `--rerun-tasks`) test execution. Criteria 1 and 2 are mechanism-verified in code; only the inherently Docker-dependent live execution is human-gated.
 
 ### Required Artifacts
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `kore-storage/build.gradle.kts` | integrationTest task + zero-test guard | ✓ VERIFIED | Task registered under `verification` group, tag-filtered, fail-loud guard, decoupled from build/check. Unit `test` still `excludeTags("integration")` (line 39-43). |
-| `.github/workflows/ci.yml` | integration-test job + docker pre-flight | ✓ VERIFIED | Job on self-hosted runner, needs:build, docker pre-flight, gradle task. No ubuntu-latest. |
-| `kore-core/.../port/SkillRegistry.kt` | ActivatedSkill + activateFor: List<ActivatedSkill> | ✓ VERIFIED | `data class ActivatedSkill(name, prompt)`, stdlib-only, NOT @Serializable. Both impls migrated. |
-| `kore-core/.../AgentEvent.kt` | SkillActivated subclass | ✓ VERIFIED | @Serializable @SerialName, names-only payload (no prompts). |
-| `kore-core/.../AgentLoop.kt` | skill span + conditional emission | ✓ VERIFIED | Three attrs, always-emit span, event-on-match. var-free try/finally guard. |
-| `kore-skills/.../SkillRegistryAdapter.kt` | maps to ActivatedSkill(name, prompt) | ✓ VERIFIED | `.map { ActivatedSkill(name = it.name, prompt = it.prompt) }`. |
-| `kore-observability/.../KoreTracer.kt` | KoreAttrs skill constants + List<*> branch | ✓ VERIFIED | Three constants match AgentLoop literal keys; `is List<*>` → stringArrayKey + filterIsInstance. |
-| `kore-observability/.../KoreMetrics.kt` | skillsActivatedCounter + duration | ✓ VERIFIED | Counter `kore.skills.activated` (agent_name+skill_name), DistributionSummary `kore.skills.activate.duration`. |
-| Three event-bus observers | explicit SkillActivated branches | ✓ VERIFIED | Metrics (behavior), Span (no-op), Dashboard (no-op) — all explicit before `else -> Unit`. |
+| `kore-storage/build.gradle.kts` | integrationTest task + zero-test guard | ✓ VERIFIED | Registered under `verification` group, tag-filtered, fail-loud `GradleException` guard, decoupled from build/check; unit `test` excludes integration tag. |
+| `.github/workflows/ci.yml` | integration-test job + docker pre-flight | ✓ VERIFIED | Self-hosted runner, `needs: build`, loud docker pre-flight, gradle task. No ubuntu-latest. |
+| `kore-core/.../port/SkillRegistry.kt` | `ActivatedSkill` + `activateFor: List<ActivatedSkill>` | ✓ VERIFIED | `data class ActivatedSkill(name, prompt)`, stdlib-only, NOT @Serializable (D-02). Default impl returns emptyList(). |
+| `kore-core/.../AgentEvent.kt` | `SkillActivated` subclass | ✓ VERIFIED | @Serializable + @SerialName, names-only payload (no prompts cross the bus). |
+| `kore-core/.../AgentLoop.kt` | skill span (always) + conditional event | ✓ VERIFIED | 3 attrs, always-emit span via try/finally (var-free arrayOfNulls holder), event-on-match. |
+| `kore-skills/.../SkillRegistryAdapter.kt` | maps to `ActivatedSkill(name, prompt)` | ✓ VERIFIED | SkillRegistryAdapterTest 7/0/0. |
+| `kore-observability/.../KoreTracer.kt` | KoreAttrs skill consts + List<*> branch | ✓ VERIFIED | Constants equal AgentLoop literal keys; `is List<*>` → stringArrayKey + filterIsInstance. |
+| `kore-observability/.../KoreMetrics.kt` | skillsActivatedCounter + duration | ✓ VERIFIED | `kore.skills.activated` counter + `kore.skills.activate.duration` recorder. |
+| Three event-bus observers | explicit SkillActivated branches | ✓ VERIFIED | Metrics (behavior), Span (explicit no-op line 107), Dashboard (explicit no-op line 90). |
 
 ### Key Link Verification
 
@@ -53,20 +60,20 @@ human_verification:
 |------|----|----|--------|---------|
 | ci.yml integration-test job | :kore-storage:integrationTest | gradle task invocation | ✓ WIRED | `run: ./gradlew :kore-storage:integrationTest` (ci.yml:78) |
 | integrationTest task | @Tag("integration") classes | includeTags("integration") | ✓ WIRED | build.gradle.kts:58-60; all 3 classes tagged |
-| AgentLoop skill span | OTel Span attributes | AttributeKey.stringArrayKey/longKey | ✓ WIRED | AgentLoop.kt:125-127 |
+| AgentLoop skill span | OTel span attributes | stringArrayKey/longKey + setAttribute | ✓ WIRED | AgentLoop.kt:125-127 |
 | AgentLoop | SkillActivated on bus | eventBus.emit when activated.isNotEmpty() | ✓ WIRED | AgentLoop.kt:133,142-148 |
-| EventBusMetricsObserver | kore.skills.activated meter | metrics.skillsActivatedCounter(...).increment() | ✓ WIRED | EventBusMetricsObserver.kt:86-89 |
-| ObservableAgentRunner skill span | kore.agent.run parent span | setParent(Context.current()) under withSpan(AGENT_RUN) | ✓ WIRED | ObservableAgentRunner.kt:45-46; proven by ObservableAgentRunnerTest.kt:193 |
+| EventBusMetricsObserver | kore.skills.activated meter | skillsActivatedCounter(...).increment() | ✓ WIRED | EventBusMetricsObserver.kt:80-89 |
+| ObservableAgentRunner skill span | kore.agent.run parent span | setParent(Context.current()) | ✓ WIRED | proven by ObservableAgentRunnerTest.kt:193 (spanId match) |
 
 ### Behavioral Spot-Checks
 
 | Behavior | Command | Result | Status |
 |----------|---------|--------|--------|
-| integrationTest task is registered/discoverable | `./gradlew :kore-storage:tasks --all` | Lists `integrationTest - Runs kore-storage Testcontainers integration tests (CI-01).` — BUILD SUCCESSFUL in 777ms | ✓ PASS |
-| CI integration-test job well-formed | python3 yaml.safe_load + asserts | runs-on=[arc-runner-unityinflow], needs=build, docker info present, gradle task present, no ubuntu-latest → "CI YAML OK" | ✓ PASS |
-| Phase commits exist in history | `git cat-file -t` x7 | 48493b4, 24e17a2, c948ab9, 0520a1d, 41b9da5, 37d2fbd, ca30f78 all FOUND | ✓ PASS |
-| integrationTest executes real Postgres tests | `./gradlew :kore-storage:integrationTest` | No Docker daemon on host | ? SKIP → human |
-| Full `test lintKotlin` across 11 modules | `./gradlew test lintKotlin` | Verified green by orchestrator (per task brief) | ✓ PASS (delegated) |
+| Docker-free unit suites (criteria 3 & 4) execute fresh and pass | `./gradlew :kore-core:test :kore-observability:test :kore-skills:test --rerun-tasks` | BUILD SUCCESSFUL in 10s; 24 tasks executed (not cached) | ✓ PASS |
+| Skill span/parenting proof tests pass with >0 tests | parsed JUnit XML | AgentLoopSkillTest 10/0/0, ObservableAgentRunnerTest 9/0/0, KoreTracerTest 8/0/0 | ✓ PASS |
+| Skill event/serialization/metrics proof tests pass | parsed JUnit XML | EventBusMetricsObserverTest 5/0/0, AgentEventSerializationTest 7/0/0, SkillRegistryAdapterTest 7/0/0 | ✓ PASS |
+| integrationTest live run against real Postgres | `./gradlew :kore-storage:integrationTest` | No Docker daemon on host | ? SKIP → human |
+| CI integration-test job on self-hosted runner | (CI only) | First-PR-gated; not reproducible locally | ? SKIP → human |
 
 ### Probe Execution
 
@@ -76,24 +83,24 @@ Not applicable — no `scripts/*/tests/probe-*.sh` and the phase declares no pro
 
 | Requirement | Source Plan | Description | Status | Evidence |
 |-------------|-------------|-------------|--------|----------|
-| CI-01 | 05-01 | Dedicated `integrationTest` task, tag-filtered, fails loudly if 0 tests execute | ✓ SATISFIED | Task registered + zero-test guard verified by inspection and task discovery; live run human-gated |
+| CI-01 | 05-01 | Dedicated `integrationTest` task, tag-filtered, fails loudly if 0 tests execute | ✓ SATISFIED | Task + zero-test guard verified by inspection; live containerized run human-gated |
 | CI-02 | 05-01 | CI runs integration tests on arc-runner-unityinflow with `docker info` pre-flight, asserting tests executed | ✓ SATISFIED | Job shape + pre-flight + in-Gradle assertion verified; live CI run human-gated |
-| OBSV-03 | 05-02, 05-03, 05-04 | Skill activation emits `kore.skill.activate` span parented under agent-run span, name/count/duration attrs | ✓ SATISFIED | AgentLoop span emission + parenting test + KoreAttrs/withSpan support all verified |
-| OBSV-04 | 05-02, 05-03 | Skill activation emits `AgentEvent.SkillActivated` for metrics observers | ✓ SATISFIED | Subclass + conditional emission + observer reactions + counter-moved test all verified |
+| OBSV-03 | 05-02, 05-03, 05-04 | Skill activation emits `kore.skill.activate` span parented under agent-run span, name/count/duration attrs | ✓ SATISFIED | Emission + parenting test + KoreAttrs/withSpan support, all machine-verified green |
+| OBSV-04 | 05-02, 05-03 | Skill activation emits `AgentEvent.SkillActivated` for metrics observers | ✓ SATISFIED | Subclass + conditional emission + observer reactions + counter-moved test, all green |
 
-All 4 phase requirement IDs are accounted for. No orphaned requirements: REQUIREMENTS.md maps exactly CI-01, CI-02, OBSV-03, OBSV-04 to Phase 5, and all four appear in plan `requirements:` frontmatter (05-01: CI-01/CI-02; 05-02: OBSV-03/OBSV-04; 05-03: OBSV-03/OBSV-04; 05-04: OBSV-03).
-
-**Traceability consistency:** REQUIREMENTS.md checklist marks all four `[x]`; the traceability table marks all four "Complete". Checklist and table are mutually consistent and consistent with the verified codebase.
+All 4 phase requirement IDs accounted for. REQUIREMENTS.md maps exactly CI-01, CI-02, OBSV-03, OBSV-04 to Phase 5 (lines 25-31), all four appear in plan `requirements:` frontmatter, all four are marked `[x]` and "Complete" in the traceability table (lines 75-78). No orphaned requirements.
 
 ### Anti-Patterns Found
 
 | File | Line | Pattern | Severity | Impact |
 |------|------|---------|----------|--------|
-| (none) | — | No TBD/FIXME/XXX/HACK/placeholder/"not yet implemented" markers in any phase-modified source file | — | Clean |
+| (none) | — | No TODO/FIXME/XXX/TBD/HACK/placeholder markers; no `var`; no `!!` in any phase-modified source file | — | Clean (CLAUDE.md compliant) |
 
-### Documentation Discrepancy (informational, not a gap)
+### Quality Observations (informational — do NOT fail any criterion)
 
-ROADMAP/REQUIREMENTS describe "7 Testcontainers integration tests". The actual count is **13 `@Test` methods** across 3 `@Tag("integration")` classes (MigrationTest: 4, PostgresAuditLogAdapterTest: 5, PostgresAuditLogAdapterQueryTest: 4). This is a stale early estimate in the requirement wording. It does NOT affect goal achievement: the fail-loud guard fires on `count == 0`, independent of the exact non-zero count, and CI-01's behavioral contract ("fails loudly if 0 execute") is fully satisfied. No action required; optionally update the "7" wording in REQUIREMENTS.md/ROADMAP.md to "13" or "the @Tag(\"integration\") suite" for accuracy.
+1. **WR-02 (from 05-REVIEW.md): skill duration measured twice.** `AgentLoop.kt` computes `durMs` once in the `finally` block (line 127, for the span's `kore.skill.duration_ms`) and again at the emission block (the second `val durMs = (System.nanoTime() - startNanos) / 1_000_000` before `eventBus.emit`). The two reads can diverge by the cost of the intervening work, so the span's `kore.skill.duration_ms` and the event's `durationMs` may not be byte-identical. Both values ARE still emitted and both measure from the same `startNanos`, so neither Success Criterion 3 nor 4 fails. Recommend hoisting a single `durMs` (computed once after `activateFor` returns) and reusing it for both the span and the event for consistency.
+
+2. **Documentation discrepancy (stale count).** REQUIREMENTS.md (line 30) and ROADMAP describe "7 Testcontainers integration tests"; the actual count is **13 `@Test` methods** across 3 `@Tag("integration")` classes (MigrationTest 4, PostgresAuditLogAdapterTest 5, PostgresAuditLogAdapterQueryTest 4). Does NOT affect goal achievement — the fail-loud guard fires on `count == 0` regardless of the exact non-zero count. Optionally update the "7" wording for accuracy.
 
 ### Human Verification Required
 
@@ -101,7 +108,7 @@ ROADMAP/REQUIREMENTS describe "7 Testcontainers integration tests". The actual c
 
 **Test:** Run `./gradlew :kore-storage:integrationTest` on a Docker-equipped host (or observe the first PR CI run).
 **Expected:** All 13 `@Tag("integration")` Testcontainers tests start a real PostgreSQL container and execute with >0 tests run; no GradleException; BUILD SUCCESSFUL.
-**Why human:** The verification host has no Docker daemon; Testcontainers needs a live daemon to start the container. Task registration, tag filter, and fail-loud guard are already verified by inspection — only the containerized execution is human-gated.
+**Why human:** This host has no Docker daemon; Testcontainers needs a live daemon. Task registration, tag filter, and fail-loud guard are verified by inspection — only the containerized execution is human-gated.
 
 #### 2. CI integration-test job run on arc-runner-unityinflow (CI-02)
 
@@ -113,12 +120,12 @@ ROADMAP/REQUIREMENTS describe "7 Testcontainers integration tests". The actual c
 
 No gaps. All four success criteria are achieved in the codebase:
 
-1. The `integrationTest` task exists, is tag-filtered to `@Tag("integration")`, reuses `src/test`, is decoupled from build/check, and fails loudly via an `AtomicInteger`/`TestListener`/`doLast(GradleException)` zero-test guard. Confirmed registered and discoverable.
-2. The CI `integration-test` job is on `arc-runner-unityinflow`, `needs: build`, runs a loud `docker info` pre-flight worded as a config error, then invokes the gradle task. YAML well-formed.
-3. The `kore.skill.activate` span is always emitted (incl. count=0 and on throw), carries `kore.skill.names`/`count`/`duration_ms`, and is parented under `kore.agent.run` (proven by an end-to-end test through `ObservableAgentRunner`). `KoreAttrs` constants + `withSpan` string-array branch support it.
-4. `AgentEvent.SkillActivated` is `@Serializable`, emitted only on ≥1 match, and reacted to by all three observers (metrics moves a real counter + duration, span/dashboard explicit no-ops), with a counter-moved test.
+1. The `integrationTest` task exists, is tag-filtered to `@Tag("integration")`, reuses `src/test`, is decoupled from build/check, and fails loudly via an `AtomicInteger`/`TestListener`/`doLast(GradleException)` zero-test guard.
+2. The CI `integration-test` job is on `arc-runner-unityinflow`, `needs: build`, runs a loud `docker info` pre-flight worded as a config error, then invokes the gradle task. No ubuntu-latest. YAML well-formed.
+3. The `kore.skill.activate` span is always emitted (incl. count=0 and on throw), carries `kore.skill.names`/`count`/`duration_ms`, and is parented under `kore.agent.run` — proven by an end-to-end test through `ObservableAgentRunner` that ran fresh and green.
+4. `AgentEvent.SkillActivated` is `@Serializable`, emitted only on ≥1 match, and reacted to by all three observers (metrics moves a real counter + duration, span/dashboard explicit no-ops), with a counter-moved test that ran fresh and green.
 
-The only items routed to human verification are the inherently Docker-dependent live runs (criteria 1 and 2's "actually execute against real PostgreSQL" / "CI job runs green"), which cannot be exercised on a host without a Docker daemon. The full `./gradlew test lintKotlin` across all 11 modules passes (orchestrator-confirmed), and all seven phase commits are present in history.
+Status is `human_needed` (not `passed`) solely because the inherently Docker-dependent live runs (criteria 1 and 2's "actually execute against real PostgreSQL" / "CI job runs green") cannot be exercised on a host without a Docker daemon. The wiring, guards, and job shape are fully verified; only the containerized execution awaits human confirmation on a Docker-equipped host / first PR.
 
 ---
 
