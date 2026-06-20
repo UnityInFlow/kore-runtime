@@ -1,5 +1,5 @@
 ---
-status: complete
+status: testing
 phase: 05-ci-baseline-skill-observability
 source: [05-VERIFICATION.md]
 started: 2026-06-20
@@ -8,7 +8,15 @@ updated: 2026-06-20
 
 ## Current Test
 
-[testing complete]
+number: 1
+name: Live integrationTest run against real PostgreSQL (CI-01)
+expected: |
+  Running `./gradlew :kore-storage:integrationTest` on a Docker-equipped host
+  starts a real PostgreSQL container and executes all `@Tag("integration")`
+  Testcontainers tests (13 @Test methods across 3 tagged classes) with >0 tests
+  run; no GradleException; BUILD SUCCESSFUL. The fail-loud zero-test guard does
+  NOT fire.
+awaiting: user response
 
 ## Tests
 
@@ -23,7 +31,7 @@ updated: 2026-06-20
   filter, and the fail-loud zero-test guard are already verified by code
   inspection — only the containerized execution against real PostgreSQL is
   human-gated.
-- **Status:** pass
+- **Status:** awaiting
 
 ### Test 2: CI integration-test job on arc-runner-unityinflow (CI-02)
 
@@ -38,7 +46,7 @@ updated: 2026-06-20
   daemon is first-PR-gated and cannot be reproduced on this host. Job shape,
   runner, `needs: build`, docker pre-flight, and gradle task invocation are all
   verified by inspecting `ci.yml`.
-- **Status:** pass
+- **Status:** awaiting
 
 ## Notes
 
