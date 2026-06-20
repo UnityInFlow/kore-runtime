@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v0.0.2
 milestone_name: Hardening & Hierarchy
-status: verified_human_needed
-stopped_at: Phase 5 verified 4/4 in code — 2 Docker-gated UAT items open (05-UAT.md)
-last_updated: "2026-06-20T17:36:40.424Z"
+status: ready_to_plan
+stopped_at: Phase 5 complete & verified (UAT user-attested pass) — ready to plan Phase 6
+last_updated: "2026-06-20"
 last_activity: 2026-06-20
 progress:
   total_phases: 3
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-12)
 
 **Core value:** A developer adds one Spring Boot dependency, writes an `agent { }` block, and has a production-ready agent running with observability and budget control.
-**Current focus:** Phase 05 — ci-baseline-skill-observability
+**Current focus:** Phase 06 — real-budget-enforcement
 
 ## Current Position
 
-Phase: 05 (ci-baseline-skill-observability) — VERIFIED (human_needed)
-Plan: 4 of 4 (all complete)
-Status: 4/4 success criteria verified in code; 2 Docker-gated live runs await human/CI UAT (05-UAT.md). Next: Phase 6, or /gsd-verify-work 05 after first Docker-equipped CI run.
+Phase: 6
+Plan: Not started
+Status: Phase 5 COMPLETE & VERIFIED (passed) — all 4 plans executed; both Docker-gated UAT items user-attested pass (05-UAT.md). Ready to plan Phase 6 (Real Budget Enforcement).
 Last activity: 2026-06-20
 
-Progress: [██████████] 100% (Phase 5 code-complete)
+Progress: [███░░░░░░░] 33% (1 of 3 milestone phases complete)
 
 **Milestone phase structure:**
 
@@ -42,7 +42,7 @@ Progress: [██████████] 100% (Phase 5 code-complete)
 
 **Velocity:**
 
-- Total plans completed: 21 (v0.0.1)
+- Total plans completed: 25 (v0.0.1)
 - Average duration: -
 - Total execution time: -
 
@@ -54,6 +54,7 @@ Progress: [██████████] 100% (Phase 5 code-complete)
 | 02 | 3 | - | - |
 | 03 | 5 | - | - |
 | 04 | 6 | - | - |
+| 5 | 4 | - | - |
 
 *Updated after each plan completion*
 | Phase 01-core-runtime P01 | 4 | 2 tasks | 20 files |
