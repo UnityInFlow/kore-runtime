@@ -4,7 +4,7 @@ milestone: v0.0.2
 milestone_name: Hardening & Hierarchy
 status: verifying
 stopped_at: Completed 05-04-PLAN.md
-last_updated: "2026-06-20T17:30:06.316Z"
+last_updated: "2026-06-20T17:30:43.464Z"
 last_activity: 2026-06-20
 progress:
   total_phases: 3
@@ -80,6 +80,7 @@ Progress: [████████░░] 75%
 | Phase 05-ci-baseline-skill-observability P02 | 12min | 2 tasks | 7 files |
 | Phase 05 P02 | 12min | 2 tasks | 7 files |
 | Phase 05-ci-baseline-skill-observability P04 | 8min | 1 tasks | 2 files |
+| Phase 05 P04 | 2min | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -168,6 +169,8 @@ Recent decisions affecting current work:
 - [Phase 05-ci-baseline-skill-observability]: observer when branches (kore-observability/kore-dashboard) intentionally NOT touched this plan — their else -> Unit absorbs SkillActivated without breaking compile (RESEARCH Pitfall 1); observer reactions + parenting test are Plan 05-03
 - [Phase ?]: Plan 05-02: SkillRegistry.activateFor returns List<ActivatedSkill> (breaking, no shim); kore.skill.activate span always emitted incl count=0 and on-throw; SkillActivated event only on >=1 match (D-01/D-04/D-07)
 - [Phase 05-ci-baseline-skill-observability]: Plan 05-04: KoreAttrs.SKILL_NAMES/SKILL_COUNT/SKILL_DURATION_MS added as the single source of truth for the kore.skill.* attribute keys (mirroring AgentLoop's inline literals); KoreTracer.withSpan gained an `is List<*>` branch that sets a native OTel string-array via AttributeKey.stringArrayKey + filterIsInstance<String>() — no comma-join, no UNCHECKED_CAST, no !! (D-03). OBSV-03 now complete on both emission and support sides.
+- [Phase 05-ci-baseline-skill-observability]: Plan 05-04: KoreAttrs.SKILL_NAMES/SKILL_COUNT/SKILL_DURATION_MS added as the single source of truth for kore.skill.* keys; AgentLoop mirrors the literal strings inline (cannot import KoreAttrs) — a KoreTracerTest asserts constant==literal to prevent drift
+- [Phase 05-ci-baseline-skill-observability]: Plan 05-04: KoreTracer.withSpan gains an is List<*> branch setting a native OTel string-array via AttributeKey.stringArrayKey + filterIsInstance<String>() (no UNCHECKED_CAST, no !!, no comma-join); is List<*> not is List<String> due to JVM type erasure
 
 ### Pending Todos
 
@@ -195,6 +198,6 @@ Items acknowledged and deferred at milestone close on 2026-04-26.
 
 ## Session Continuity
 
-Last session: 2026-06-20T17:30:06.309Z
+Last session: 2026-06-20T17:30:43.457Z
 Stopped at: Completed 05-04-PLAN.md
 Resume file: None
