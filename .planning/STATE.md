@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v0.0.2
 milestone_name: Hardening & Hierarchy
-status: executing
-stopped_at: Completed 05-02-PLAN.md
-last_updated: "2026-06-20T17:25:36.453Z"
-last_activity: 2026-06-20 -- Completed Phase 05 Plan 02 (SkillRegistry port → List<ActivatedSkill> + skill-activate span attrs + SkillActivated event)
+status: verifying
+stopped_at: Completed 05-04-PLAN.md
+last_updated: "2026-06-20T17:30:06.316Z"
+last_activity: 2026-06-20
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 4
-  completed_plans: 2
+  completed_plans: 3
   percent: 0
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-12)
 ## Current Position
 
 Phase: 05 (ci-baseline-skill-observability) — EXECUTING
-Plan: 4 of 4
-Status: Ready to execute
-Last activity: 2026-06-20 -- Completed Phase 05 Plan 02 (SkillRegistry port → List<ActivatedSkill> + skill-activate span attrs + SkillActivated event)
+Plan: 4 of 4 (complete); 05-03 (observer reactions + parenting test) remains
+Status: Phase complete — ready for verification
+Last activity: 2026-06-20
 
-Progress: [░░░░░░░░░░] 0% (0/3 phases)
+Progress: [████████░░] 75%
 
 **Milestone phase structure:**
 
@@ -79,6 +79,7 @@ Progress: [░░░░░░░░░░] 0% (0/3 phases)
 | Phase 05-ci-baseline-skill-observability P01 | 2min | 2 tasks | 2 files |
 | Phase 05-ci-baseline-skill-observability P02 | 12min | 2 tasks | 7 files |
 | Phase 05 P02 | 12min | 2 tasks | 7 files |
+| Phase 05-ci-baseline-skill-observability P04 | 8min | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -166,6 +167,7 @@ Recent decisions affecting current work:
 - [Phase 05-ci-baseline-skill-observability]: span-always / event-on-match asymmetry (D-04 vs D-07) — kore.skill.activate span emits unconditionally (incl. count=0), AgentEvent.SkillActivated emits only on >=1 match; prompts injected from ActivatedSkill.prompt, only skillNames (not prompts) reach the event payload (D-06)
 - [Phase 05-ci-baseline-skill-observability]: observer when branches (kore-observability/kore-dashboard) intentionally NOT touched this plan — their else -> Unit absorbs SkillActivated without breaking compile (RESEARCH Pitfall 1); observer reactions + parenting test are Plan 05-03
 - [Phase ?]: Plan 05-02: SkillRegistry.activateFor returns List<ActivatedSkill> (breaking, no shim); kore.skill.activate span always emitted incl count=0 and on-throw; SkillActivated event only on >=1 match (D-01/D-04/D-07)
+- [Phase 05-ci-baseline-skill-observability]: Plan 05-04: KoreAttrs.SKILL_NAMES/SKILL_COUNT/SKILL_DURATION_MS added as the single source of truth for the kore.skill.* attribute keys (mirroring AgentLoop's inline literals); KoreTracer.withSpan gained an `is List<*>` branch that sets a native OTel string-array via AttributeKey.stringArrayKey + filterIsInstance<String>() — no comma-join, no UNCHECKED_CAST, no !! (D-03). OBSV-03 now complete on both emission and support sides.
 
 ### Pending Todos
 
@@ -193,6 +195,6 @@ Items acknowledged and deferred at milestone close on 2026-04-26.
 
 ## Session Continuity
 
-Last session: 2026-06-20T17:25:25.958Z
-Stopped at: Completed 05-02-PLAN.md
+Last session: 2026-06-20T17:30:06.309Z
+Stopped at: Completed 05-04-PLAN.md
 Resume file: None

@@ -46,7 +46,7 @@ Plans:
 
 - [x] 05-01-PLAN.md — integrationTest Gradle task (fail-loud zero-test guard) + integration-test CI job with docker pre-flight (CI-01, CI-02) [wave 1]
 - [x] 05-02-PLAN.md — breaking SkillRegistry port → List<ActivatedSkill> + AgentLoop kore.skill.activate span attrs + AgentEvent.SkillActivated emission (OBSV-03/04 emission side) [wave 1]
-- [ ] 05-04-PLAN.md — KoreAttrs skill key constants + KoreTracer.withSpan string-array attribute branch (OBSV-03 support side) [wave 1]
+- [x] 05-04-PLAN.md — KoreAttrs skill key constants + KoreTracer.withSpan string-array attribute branch (OBSV-03 support side) [wave 1] ✅ 2026-06-20 (1/1 tasks)
 - [ ] 05-03-PLAN.md — observer SkillActivated branches (metrics counter/duration, span no-op, dashboard) + span-parenting test through ObservableAgentRunner (OBSV-03/04) [wave 2, depends on 05-02]
 
 ### Phase 6: Real Budget Enforcement
