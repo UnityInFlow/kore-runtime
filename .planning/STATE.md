@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v0.0.2
 milestone_name: Hardening & Hierarchy
 status: executing
-stopped_at: Completed 05-01-PLAN.md
-last_updated: "2026-06-20T17:17:48.431Z"
-last_activity: 2026-06-20 -- Completed Phase 05 Plan 01 (integrationTest task + CI job)
+stopped_at: Completed 05-02-PLAN.md
+last_updated: "2026-06-20T17:25:18.609Z"
+last_activity: 2026-06-20 -- Completed Phase 05 Plan 02 (SkillRegistry port → List<ActivatedSkill> + skill-activate span attrs + SkillActivated event)
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 4
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-06-12)
 ## Current Position
 
 Phase: 05 (ci-baseline-skill-observability) — EXECUTING
-Plan: 2 of 4
+Plan: 4 of 4
 Status: Ready to execute
-Last activity: 2026-06-20 -- Completed Phase 05 Plan 01 (integrationTest task + CI job)
+Last activity: 2026-06-20 -- Completed Phase 05 Plan 02 (SkillRegistry port → List<ActivatedSkill> + skill-activate span attrs + SkillActivated event)
 
 Progress: [░░░░░░░░░░] 0% (0/3 phases)
 
@@ -77,6 +77,8 @@ Progress: [░░░░░░░░░░] 0% (0/3 phases)
 | Phase 04-event-bus-publishing P04 | 12min | 2 tasks | 6 files |
 | Phase 04-event-bus-publishing P05 | 5min | 2 tasks | 14 files |
 | Phase 05-ci-baseline-skill-observability P01 | 2min | 2 tasks | 2 files |
+| Phase 05-ci-baseline-skill-observability P02 | 12min | 2 tasks | 7 files |
+| Phase 05 P02 | 12min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -158,6 +160,11 @@ Recent decisions affecting current work:
 - [Phase 05-ci-baseline-skill-observability]: integration-test CI job on [arc-runner-unityinflow] needs:build with a docker info pre-flight emitting ::error title=Docker unavailable:: as a RUNNER CONFIG ERROR before tests run (D-14); zero-test assertion lives entirely in the Gradle guard, no CI-side XML parsing (D-15)
 - [Phase 05-ci-baseline-skill-observability]: kore-storage integrationTest zero-test guard uses addTestListener(TestListener) + AtomicInteger + doLast throwing GradleException (NOT afterSuite — removed in Gradle 10 / config-cache-incompatible); task reuses src/test source set (D-09), decoupled from build/check (D-11)
 - [Phase 05-ci-baseline-skill-observability]: integration-test CI job on self-hosted [arc-runner-unityinflow], needs:build, with a docker info pre-flight failing as a RUNNER CONFIG ERROR (D-14); zero-test assertion lives in the Gradle guard, no CI-side XML parsing (D-15)
+- [Phase 05-ci-baseline-skill-observability]: SkillRegistry.activateFor() now returns List<ActivatedSkill> (breaking, no compat shim — D-01); ActivatedSkill(name, prompt) is a stdlib-only data class in kore-core port package, NOT @Serializable, never crosses the bus (D-02)
+- [Phase 05-ci-baseline-skill-observability]: AgentLoop builds the kore.skill.activate span with literal key strings (kore.skill.names string-array / count / duration_ms) because kore-core cannot import KoreAttrs from kore-observability — KoreAttrs is the mirror source-of-truth, Plan 05-04 adds the constants; span name held as a private companion const SKILL_ACTIVATE_SPAN mirroring KoreSpans.SKILL_ACTIVATE
+- [Phase 05-ci-baseline-skill-observability]: var-free span guard — val arrayOfNulls<List<ActivatedSkill>>(1) holder assigned via .also in try, read with .orEmpty() in finally so names/count/duration compute even when activateFor throws (span ALWAYS ends, D-04 / Pitfall 5); no var, no !!; nanoTime for duration
+- [Phase 05-ci-baseline-skill-observability]: span-always / event-on-match asymmetry (D-04 vs D-07) — kore.skill.activate span emits unconditionally (incl. count=0), AgentEvent.SkillActivated emits only on >=1 match; prompts injected from ActivatedSkill.prompt, only skillNames (not prompts) reach the event payload (D-06)
+- [Phase 05-ci-baseline-skill-observability]: observer when branches (kore-observability/kore-dashboard) intentionally NOT touched this plan — their else -> Unit absorbs SkillActivated without breaking compile (RESEARCH Pitfall 1); observer reactions + parenting test are Plan 05-03
 
 ### Pending Todos
 
@@ -185,6 +192,6 @@ Items acknowledged and deferred at milestone close on 2026-04-26.
 
 ## Session Continuity
 
-Last session: 2026-06-20T17:17:48.424Z
-Stopped at: Completed 05-01-PLAN.md
+Last session: 2026-06-20T17:35:00.000Z
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None
