@@ -72,8 +72,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HIER-02 | Phase 7 | Pending |
 | HIER-03 | Phase 7 | Pending |
 | HIER-04 | Phase 7 | Pending |
-| OBSV-03 | Phase 5 | In Progress (emission side done 05-02; KoreTracer support done 05-04; parenting test remains 05-03) |
-| OBSV-04 | Phase 5 | In Progress (emission side done 05-02; observer reactions 05-03) |
+| OBSV-03 | Phase 5 | Complete (emission 05-02; KoreTracer support 05-04; parenting test 05-03) |
+| OBSV-04 | Phase 5 | Complete (emission 05-02; observer reactions 05-03) |
 | CI-01 | Phase 5 | Complete |
 | CI-02 | Phase 5 | Complete |
 

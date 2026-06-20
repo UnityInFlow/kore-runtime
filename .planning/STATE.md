@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v0.0.2
 milestone_name: Hardening & Hierarchy
 status: verifying
-stopped_at: Completed 05-04-PLAN.md
-last_updated: "2026-06-20T17:30:43.464Z"
+stopped_at: Completed 05-03-PLAN.md (Phase 5 complete — all 4 plans done)
+last_updated: "2026-06-20T17:36:40.424Z"
 last_activity: 2026-06-20
 progress:
   total_phases: 3
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 4
-  completed_plans: 3
-  percent: 0
+  completed_plans: 4
+  percent: 33
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-06-12)
 
 ## Current Position
 
-Phase: 05 (ci-baseline-skill-observability) — EXECUTING
-Plan: 4 of 4 (complete); 05-03 (observer reactions + parenting test) remains
+Phase: 05 (ci-baseline-skill-observability) — COMPLETE
+Plan: 4 of 4 (all complete)
 Status: Phase complete — ready for verification
 Last activity: 2026-06-20
 
-Progress: [████████░░] 75%
+Progress: [██████████] 100%
 
 **Milestone phase structure:**
 
@@ -81,6 +81,8 @@ Progress: [████████░░] 75%
 | Phase 05 P02 | 12min | 2 tasks | 7 files |
 | Phase 05-ci-baseline-skill-observability P04 | 8min | 1 tasks | 2 files |
 | Phase 05 P04 | 2min | 1 tasks | 2 files |
+| Phase 05-ci-baseline-skill-observability P03 | 6min | 2 tasks | 5 files |
+| Phase 05 P03 | 8min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -171,6 +173,9 @@ Recent decisions affecting current work:
 - [Phase 05-ci-baseline-skill-observability]: Plan 05-04: KoreAttrs.SKILL_NAMES/SKILL_COUNT/SKILL_DURATION_MS added as the single source of truth for the kore.skill.* attribute keys (mirroring AgentLoop's inline literals); KoreTracer.withSpan gained an `is List<*>` branch that sets a native OTel string-array via AttributeKey.stringArrayKey + filterIsInstance<String>() — no comma-join, no UNCHECKED_CAST, no !! (D-03). OBSV-03 now complete on both emission and support sides.
 - [Phase 05-ci-baseline-skill-observability]: Plan 05-04: KoreAttrs.SKILL_NAMES/SKILL_COUNT/SKILL_DURATION_MS added as the single source of truth for kore.skill.* keys; AgentLoop mirrors the literal strings inline (cannot import KoreAttrs) — a KoreTracerTest asserts constant==literal to prevent drift
 - [Phase 05-ci-baseline-skill-observability]: Plan 05-04: KoreTracer.withSpan gains an is List<*> branch setting a native OTel string-array via AttributeKey.stringArrayKey + filterIsInstance<String>() (no UNCHECKED_CAST, no !!, no comma-join); is List<*> not is List<String> due to JVM type erasure
+- [Phase 05-ci-baseline-skill-observability]: Plan 05-03: all three event-bus observers explicitly handle AgentEvent.SkillActivated before else -> Unit (RESEARCH Pitfall 1 — silent drop guarded): EventBusMetricsObserver moves kore.skills.activated counter once per skill name (tag agent_name+skill_name, D-24 low-cardinality) + records a per-run kore.skills.activate.duration DistributionSummary (Open-Q 2 — percentiles over a plain counter); EventBusSpanObserver + EventBusDashboardObserver are documented no-ops (D-08 — AgentLoop already emits the in-process span; a second would duplicate it)
+- [Phase 05-ci-baseline-skill-observability]: Plan 05-03: OBSV-03 parenting proven through a REAL AgentLoop driven via ObservableAgentRunner with the SAME SDK tracer wired into both the runner's KoreTracer and the loop — skillSpan.parentSpanContext.spanId == agentRunSpan.spanId, same traceId; bare-loop would emit a ROOT skill span (Pitfall 2), so the test must go through the runner. Phase 5 now fully complete (CI-01/CI-02/OBSV-03/OBSV-04)
+- [Phase ?]: Plan 05-03: explicit SkillActivated branch before else->Unit in all 3 observers (silent-drop guard); per-run DistributionSummary for skill duration; OBSV-03 parenting proven via real AgentLoop through ObservableAgentRunner into shared InMemorySpanExporter
 
 ### Pending Todos
 
@@ -198,6 +203,6 @@ Items acknowledged and deferred at milestone close on 2026-04-26.
 
 ## Session Continuity
 
-Last session: 2026-06-20T17:30:43.457Z
-Stopped at: Completed 05-04-PLAN.md
+Last session: 2026-06-20T17:36:20.849Z
+Stopped at: Completed 05-03-PLAN.md (Phase 5 complete — all 4 plans done)
 Resume file: None

@@ -23,7 +23,7 @@ Full milestone details: [milestones/v0.0.1-ROADMAP.md](milestones/v0.0.1-ROADMAP
 
 **Milestone Goal:** Close every item deferred at v0.0.1's close — real budget enforcement, hierarchical agents, full observability coverage, and integration-test CI — so the runtime is production-trustworthy before the v0.1.0 feature push.
 
-- [ ] **Phase 5: CI Baseline & Skill Observability** - Integration tests run in CI and skill activations are fully observable (span + event)
+- [x] **Phase 5: CI Baseline & Skill Observability** - Integration tests run in CI and skill activations are fully observable (span + event)
 - [ ] **Phase 6: Real Budget Enforcement** - budget-breaker adapter delivers actual hard-stop token budgets with per-agent isolation
 - [ ] **Phase 7: Hierarchical Agents** - Parent agents spawn children via `child { }` with structured-concurrency cancellation and traceable run trees
 
@@ -47,7 +47,7 @@ Plans:
 - [x] 05-01-PLAN.md — integrationTest Gradle task (fail-loud zero-test guard) + integration-test CI job with docker pre-flight (CI-01, CI-02) [wave 1]
 - [x] 05-02-PLAN.md — breaking SkillRegistry port → List<ActivatedSkill> + AgentLoop kore.skill.activate span attrs + AgentEvent.SkillActivated emission (OBSV-03/04 emission side) [wave 1]
 - [x] 05-04-PLAN.md — KoreAttrs skill key constants + KoreTracer.withSpan string-array attribute branch (OBSV-03 support side) [wave 1] ✅ 2026-06-20 (1/1 tasks)
-- [ ] 05-03-PLAN.md — observer SkillActivated branches (metrics counter/duration, span no-op, dashboard) + span-parenting test through ObservableAgentRunner (OBSV-03/04) [wave 2, depends on 05-02]
+- [x] 05-03-PLAN.md — observer SkillActivated branches (metrics counter/duration, span no-op, dashboard) + span-parenting test through ObservableAgentRunner (OBSV-03/04) [wave 2, depends on 05-02] ✅ 2026-06-20 (2/2 tasks)
 
 ### Phase 6: Real Budget Enforcement
 
@@ -88,6 +88,6 @@ Phases execute in numeric order: 5 → 6 → 7 (Phase 6 has no dependency on Pha
 | 2. Observability & Storage    | v0.0.1 | 3/3 | Complete | 2026-04-13 |
 | 3. Skills, Spring & Dashboard | v0.0.1 | 5/5 | Complete | 2026-04-14 |
 | 4. Event Bus & Publishing     | v0.0.1 | 6/6 | Complete | 2026-04-15 |
-| 5. CI Baseline & Skill Observability | v0.0.2 | 3/4 | In Progress|  |
+| 5. CI Baseline & Skill Observability | v0.0.2 | 4/4 | Complete   | 2026-06-20 |
 | 6. Real Budget Enforcement           | v0.0.2 | 0/? | Not started | - |
 | 7. Hierarchical Agents               | v0.0.2 | 0/? | Not started | - |
