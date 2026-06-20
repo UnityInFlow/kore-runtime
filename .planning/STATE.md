@@ -4,7 +4,7 @@ milestone: v0.0.2
 milestone_name: Hardening & Hierarchy
 status: executing
 stopped_at: Completed 05-02-PLAN.md
-last_updated: "2026-06-20T17:25:18.609Z"
+last_updated: "2026-06-20T17:25:36.453Z"
 last_activity: 2026-06-20 -- Completed Phase 05 Plan 02 (SkillRegistry port → List<ActivatedSkill> + skill-activate span attrs + SkillActivated event)
 progress:
   total_phases: 3
@@ -165,6 +165,7 @@ Recent decisions affecting current work:
 - [Phase 05-ci-baseline-skill-observability]: var-free span guard — val arrayOfNulls<List<ActivatedSkill>>(1) holder assigned via .also in try, read with .orEmpty() in finally so names/count/duration compute even when activateFor throws (span ALWAYS ends, D-04 / Pitfall 5); no var, no !!; nanoTime for duration
 - [Phase 05-ci-baseline-skill-observability]: span-always / event-on-match asymmetry (D-04 vs D-07) — kore.skill.activate span emits unconditionally (incl. count=0), AgentEvent.SkillActivated emits only on >=1 match; prompts injected from ActivatedSkill.prompt, only skillNames (not prompts) reach the event payload (D-06)
 - [Phase 05-ci-baseline-skill-observability]: observer when branches (kore-observability/kore-dashboard) intentionally NOT touched this plan — their else -> Unit absorbs SkillActivated without breaking compile (RESEARCH Pitfall 1); observer reactions + parenting test are Plan 05-03
+- [Phase ?]: Plan 05-02: SkillRegistry.activateFor returns List<ActivatedSkill> (breaking, no shim); kore.skill.activate span always emitted incl count=0 and on-throw; SkillActivated event only on >=1 match (D-01/D-04/D-07)
 
 ### Pending Todos
 
@@ -192,6 +193,6 @@ Items acknowledged and deferred at milestone close on 2026-04-26.
 
 ## Session Continuity
 
-Last session: 2026-06-20T17:35:00.000Z
+Last session: 2026-06-20T17:25:25.958Z
 Stopped at: Completed 05-02-PLAN.md
 Resume file: None

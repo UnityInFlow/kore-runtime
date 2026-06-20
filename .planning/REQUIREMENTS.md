@@ -22,8 +22,8 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Observability
 
-- [ ] **OBSV-03**: Skill activation emits a `kore.skill.activate` OTel span correctly parented under the agent-run span (via `KoreTracer.withSpan`), with skill name/count/duration attributes
-- [ ] **OBSV-04**: Skill activation emits `AgentEvent.SkillActivated` on the event bus for metrics observers
+- [x] **OBSV-03**: Skill activation emits a `kore.skill.activate` OTel span correctly parented under the agent-run span (via `KoreTracer.withSpan`), with skill name/count/duration attributes
+- [x] **OBSV-04**: Skill activation emits `AgentEvent.SkillActivated` on the event bus for metrics observers
 
 ### CI / Testing
 
