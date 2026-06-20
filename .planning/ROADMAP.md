@@ -36,7 +36,7 @@ Full milestone details: [milestones/v0.0.1-ROADMAP.md](milestones/v0.0.1-ROADMAP
 **Requirements**: CI-01, CI-02, OBSV-03, OBSV-04
 **Success Criteria** (what must be TRUE):
 
-  1. Developer can run `./gradlew :kore-storage:integrationTest` and watch the 7 Testcontainers tests execute against real PostgreSQL — the task fails loudly if 0 tests run
+  1. Developer can run `./gradlew :kore-storage:integrationTest` and watch the tagged Testcontainers tests (13 `@Test` methods across 3 `@Tag("integration")` classes) execute against real PostgreSQL — the task fails loudly if 0 tests run
   2. CI runs the integration tests on arc-runner-unityinflow with a `docker info` pre-flight check, and the job asserts tests actually executed (no silent 0-test pass)
   3. A skill activation produces a `kore.skill.activate` OTel span correctly parented under the agent-run span, carrying skill name/count/duration attributes (visible in any OTel backend)
   4. A skill activation emits `AgentEvent.SkillActivated` on the event bus, observable by metrics observers (e.g., `EventBusSpanObserver` / `EventBusMetricsObserver`)

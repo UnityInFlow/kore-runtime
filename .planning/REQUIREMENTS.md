@@ -27,7 +27,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### CI / Testing
 
-- [x] **CI-01**: Developer can run kore-storage's 7 Testcontainers integration tests via a dedicated `./gradlew :kore-storage:integrationTest` task (tag-filtered, fails loudly if 0 tests execute)
+- [x] **CI-01**: Developer can run kore-storage's tagged Testcontainers integration tests (13 `@Test` methods across 3 `@Tag("integration")` classes) via a dedicated `./gradlew :kore-storage:integrationTest` task (tag-filtered, fails loudly if 0 tests execute)
 - [x] **CI-02**: CI runs the integration tests on arc-runner-unityinflow with a Docker pre-flight check (`docker info`), asserting tests actually executed
 
 ## Future Requirements (v0.1.0)
