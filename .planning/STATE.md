@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v0.0.2
 milestone_name: Hardening & Hierarchy
-status: verifying
-stopped_at: Completed 05-03-PLAN.md (Phase 5 complete — all 4 plans done)
+status: verified_human_needed
+stopped_at: Phase 5 verified 4/4 in code — 2 Docker-gated UAT items open (05-UAT.md)
 last_updated: "2026-06-20T17:36:40.424Z"
 last_activity: 2026-06-20
 progress:
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-06-12)
 
 ## Current Position
 
-Phase: 05 (ci-baseline-skill-observability) — COMPLETE
+Phase: 05 (ci-baseline-skill-observability) — VERIFIED (human_needed)
 Plan: 4 of 4 (all complete)
-Status: Phase complete — ready for verification
+Status: 4/4 success criteria verified in code; 2 Docker-gated live runs await human/CI UAT (05-UAT.md). Next: Phase 6, or /gsd-verify-work 05 after first Docker-equipped CI run.
 Last activity: 2026-06-20
 
-Progress: [██████████] 100%
+Progress: [██████████] 100% (Phase 5 code-complete)
 
 **Milestone phase structure:**
 
