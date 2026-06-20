@@ -57,7 +57,7 @@ class AgentLoop(
     suspend fun run(task: AgentTask): AgentResult {
         val agentId = task.id
         val history = mutableListOf<ConversationMessage>()
-        var accumulatedUsage = TokenUsage(0, 0)
+        val accumulatedUsage = TokenUsage(0, 0)
 
         // Build initial tool list from all providers
         val toolDefs: List<ToolDefinition> =
@@ -108,9 +108,14 @@ class AgentLoop(
                 ?.setParent(Context.current()) // parents under kore.agent.run (OBSV-03)
                 ?.startSpan()
         val startNanos = System.nanoTime()
-        // Holder is read inside `finally` so attributes are computable even if
+        // Holders are read inside `finally` so attributes are computable even if
         // activateFor throws (default stays empty → count=0, names=[]). val-only.
+        // durationMsHolder captures the activation duration ONCE so the span
+        // attribute and the SkillActivated event below report the identical value
+        // (WR-02: a second System.nanoTime() read after message assembly would
+        // diverge from the span's measurement).
         val activatedHolder = arrayOfNulls<List<ActivatedSkill>>(1)
+        val durationMsHolder = LongArray(1)
         val activated: List<ActivatedSkill> =
             try {
                 skillRegistry
@@ -120,6 +125,7 @@ class AgentLoop(
                     ).also { activatedHolder[0] = it }
             } finally {
                 val durMs = (System.nanoTime() - startNanos) / 1_000_000
+                durationMsHolder[0] = durMs
                 val names = activatedHolder[0].orEmpty().map { it.name }
                 span?.apply {
                     setAttribute(AttributeKey.stringArrayKey("kore.skill.names"), names)
@@ -138,12 +144,11 @@ class AgentLoop(
                     content = activated.joinToString("\n\n") { it.prompt },
                 ),
             )
-            val durMs = (System.nanoTime() - startNanos) / 1_000_000
             eventBus.emit(
                 AgentEvent.SkillActivated(
                     agentId = agentId,
                     skillNames = activated.map { it.name },
-                    durationMs = durMs,
+                    durationMs = durationMsHolder[0], // same measurement as the span (WR-02)
                 ),
             )
         }
