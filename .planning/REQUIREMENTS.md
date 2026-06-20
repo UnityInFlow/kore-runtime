@@ -27,8 +27,8 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### CI / Testing
 
-- [ ] **CI-01**: Developer can run kore-storage's 7 Testcontainers integration tests via a dedicated `./gradlew :kore-storage:integrationTest` task (tag-filtered, fails loudly if 0 tests execute)
-- [ ] **CI-02**: CI runs the integration tests on arc-runner-unityinflow with a Docker pre-flight check (`docker info`), asserting tests actually executed
+- [x] **CI-01**: Developer can run kore-storage's 7 Testcontainers integration tests via a dedicated `./gradlew :kore-storage:integrationTest` task (tag-filtered, fails loudly if 0 tests execute)
+- [x] **CI-02**: CI runs the integration tests on arc-runner-unityinflow with a Docker pre-flight check (`docker info`), asserting tests actually executed
 
 ## Future Requirements (v0.1.0)
 
@@ -74,10 +74,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HIER-04 | Phase 7 | Pending |
 | OBSV-03 | Phase 5 | Pending |
 | OBSV-04 | Phase 5 | Pending |
-| CI-01 | Phase 5 | Pending |
-| CI-02 | Phase 5 | Pending |
+| CI-01 | Phase 5 | Complete |
+| CI-02 | Phase 5 | Complete |
 
 **Coverage:**
+
 - v0.0.2 requirements: 11 total
 - Mapped to phases: 11 ✓
 - Unmapped: 0

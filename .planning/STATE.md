@@ -4,7 +4,7 @@ milestone: v0.0.2
 milestone_name: Hardening & Hierarchy
 status: executing
 stopped_at: Phase 5 context gathered
-last_updated: "2026-06-20T17:16:14.658Z"
+last_updated: "2026-06-20T17:17:22.707Z"
 last_activity: 2026-06-20 -- Completed Phase 05 Plan 01 (integrationTest task + CI job)
 progress:
   total_phases: 3
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-06-12)
 ## Current Position
 
 Phase: 05 (ci-baseline-skill-observability) — EXECUTING
-Plan: 3 of 4
+Plan: 2 of 4
 Status: Ready to execute
 Last activity: 2026-06-20 -- Completed Phase 05 Plan 01 (integrationTest task + CI job)
 
@@ -156,6 +156,8 @@ Recent decisions affecting current work:
 - [Phase 05-ci-baseline-skill-observability]: integrationTest zero-test guard uses addTestListener(TestListener) + AtomicInteger (val holding mutable state), not afterSuite — afterSuite is deprecated Gradle 9 / removed Gradle 10 / config-cache-incompatible (D-10)
 - [Phase 05-ci-baseline-skill-observability]: integrationTest reuses existing src/test source set (no src/integrationTest move, D-09) and is decoupled from check/build so default ./gradlew build stays fast and Docker-free (D-11)
 - [Phase 05-ci-baseline-skill-observability]: integration-test CI job on [arc-runner-unityinflow] needs:build with a docker info pre-flight emitting ::error title=Docker unavailable:: as a RUNNER CONFIG ERROR before tests run (D-14); zero-test assertion lives entirely in the Gradle guard, no CI-side XML parsing (D-15)
+- [Phase ?]: [Phase 05-ci-baseline-skill-observability]: kore-storage integrationTest zero-test guard uses addTestListener(TestListener) + AtomicInteger + doLast throwing GradleException (NOT afterSuite — removed in Gradle 10 / config-cache-incompatible); task reuses src/test source set (D-09), decoupled from build/check (D-11)
+- [Phase ?]: [Phase 05-ci-baseline-skill-observability]: integration-test CI job on self-hosted [arc-runner-unityinflow], needs:build, with a docker info pre-flight failing as a RUNNER CONFIG ERROR (D-14); zero-test assertion lives in the Gradle guard, no CI-side XML parsing (D-15)
 
 ### Pending Todos
 
