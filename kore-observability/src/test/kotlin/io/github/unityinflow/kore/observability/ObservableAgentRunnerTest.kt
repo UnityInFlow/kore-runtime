@@ -3,7 +3,15 @@ package io.github.unityinflow.kore.observability
 import io.github.unityinflow.kore.core.AgentLoop
 import io.github.unityinflow.kore.core.AgentResult
 import io.github.unityinflow.kore.core.AgentTask
+import io.github.unityinflow.kore.core.LLMChunk
+import io.github.unityinflow.kore.core.LLMConfig
 import io.github.unityinflow.kore.core.TokenUsage
+import io.github.unityinflow.kore.core.internal.InMemoryAuditLog
+import io.github.unityinflow.kore.core.internal.InMemoryBudgetEnforcer
+import io.github.unityinflow.kore.core.internal.InProcessEventBus
+import io.github.unityinflow.kore.core.port.ActivatedSkill
+import io.github.unityinflow.kore.core.port.LLMBackend
+import io.github.unityinflow.kore.core.port.SkillRegistry
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.coEvery
@@ -12,6 +20,7 @@ import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -126,5 +135,66 @@ class ObservableAgentRunnerTest {
 
             val span = exporter.finishedSpanItems.first { it.name == KoreSpans.AGENT_RUN }
             span.traceId shouldNotBe null
+        }
+
+    /** Minimal backend: emits a single text + usage chunk so the loop completes on the first call. */
+    private class DoneBackend : LLMBackend {
+        override val name = "done"
+
+        override fun call(
+            messages: List<io.github.unityinflow.kore.core.ConversationMessage>,
+            tools: List<io.github.unityinflow.kore.core.ToolDefinition>,
+            config: LLMConfig,
+        ) = flow {
+            emit(LLMChunk.Text("ok"))
+            emit(LLMChunk.Usage(inputTokens = 1, outputTokens = 1))
+            emit(LLMChunk.Done)
+        }
+    }
+
+    /**
+     * OBSV-03: the kore.skill.activate span must be parented under the kore.agent.run span when
+     * the loop runs THROUGH ObservableAgentRunner (which establishes the agent-run span as the
+     * current OTel context). A bare AgentLoop would emit a ROOT skill span instead (Pitfall 2), so
+     * this test deliberately drives a REAL AgentLoop (not the mocked one) through the runner,
+     * wiring the SAME SDK tracer into both the runner's KoreTracer and the loop so both spans land
+     * in the one InMemorySpanExporter.
+     */
+    @Test
+    fun `kore_skill_activate span is parented under kore_agent_run span through the runner`() =
+        runTest {
+            val sdkTracer = koreTracer.tracer
+            val skillRegistry =
+                object : SkillRegistry {
+                    override suspend fun activateFor(
+                        taskContent: String,
+                        availableTools: List<String>,
+                    ): List<ActivatedSkill> = listOf(ActivatedSkill(name = "code-review", prompt = "be thorough"))
+                }
+            val realLoop =
+                AgentLoop(
+                    llmBackend = DoneBackend(),
+                    toolProviders = emptyList(),
+                    budgetEnforcer = InMemoryBudgetEnforcer(),
+                    eventBus = InProcessEventBus(),
+                    auditLog = InMemoryAuditLog(),
+                    skillRegistry = skillRegistry,
+                    tracer = sdkTracer,
+                    config = LLMConfig(model = "test-model"),
+                )
+            val realRunner = ObservableAgentRunner(realLoop, koreTracer)
+
+            realRunner.run(AgentTask(id = "task-parent", input = "review code")).await()
+
+            val agentRunSpan = exporter.finishedSpanItems.first { it.name == KoreSpans.AGENT_RUN }
+            val skillSpan = exporter.finishedSpanItems.first { it.name == KoreSpans.SKILL_ACTIVATE }
+
+            // Parented: the skill span's parent is the agent-run span, in the same trace.
+            skillSpan.parentSpanContext.spanId shouldBe agentRunSpan.spanContext.spanId
+            skillSpan.spanContext.traceId shouldBe agentRunSpan.spanContext.traceId
+
+            // Tie OBSV-03 attrs + parenting together: the skill names array is present on the span.
+            skillSpan.attributes.get(AttributeKey.stringArrayKey(KoreAttrs.SKILL_NAMES)) shouldBe
+                listOf("code-review")
         }
 }
