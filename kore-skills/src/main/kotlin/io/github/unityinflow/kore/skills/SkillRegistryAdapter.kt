@@ -1,5 +1,6 @@
 package io.github.unityinflow.kore.skills
 
+import io.github.unityinflow.kore.core.port.ActivatedSkill
 import io.github.unityinflow.kore.core.port.SkillRegistry
 import io.github.unityinflow.kore.skills.internal.PatternMatcher
 
@@ -32,7 +33,7 @@ class SkillRegistryAdapter(
     override suspend fun activateFor(
         taskContent: String,
         availableTools: List<String>,
-    ): List<String> =
+    ): List<ActivatedSkill> =
         skills
             .filter { skill ->
                 val taskMatches =
@@ -42,5 +43,5 @@ class SkillRegistryAdapter(
                     skill.activation.requiresTools.isEmpty() ||
                         availableTools.containsAll(skill.activation.requiresTools)
                 taskMatches && toolsPresent
-            }.map { it.prompt }
+            }.map { ActivatedSkill(name = it.name, prompt = it.prompt) }
 }

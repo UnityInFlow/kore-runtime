@@ -53,7 +53,7 @@ class SkillRegistryAdapterTest {
                     taskContent = "review this code please",
                     availableTools = listOf("github_get_pr", "github_list_files"),
                 )
-            prompts.any { it.contains("expert code reviewer") } shouldBe true
+            prompts.any { it.prompt.contains("expert code reviewer") } shouldBe true
         }
 
     @Test
@@ -90,7 +90,7 @@ class SkillRegistryAdapterTest {
                     availableTools = listOf("github_get_pr", "github_list_files"),
                 )
             prompts shouldHaveSize 1
-            prompts.first() shouldContain "expert code reviewer"
+            prompts.first().prompt shouldContain "expert code reviewer"
         }
 
     @Test
