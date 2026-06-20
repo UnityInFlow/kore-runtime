@@ -85,6 +85,40 @@ class KoreTracerTest {
         }
 
     @Test
+    fun `withSpan stores a List of String attr as a native OTel string-array`() =
+        runTest {
+            val skillNames = listOf("planner", "researcher", "writer")
+            tracer.withSpan(
+                name = KoreSpans.SKILL_ACTIVATE,
+                attrs = mapOf(KoreAttrs.SKILL_NAMES to skillNames),
+            ) { }
+
+            val span = exporter.finishedSpanItems.single()
+            span.attributes.get(AttributeKey.stringArrayKey(KoreAttrs.SKILL_NAMES)) shouldBe skillNames
+        }
+
+    @Test
+    fun `withSpan drops non-String elements from a mixed list without crashing`() =
+        runTest {
+            val mixed = listOf("planner", 42, "writer")
+            tracer.withSpan(
+                name = KoreSpans.SKILL_ACTIVATE,
+                attrs = mapOf(KoreAttrs.SKILL_NAMES to mixed),
+            ) { }
+
+            val span = exporter.finishedSpanItems.single()
+            span.attributes.get(AttributeKey.stringArrayKey(KoreAttrs.SKILL_NAMES)) shouldBe
+                listOf("planner", "writer")
+        }
+
+    @Test
+    fun `KoreAttrs skill constants equal the literal keys AgentLoop uses`() {
+        KoreAttrs.SKILL_NAMES shouldBe "kore.skill.names"
+        KoreAttrs.SKILL_COUNT shouldBe "kore.skill.count"
+        KoreAttrs.SKILL_DURATION_MS shouldBe "kore.skill.duration_ms"
+    }
+
+    @Test
     fun `withSpan uses INTERNAL kind by default`() =
         runTest {
             tracer.withSpan("kore.agent.run") { }

@@ -1,5 +1,6 @@
 package io.github.unityinflow.kore.observability
 
+import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.api.trace.Tracer
@@ -34,6 +35,13 @@ object KoreAttrs {
     const val TOOL_NAME = "kore.tool.name"
     const val TOOL_MCP_SERVER = "kore.tool.mcp_server"
     const val TOOL_DURATION_MS = "kore.tool.duration_ms"
+
+    // Skill (D-03). Single source of truth for the kore.skill.* attribute keys.
+    // AgentLoop (kore-core) sets these inline with the same literal strings because kore-core
+    // cannot depend on kore-observability (A4 / Open-Q 1) — keep these in lockstep with Plan 05-02.
+    const val SKILL_NAMES = "kore.skill.names"
+    const val SKILL_COUNT = "kore.skill.count"
+    const val SKILL_DURATION_MS = "kore.skill.duration_ms"
 }
 
 /**
@@ -71,6 +79,10 @@ suspend fun <T> KoreTracer.withSpan(
             is Int -> span.setAttribute(key, value.toLong())
             is Double -> span.setAttribute(key, value)
             is Boolean -> span.setAttribute(key, value)
+            // D-03: a List value becomes a native OTel string-array (queryable per-element),
+            // never a comma-joined String. filterIsInstance drops non-String elements safely
+            // (no @Suppress("UNCHECKED_CAST"), no !!).
+            is List<*> -> span.setAttribute(AttributeKey.stringArrayKey(key), value.filterIsInstance<String>())
         }
     }
     return withContext(span.storeInContext(Context.current()).asContextElement()) {
