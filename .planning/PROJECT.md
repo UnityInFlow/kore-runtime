@@ -53,15 +53,16 @@ The agent loop must work — task intake, LLM call, tool use, result handling, l
 - ✓ Pluggable event bus: Kotlin Flows (default), Kafka (opt-in), RabbitMQ (opt-in) — v0.0.1 (Phase 4)
 - ✓ HTMX dashboard: active agents, recent runs, token cost summary — v0.0.1 (Phase 3)
 - ✓ kore-test module: MockLLMBackend + session recording/replay for deterministic agent testing — v0.0.1 (Phase 1)
+- ✓ Skill-activation OTel span (OBSV-03): `kore.skill.activate` parented under the agent-run span with name/count/duration attributes — v0.0.2 (Phase 5)
+- ✓ Skill-activation event (OBSV-04): `AgentEvent.SkillActivated` emitted on the event bus, consumed by metrics observers — v0.0.2 (Phase 5)
+- ✓ kore-storage `integrationTest` Gradle task (fail-loud zero-test guard) + CI integration-test job with docker pre-flight on arc-runner-unityinflow (CI-01, CI-02) — v0.0.2 (Phase 5)
 
 ### Active
 
 (Milestone v0.0.2 — Hardening & Hierarchy)
 
-- [ ] Real budget-breaker adapter: BudgetEnforcer adapter backed by `io.github.unityinflow:budget-breaker`, replacing the InMemoryBudgetEnforcer stub (Tool 05 core library shipped v0.0.1; Spring Boot starter still pending — gate auto-config accordingly)
-- [ ] Hierarchical agents: parent agents spawn child agents with structured concurrency (deferred from v0.0.1 — original scope item, not exercised in initial loop)
-- [ ] Skill-activation OTel span (OBSV-03) — intentionally deferred from Phase 2; needs wiring against `SkillActivated` event from Phase 3 implementation
-- [ ] kore-storage `integrationTest` task + CI step on arc-runner-unityinflow for the 7 Testcontainers tests (currently excluded via `excludeTags("integration")` with no separate task)
+- [ ] Real budget-breaker adapter: BudgetEnforcer adapter backed by `io.github.unityinflow:budget-breaker`, replacing the InMemoryBudgetEnforcer stub (Tool 05 core library shipped v0.0.1; Spring Boot starter still pending — gate auto-config accordingly) — Phase 6
+- [ ] Hierarchical agents: parent agents spawn child agents with structured concurrency (deferred from v0.0.1 — original scope item, not exercised in initial loop) — Phase 7
 
 *(Resolved since v0.0.1 close: Phase 01 + Phase 02 `human_needed` UAT items — verified 2026-04-26.)*
 
@@ -157,4 +158,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-12 — milestone v0.0.2 Hardening & Hierarchy started*
+*Last updated: 2026-06-20 — after Phase 5 (CI Baseline & Skill Observability) complete*
