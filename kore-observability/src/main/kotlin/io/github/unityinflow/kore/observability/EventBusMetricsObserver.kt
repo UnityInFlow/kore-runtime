@@ -77,6 +77,18 @@ class EventBusMetricsObserver(
                             .increment(event.tokenUsage.outputTokens.toDouble())
                     }
 
+                    is AgentEvent.SkillActivated -> {
+                        // OBSV-04: one batch event per run carries all activated skill names (D-05).
+                        // Increment the kore.skills.activated counter once per skill name (tagged
+                        // agent_name + skill_name) so a per-skill activation rate is queryable, and
+                        // record the activation pass duration once (per-run, not per-skill).
+                        val agentName = agentNames[event.agentId] ?: "unknown"
+                        event.skillNames.forEach { skillName ->
+                            metrics.skillsActivatedCounter(agentName, skillName).increment()
+                        }
+                        metrics.skillActivationDuration(agentName).record(event.durationMs.toDouble())
+                    }
+
                     // ToolCallStarted, ToolCallCompleted, LLMCallStarted: no Micrometer action (D-25)
                     // Per-tool metrics live in OTel spans only — no kore.tool.* counters here.
                     else -> Unit

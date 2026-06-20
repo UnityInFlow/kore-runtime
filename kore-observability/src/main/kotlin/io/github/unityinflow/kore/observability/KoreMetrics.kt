@@ -1,6 +1,7 @@
 package io.github.unityinflow.kore.observability
 
 import io.micrometer.core.instrument.Counter
+import io.micrometer.core.instrument.DistributionSummary
 import io.micrometer.core.instrument.MeterRegistry
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -93,5 +94,45 @@ class KoreMetrics(
             .builder("kore.errors")
             .tag("agent_name", agentName)
             .tag("error_type", errorType)
+            .register(registry)
+
+    /**
+     * Incremented once per activated skill on [io.github.unityinflow.kore.core.AgentEvent.SkillActivated]
+     * (OBSV-04). A single event carries the full list of activated skill names (D-05); the
+     * [EventBusMetricsObserver] iterates the names and increments this counter once per name so a
+     * per-skill activation rate is queryable.
+     *
+     * Tags: agent_name (configured name), skill_name (the activated skill's name).
+     *
+     * **Cardinality (D-24 / threat T-05-06):** [skillName] tag values MUST stay low-cardinality —
+     * configured skill names from the loaded skill definitions, never UUIDs or user-supplied free
+     * text. Skill names are bounded/in-repo today; capping distinct skill-name tags is the
+     * documented follow-up if user-defined skills grow unbounded.
+     */
+    fun skillsActivatedCounter(
+        agentName: String,
+        skillName: String,
+    ): Counter =
+        Counter
+            .builder("kore.skills.activated")
+            .tag("agent_name", agentName)
+            .tag("skill_name", skillName)
+            .register(registry)
+
+    /**
+     * Records the wall-clock duration (ms) of a skill activation pass on
+     * [io.github.unityinflow.kore.core.AgentEvent.SkillActivated] (OBSV-04). A
+     * [DistributionSummary] (rather than a plain counter) preserves percentiles/max so slow
+     * activation passes are visible.
+     *
+     * Tags: agent_name only (skill_name is intentionally omitted here to keep the distribution
+     * per-run rather than per-skill — one activation pass produces one duration regardless of how
+     * many skills matched).
+     */
+    fun skillActivationDuration(agentName: String): DistributionSummary =
+        DistributionSummary
+            .builder("kore.skills.activate.duration")
+            .baseUnit("ms")
+            .tag("agent_name", agentName)
             .register(registry)
 }

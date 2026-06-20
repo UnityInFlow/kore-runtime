@@ -85,6 +85,10 @@ class EventBusDashboardObserver(
                         }
                     }
 
+                    // Explicit no-op for discoverability (D-08): the dashboard's active-agents
+                    // fragment does not surface skill activations in v0.0.2.
+                    is AgentEvent.SkillActivated -> Unit
+
                     else -> Unit
                 }
             }

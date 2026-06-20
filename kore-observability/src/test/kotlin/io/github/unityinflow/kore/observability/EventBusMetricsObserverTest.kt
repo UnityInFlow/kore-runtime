@@ -150,4 +150,50 @@ class EventBusMetricsObserverTest {
             inCount shouldBe 10.0
             outCount shouldBe 5.0
         }
+
+    @Test
+    fun `SkillActivated increments kore_skills_activated counter once per skill name and records duration`() =
+        runTest {
+            val registry = SimpleMeterRegistry()
+            val metrics = KoreMetrics(registry)
+            val flow = MutableSharedFlow<AgentEvent>(extraBufferCapacity = 16)
+            val observer = makeObserver(flow, metrics, backgroundScope)
+            observer.start()
+            yield()
+
+            flow.emit(AgentEvent.AgentStarted(agentId = "agent-1", taskId = "task-1"))
+            flow.emit(
+                AgentEvent.SkillActivated(
+                    agentId = "agent-1",
+                    skillNames = listOf("code-review", "security-audit"),
+                    durationMs = 42L,
+                ),
+            )
+            runCurrent()
+
+            // Counter moved once per skill name (per-skill tag).
+            val codeReviewCount =
+                registry
+                    .find("kore.skills.activated")
+                    .tag("skill_name", "code-review")
+                    .counter()
+            val securityAuditCount =
+                registry
+                    .find("kore.skills.activated")
+                    .tag("skill_name", "security-audit")
+                    .counter()
+            codeReviewCount shouldNotBe null
+            securityAuditCount shouldNotBe null
+            codeReviewCount!!.count() shouldBe 1.0
+            securityAuditCount!!.count() shouldBe 1.0
+
+            // Duration recorded once (per-run) with the measured value.
+            val duration =
+                registry
+                    .find("kore.skills.activate.duration")
+                    .summary()
+            duration shouldNotBe null
+            duration!!.count() shouldBe 1L
+            duration.totalAmount() shouldBe 42.0
+        }
 }

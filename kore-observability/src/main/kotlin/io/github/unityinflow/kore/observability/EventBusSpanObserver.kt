@@ -20,8 +20,12 @@ import java.util.concurrent.ConcurrentHashMap
  * Span leak mitigation (T-02-02): AgentCompleted event closes any remaining open spans for
  * the agent, guarding against a LLMCallCompleted/ToolCallCompleted that is never received.
  *
- * OBSV-03 stub: SkillActivated event handling will be added in Phase 3 when kore-skills emits
- * the event. The "kore.skill.activate" span name constant is already defined in KoreSpans.
+ * SkillActivated (OBSV-03 / D-08): handled as a DELIBERATE no-op. The real
+ * `kore.skill.activate` span is created in-process by [io.github.unityinflow.kore.core.AgentLoop]
+ * (parented under the agent-run span). Synthesizing a second span from the bus event would
+ * duplicate it in the default single-JVM topology, and the Started/Completed-pair model this
+ * observer uses does not fit a single instantaneous event. (Cross-process span synthesis from a
+ * remote bus is deferred — see 05-CONTEXT §Deferred.)
  */
 class EventBusSpanObserver(
     private val eventBus: EventBus,
@@ -99,6 +103,10 @@ class EventBusSpanObserver(
                                 toolStartTimes.remove(key)
                             }
                     }
+
+                    is AgentEvent.SkillActivated -> Unit
+                    // Deliberate no-op (D-08): AgentLoop already emits the in-process
+                    // kore.skill.activate span. A second span here would duplicate it.
 
                     else -> Unit // AgentStarted handled by ObservableAgentRunner
                 }
