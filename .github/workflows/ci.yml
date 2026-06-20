@@ -49,3 +49,30 @@ jobs:
 
       - name: Build
         run: ./gradlew build
+
+  integration-test:
+    runs-on: [arc-runner-unityinflow]   # self-hosted X64 — never ubuntu-latest
+    needs: build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Docker pre-flight (CI-02 / D-14)
+        run: |
+          if ! docker info > /dev/null 2>&1; then
+            echo "::error title=Docker unavailable::Docker daemon is not reachable on this runner. This is a RUNNER CONFIG ERROR, not a test failure — integration tests need Docker for Testcontainers."
+            exit 1
+          fi
+          echo "Docker daemon reachable."
+
+      - name: Integration tests (CI-01)
+        run: ./gradlew :kore-storage:integrationTest
