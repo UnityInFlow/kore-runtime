@@ -64,6 +64,10 @@ class PostgresAuditLogAdapter(
                 stmt[startedAt] = OffsetDateTime.now()
                 stmt[finishedAt] = OffsetDateTime.now()
                 stmt[metadata] = "{}" // base metadata; enrichment via kore-spring in Phase 3
+                // Pitfall 4: parentRunId is String? but the column is UUID — null-safe
+                // parse. Root runs leave it NULL. No FK on parent_run_id (D-10) so the
+                // child insert (which lands before the parent row) is never rejected.
+                stmt[parentRunId] = task.parentRunId?.let(UUID::fromString)
             }
         }
     }

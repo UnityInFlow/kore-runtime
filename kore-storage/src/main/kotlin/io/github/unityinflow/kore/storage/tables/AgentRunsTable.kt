@@ -1,6 +1,7 @@
 package io.github.unityinflow.kore.storage.tables
 
 import org.jetbrains.exposed.v1.core.dao.id.java.UUIDTable
+import org.jetbrains.exposed.v1.core.java.javaUUID
 import org.jetbrains.exposed.v1.javatime.timestampWithTimeZone
 
 object AgentRunsTable : UUIDTable("agent_runs") {
@@ -10,4 +11,9 @@ object AgentRunsTable : UUIDTable("agent_runs") {
     val startedAt = timestampWithTimeZone("started_at")
     val finishedAt = timestampWithTimeZone("finished_at").nullable()
     val metadata = jsonb("metadata") // JSONB column matching V1__init_schema.sql DDL
+
+    // V2: nullable java.util.UUID column, NO FK (D-10 landmine). javaUUID() is the
+    // Exposed 1.0 Java-UUID overload; bare uuid() resolves to the experimental
+    // kotlin.uuid.Uuid column type.
+    val parentRunId = javaUUID("parent_run_id").nullable()
 }
