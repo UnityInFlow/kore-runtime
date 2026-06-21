@@ -79,7 +79,13 @@ Plans:
   4. Audit log records `parent_run_id` on child agent runs, so a developer can trace a full run tree from the database
   5. Existing single-agent definitions compile and run unchanged — all new `AgentLoop`/`AgentTask` parameters have defaults (binary compatibility preserved)
 
-**Plans**: TBD
+**Plans**: 4 plans (3 waves)
+Plans:
+
+- [ ] 07-01-PLAN.md — kore-core foundation: AgentTask depth/parentRunId + AgentLoop maxDepth + D-05 Cancelled audit + InMemoryAuditLog run list + ChildDispatchBinder bind seam (HIER-02/03/04, criterion #5) [wave 1]
+- [ ] 07-02-PLAN.md — kore-storage V2 migration (parent_run_id, no FK) + AgentRunsTable column + adapter INSERT + Testcontainers persistence tests (HIER-04, criterion #4) [wave 2, depends 07-01]
+- [ ] 07-03-PLAN.md — AgentTool (ToolProvider+ChildDispatchBinder) + AgentBuilder child{}/maxDepth/buildLoop/tracer + AgentToolTest + AgentLoopCancellationTest (HIER-01/02/03, criteria #1/#2/#3) [wave 2, depends 07-01]
+- [ ] 07-04-PLAN.md — kore-spring KoreProperties.hierarchy.maxDepth + KoreAgentFactory threading + ApplicationContextRunner test (HIER-03) [wave 3, depends 07-03]
 
 ## Progress
 
@@ -94,4 +100,4 @@ Phases execute in numeric order: 5 → 6 → 7 (Phase 6 has no dependency on Pha
 | 4. Event Bus & Publishing     | v0.0.1 | 6/6 | Complete | 2026-04-15 |
 | 5. CI Baseline & Skill Observability | v0.0.2 | 4/4 | Complete    | 2026-06-20 |
 | 6. Real Budget Enforcement           | v0.0.2 | 2/2 | Complete    | 2026-06-21 |
-| 7. Hierarchical Agents               | v0.0.2 | 0/? | Not started | - |
+| 7. Hierarchical Agents               | v0.0.2 | 0/4 | Planned     | - |
