@@ -12,10 +12,12 @@ import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.Context
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.withContext
 
 /**
  * The ReAct agent loop. Drives: task intake → LLM call → tool use → result → loop.
@@ -75,6 +77,12 @@ class AgentLoop(
         return try {
             runLoop(agentId, history, toolDefs, accumulatedUsage)
         } catch (e: CancellationException) {
+            // D-05: best-effort Cancelled audit row. NonCancellable shields ONLY the
+            // audit write so it survives the surrounding cancellation; the
+            // CancellationException is ALWAYS re-thrown (T-03-03 — never swallow).
+            withContext(NonCancellable) {
+                auditLog.recordAgentRun(agentId, task, AgentResult.Cancelled(reason = e.message ?: "cancelled"))
+            }
             throw e // ALWAYS re-throw CancellationException (T-03-03, D-21)
         } catch (e: Throwable) {
             AgentResult.LLMError(backend = llmBackend.name, cause = e)
