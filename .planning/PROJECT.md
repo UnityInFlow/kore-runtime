@@ -16,6 +16,8 @@ The agent loop must work — task intake, LLM call, tool use, result handling, l
 
 **On Maven Central** (released 2026-05-11): `io.github.unityinflow:kore-{core,mcp,llm,skills,observability,storage,spring,dashboard,kafka,rabbitmq,test}:0.0.1` (repo now at 0.0.2-SNAPSHOT).
 
+**v0.0.2 progress:** Phase 6 (Real Budget Enforcement) complete (2026-06-21) — new `kore-budget` module with `BudgetBreakerAdapter` over budget-breaker's `TokenTracker`, auto-configured opt-in behind the existing `BudgetEnforcer` port (BUDG-05/06/07). The `InMemoryBudgetEnforcer` stub remains the default when the dependency or `kore.budget.enabled` flag is absent.
+
 ## Current Milestone: v0.0.2 Hardening & Hierarchy
 
 **Goal:** Close every item deferred at v0.0.1's close — real budget enforcement, hierarchical agents, full observability coverage, and integration-test CI — so the runtime is production-trustworthy before the v0.1.0 feature push.
@@ -158,4 +160,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-20 — after Phase 5 (CI Baseline & Skill Observability) complete*
+*Last updated: 2026-06-21 — after Phase 6 (Real Budget Enforcement) complete*
