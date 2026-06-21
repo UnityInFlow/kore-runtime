@@ -12,4 +12,5 @@ include(
     "kore-dashboard",
     "kore-kafka",
     "kore-rabbitmq",
+    "kore-budget",
 )
