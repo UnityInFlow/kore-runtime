@@ -39,6 +39,12 @@ dependencies {
     // form (Pitfall 2) inside KafkaEventBusAutoConfiguration / RabbitMqEventBusAutoConfiguration.
     compileOnly(project(":kore-kafka"))
     compileOnly(project(":kore-rabbitmq"))
+    // Real budget enforcement (BUDG-05). Kept compileOnly so consumers MUST
+    // explicitly add `implementation("io.github.unityinflow:kore-budget")` to
+    // opt into budget-breaker — kore-spring never transitively pulls it. Gated
+    // at runtime by @ConditionalOnClass(name=[...]) string form (Pitfall 3)
+    // inside BudgetBreakerAutoConfiguration.
+    compileOnly(project(":kore-budget"))
 
     // The compileOnly project deps above only expose their own classes.
     // KoreAutoConfiguration also references symbols from THEIR compileOnly
@@ -71,6 +77,10 @@ dependencies {
     // gates and assert definition presence via assertThat(ctx).hasBean(...).
     testImplementation(project(":kore-kafka"))
     testImplementation(project(":kore-rabbitmq"))
+    // kore-budget on test classpath so the @ConditionalOnClass(name=["...BudgetBreakerAdapter"])
+    // gate fires and the BUDG-05 bean-selection matrix can assert the adapter is
+    // wired when enabled=true (and the FilteredClassLoader scenario can hide it).
+    testImplementation(project(":kore-budget"))
     testImplementation(libs.junit5)
     testImplementation(libs.kotest.assertions)
     testImplementation(libs.coroutines.test)

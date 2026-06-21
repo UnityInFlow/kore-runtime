@@ -153,6 +153,47 @@ class KoreAutoConfiguration {
     }
 
     // ───────────────────────────────────────────────────────────────────────
+    // Real budget enforcement (BUDG-05 / D-01 / D-06) — kore-budget compileOnly
+    // + triple-gate, mirroring KafkaEventBusAutoConfiguration.
+    //
+    // The default `inMemoryBudgetEnforcer` bean above is the zero-config
+    // BudgetEnforcer. To switch to real budget-breaker enforcement a developer
+    // adds the `kore-budget` dependency AND sets `kore.budget.enabled=true`.
+    //
+    //  1. @ConditionalOnClass(name=[...]) STRING form (Pitfall 3) — Spring will
+    //     NOT resolve `BudgetBreakerAdapter` until it has confirmed the class is
+    //     on the runtime classpath, so an app that depends on kore-spring but
+    //     NOT kore-budget still starts (no NoClassDefFoundError).
+    //  2. @ConditionalOnProperty enabled=true (matchIfMissing=false) — unset or
+    //     `false` leaves the in-memory default untouched (existing apps unchanged).
+    //  3. @ConditionalOnMissingBean(BudgetEnforcer::class) — both candidates carry
+    //     it and only one gate is satisfiable per app (gate passes ⇒ adapter wins;
+    //     gate fails ⇒ default wins). No bean-ordering annotations are needed —
+    //     same proof as StorageAutoConfiguration vs inMemoryAuditLog above.
+    //
+    // The adapter reference in the @Bean body is fully-qualified because
+    // kore-budget is compileOnly. The bean returns the BudgetEnforcer port. The
+    // adapter opens no socket and needs no CoroutineScope or destroyMethod.
+    // ───────────────────────────────────────────────────────────────────────
+
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(name = ["io.github.unityinflow.kore.budget.BudgetBreakerAdapter"])
+    @ConditionalOnProperty(
+        prefix = "kore.budget",
+        name = ["enabled"],
+        havingValue = "true",
+        matchIfMissing = false,
+    )
+    class BudgetBreakerAutoConfiguration {
+        @Bean
+        @ConditionalOnMissingBean(BudgetEnforcer::class)
+        fun budgetBreakerAdapter(properties: KoreProperties): BudgetEnforcer =
+            io.github.unityinflow.kore.budget.BudgetBreakerAdapter(
+                defaultHardLimitTokens = properties.budget.defaultMaxTokens,
+            )
+    }
+
+    // ───────────────────────────────────────────────────────────────────────
     // Storage (D-18) — kore-storage compileOnly + @ConditionalOnClass guard
     //
     // PostgresAuditLogAdapter takes a R2dbcDatabase that the host application

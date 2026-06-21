@@ -91,9 +91,27 @@ data class KoreProperties(
         val enabled: Boolean = true,
     )
 
-    /** In-memory budget enforcer defaults — replaced by budget-breaker in v2. */
+    /**
+     * Budget enforcement configuration.
+     *
+     * [defaultMaxTokens] is the single global hard token limit applied per agent
+     * run by whichever [io.github.unityinflow.kore.core.port.BudgetEnforcer] is
+     * active (the in-memory default, or the budget-breaker adapter when opted in).
+     *
+     * [enabled] opts into the real budget-breaker adapter (BUDG-05): when `true`
+     * AND the `kore-budget` module is on the classpath, kore-spring wires
+     * `BudgetBreakerAdapter` as the sole `BudgetEnforcer` bean. Defaults to
+     * `false`, so the zero-config default stays
+     * [io.github.unityinflow.kore.core.internal.InMemoryBudgetEnforcer] and
+     * existing apps behave identically.
+     *
+     * The shape is intentionally extensible (D-01): a future
+     * `agents: Map<String, ...>` per-agent override block can be added without
+     * touching the global `defaultMaxTokens` / `enabled` contract.
+     */
     data class BudgetProperties(
         val defaultMaxTokens: Long = 100_000L,
+        val enabled: Boolean = false,
     )
 
     /**
