@@ -3,6 +3,7 @@ package io.github.unityinflow.kore.core
 import io.github.unityinflow.kore.core.port.ActivatedSkill
 import io.github.unityinflow.kore.core.port.AuditLog
 import io.github.unityinflow.kore.core.port.BudgetEnforcer
+import io.github.unityinflow.kore.core.port.ChildDispatchBinder
 import io.github.unityinflow.kore.core.port.EventBus
 import io.github.unityinflow.kore.core.port.LLMBackend
 import io.github.unityinflow.kore.core.port.NoOpSkillRegistry
@@ -49,6 +50,13 @@ class AgentLoop(
      * ensures kore-core does not require kore-observability at runtime.
      */
     private val tracer: Tracer? = null,
+    /**
+     * Maximum recursion depth for spawned child agents (D-08). Defaulted to 5 for
+     * binary compat (criterion #5). [AgentLoop] only THREADS this value into the
+     * dispatch-time binding; the actual depth guard is enforced in
+     * `AgentTool.callTool` (Plan 03).
+     */
+    private val maxDepth: Int = 5,
     private val config: LLMConfig,
 ) {
     /**
@@ -75,7 +83,7 @@ class AgentLoop(
         eventBus.emit(AgentEvent.AgentStarted(agentId = agentId, taskId = task.id))
 
         return try {
-            runLoop(agentId, history, toolDefs, accumulatedUsage)
+            runLoop(agentId, history, toolDefs, accumulatedUsage, parentDepth = task.depth)
         } catch (e: CancellationException) {
             // D-05: best-effort Cancelled audit row. NonCancellable shields ONLY the
             // audit write so it survives the surrounding cancellation; the
@@ -97,6 +105,7 @@ class AgentLoop(
         history: MutableList<ConversationMessage>,
         toolDefs: List<ToolDefinition>,
         initialUsage: TokenUsage,
+        parentDepth: Int,
     ): AgentResult {
         var accumulatedUsage = initialUsage
 
@@ -224,6 +233,13 @@ class AgentLoop(
                 toolCallChunks.map { chunk ->
                     ToolCall(id = chunk.id, name = chunk.name, arguments = chunk.arguments)
                 }
+
+            // A2 dispatch-time binding: push this run's lineage into any child-spawning
+            // provider before dispatch, so a child knows its parent depth and parent run
+            // id at the moment it runs (these are runtime values; see ChildDispatchBinder).
+            toolProviders.filterIsInstance<ChildDispatchBinder>().forEach {
+                it.bind(parentDepth = parentDepth, parentRunId = agentId)
+            }
 
             val toolResults: List<ToolResult> =
                 try {
