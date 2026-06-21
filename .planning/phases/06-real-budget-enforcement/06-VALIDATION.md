@@ -1,8 +1,8 @@
 ---
 phase: 6
 slug: real-budget-enforcement
-status: draft
-nyquist_compliant: false
+status: approved
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-06-21
 ---
@@ -46,9 +46,13 @@ created: 2026-06-21
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | Status |
 |---------|------|------|-------------|-----------|-------------------|--------|
-| TBD (populated by planner/Nyquist audit) | — | — | — | — | — | ⬜ pending |
+| 06-01-01 | 01 | 1 | (module scaffold) | gradle | `./gradlew :kore-budget:dependencies … grep budget-breaker:0.0.1` | ⬜ pending |
+| 06-01-02 | 01 | 1 | BUDG-06, BUDG-07 | unit | `./gradlew :kore-budget:test --tests "*BudgetBreakerAdapterTest"` | ⬜ pending |
+| 06-02-01 | 02 | 2 | BUDG-05 | compile+lint | `./gradlew :kore-spring:compileKotlin :kore-spring:lintKotlin` | ⬜ pending |
+| 06-02-02 | 02 | 2 | BUDG-05 | integration | `./gradlew :kore-spring:test --tests "*BudgetBreakerAutoConfigurationTest"` | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+*Sampling continuity: every task carries an `<automated>` verify — no gap. No watch-mode flags; no Docker.*
 
 ---
 
@@ -72,11 +76,11 @@ created: 2026-06-21
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 60s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references (module scaffold is task 06-01-01; both test files created in their plans)
+- [x] No watch-mode flags
+- [x] Feedback latency < 60s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-06-21
