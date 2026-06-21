@@ -9,7 +9,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Budget Enforcement
 
-- [ ] **BUDG-05**: Developer can enable real token-budget enforcement by adding the `kore-budget` dependency and setting `kore.budget.enabled=true` (Spring Boot auto-configured; `InMemoryBudgetEnforcer` remains the default when absent)
+- [x] **BUDG-05**: Developer can enable real token-budget enforcement by adding the `kore-budget` dependency and setting `kore.budget.enabled=true` (Spring Boot auto-configured; `InMemoryBudgetEnforcer` remains the default when absent)
 - [x] **BUDG-06**: Agent run that hits its hard budget limit ends with `AgentResult.BudgetExceeded` — `BudgetHardLimitException` never escapes the `BudgetEnforcer` port (verified by a test that drives the adapter to the hard limit)
 - [x] **BUDG-07**: Concurrent agents have isolated budgets keyed by `AgentTask.id` (UUID), not agent name — no cross-agent budget interference or `withBudget` id collisions
 
@@ -65,7 +65,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BUDG-05 | Phase 6 | Pending |
+| BUDG-05 | Phase 6 | Complete |
 | BUDG-06 | Phase 6 | Complete |
 | BUDG-07 | Phase 6 | Complete |
 | HIER-01 | Phase 7 | Pending |
