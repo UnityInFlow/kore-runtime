@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v0.0.2
 milestone_name: Hardening & Hierarchy
-status: planning
+status: executing
 stopped_at: Phase 6 context gathered
-last_updated: "2026-06-21T08:30:57.243Z"
-last_activity: 2026-06-20
+last_updated: "2026-06-21T09:18:07.544Z"
+last_activity: 2026-06-21 -- Phase 06 execution started
 progress:
   total_phases: 3
   completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 6
+  completed_plans: 5
   percent: 33
 ---
 
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-06-12)
 
 ## Current Position
 
-Phase: 6
-Plan: Not started
-Status: Phase 5 COMPLETE & VERIFIED (passed) — all 4 plans executed; both Docker-gated UAT items user-attested pass (05-UAT.md). Ready to plan Phase 6 (Real Budget Enforcement).
-Last activity: 2026-06-20
+Phase: 06 (real-budget-enforcement) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
+Last activity: 2026-06-21 -- Phase 06 execution started
 
 Progress: [███░░░░░░░] 33% (1 of 3 milestone phases complete)
 
@@ -84,6 +84,7 @@ Progress: [███░░░░░░░] 33% (1 of 3 milestone phases complete
 | Phase 05 P04 | 2min | 1 tasks | 2 files |
 | Phase 05-ci-baseline-skill-observability P03 | 6min | 2 tasks | 5 files |
 | Phase 05 P03 | 8min | 2 tasks | 6 files |
+| Phase 06-real-budget-enforcement P01 | 8min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -177,6 +178,7 @@ Recent decisions affecting current work:
 - [Phase 05-ci-baseline-skill-observability]: Plan 05-03: all three event-bus observers explicitly handle AgentEvent.SkillActivated before else -> Unit (RESEARCH Pitfall 1 — silent drop guarded): EventBusMetricsObserver moves kore.skills.activated counter once per skill name (tag agent_name+skill_name, D-24 low-cardinality) + records a per-run kore.skills.activate.duration DistributionSummary (Open-Q 2 — percentiles over a plain counter); EventBusSpanObserver + EventBusDashboardObserver are documented no-ops (D-08 — AgentLoop already emits the in-process span; a second would duplicate it)
 - [Phase 05-ci-baseline-skill-observability]: Plan 05-03: OBSV-03 parenting proven through a REAL AgentLoop driven via ObservableAgentRunner with the SAME SDK tracer wired into both the runner's KoreTracer and the loop — skillSpan.parentSpanContext.spanId == agentRunSpan.spanId, same traceId; bare-loop would emit a ROOT skill span (Pitfall 2), so the test must go through the runner. Phase 5 now fully complete (CI-01/CI-02/OBSV-03/OBSV-04)
 - [Phase ?]: Plan 05-03: explicit SkillActivated branch before else->Unit in all 3 observers (silent-drop guard); per-run DistributionSummary for skill duration; OBSV-03 parenting proven via real AgentLoop through ObservableAgentRunner into shared InMemorySpanExporter
+- [Phase ?]: [Phase 06-real-budget-enforcement] Plan 06-01: kore-budget is a Spring-free library module (D-06); BudgetBreakerAdapter wraps budget-breaker TokenTracker in a ConcurrentHashMap<String,TokenTracker> keyed by agentId — checkBudget=!isAboveHardLimit (BUDG-06), per-agentId isolation for free (BUDG-07), defensive catch(BudgetException) so no library exception escapes the byte-identical port (D-00); getUsage read off the tracker
 
 ### Pending Todos
 
@@ -204,6 +206,6 @@ Items acknowledged and deferred at milestone close on 2026-04-26.
 
 ## Session Continuity
 
-Last session: 2026-06-21T08:30:57.215Z
+Last session: 2026-06-21T09:17:50.949Z
 Stopped at: Phase 6 context gathered
 Resume file: .planning/phases/06-real-budget-enforcement/06-CONTEXT.md

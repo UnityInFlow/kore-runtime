@@ -63,9 +63,8 @@ Plans:
 **Plans**: 2 plans (2 waves)
 Plans:
 
-- [ ] 06-01-PLAN.md — kore-budget module + BudgetBreakerAdapter (TokenTracker-backed) + adapter/concurrency tests (BUDG-06, BUDG-07) [wave 1]
+- [x] 06-01-PLAN.md — kore-budget module + BudgetBreakerAdapter (TokenTracker-backed) + adapter/concurrency tests (BUDG-06, BUDG-07) [wave 1]
 - [ ] 06-02-PLAN.md — kore-spring BudgetBreakerAutoConfiguration triple-gate + KoreProperties.enabled flag + 4-scenario ApplicationContextRunner matrix (BUDG-05) [wave 2, depends on 06-01]
-
 
 ### Phase 7: Hierarchical Agents
 
@@ -94,5 +93,5 @@ Phases execute in numeric order: 5 → 6 → 7 (Phase 6 has no dependency on Pha
 | 3. Skills, Spring & Dashboard | v0.0.1 | 5/5 | Complete | 2026-04-14 |
 | 4. Event Bus & Publishing     | v0.0.1 | 6/6 | Complete | 2026-04-15 |
 | 5. CI Baseline & Skill Observability | v0.0.2 | 4/4 | Complete    | 2026-06-20 |
-| 6. Real Budget Enforcement           | v0.0.2 | 0/2 | Planned     | - |
+| 6. Real Budget Enforcement           | v0.0.2 | 1/2 | In Progress|  |
 | 7. Hierarchical Agents               | v0.0.2 | 0/? | Not started | - |
