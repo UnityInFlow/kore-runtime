@@ -4,13 +4,13 @@ milestone: v0.0.2
 milestone_name: Hardening & Hierarchy
 status: executing
 stopped_at: Phase 7 context gathered
-last_updated: "2026-06-21T18:08:15.947Z"
-last_activity: 2026-06-21 -- Phase 07 planning complete
+last_updated: "2026-06-21T19:21:56.027Z"
+last_activity: 2026-06-21 -- Phase 07 execution started
 progress:
   total_phases: 3
   completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 10
+  completed_plans: 7
   percent: 67
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-12)
 
 **Core value:** A developer adds one Spring Boot dependency, writes an `agent { }` block, and has a production-ready agent running with observability and budget control.
-**Current focus:** Phase 06 — real-budget-enforcement
+**Current focus:** Phase 07 — hierarchical-agents
 
 ## Current Position
 
-Phase: 7
-Plan: Not started
+Phase: 07 (hierarchical-agents) — EXECUTING
+Plan: 2 of 4
 Status: Ready to execute
-Last activity: 2026-06-21 -- Phase 07 planning complete
+Last activity: 2026-06-21 -- Phase 07 execution started
 
 Progress: [███░░░░░░░] 33% (1 of 3 milestone phases complete)
 
@@ -87,6 +87,7 @@ Progress: [███░░░░░░░] 33% (1 of 3 milestone phases complete
 | Phase 05 P03 | 8min | 2 tasks | 6 files |
 | Phase 06-real-budget-enforcement P01 | 8min | 2 tasks | 4 files |
 | Phase 06-real-budget-enforcement P02 | 2min | 2 tasks | 4 files |
+| Phase 07-hierarchical-agents P01 | 4min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -182,6 +183,7 @@ Recent decisions affecting current work:
 - [Phase ?]: Plan 05-03: explicit SkillActivated branch before else->Unit in all 3 observers (silent-drop guard); per-run DistributionSummary for skill duration; OBSV-03 parenting proven via real AgentLoop through ObservableAgentRunner into shared InMemorySpanExporter
 - [Phase ?]: [Phase 06-real-budget-enforcement] Plan 06-01: kore-budget is a Spring-free library module (D-06); BudgetBreakerAdapter wraps budget-breaker TokenTracker in a ConcurrentHashMap<String,TokenTracker> keyed by agentId — checkBudget=!isAboveHardLimit (BUDG-06), per-agentId isolation for free (BUDG-07), defensive catch(BudgetException) so no library exception escapes the byte-identical port (D-00); getUsage read off the tracker
 - [Phase ?]: [Phase 06-real-budget-enforcement] Plan 06-02: BudgetBreakerAutoConfiguration triple-gate (@ConditionalOnClass string form + @ConditionalOnProperty kore.budget.enabled=true + @ConditionalOnMissingBean(BudgetEnforcer::class)) makes BudgetBreakerAdapter the sole BudgetEnforcer bean only when kore-budget is present AND enabled=true; InMemoryBudgetEnforcer stays the zero-config default otherwise (BUDG-05). No bean-ordering needed — only one gate satisfiable per app. 4-scenario ApplicationContextRunner matrix (incl. FilteredClassLoader, T-06-04) proves it; enabled defaults false, defaultMaxTokens reused as single limit (D-01)
+- [Phase ?]: [Phase 07-hierarchical-agents] Plan 07-01: ChildDispatchBinder is its own kore-core port interface so AgentLoop binds via filterIsInstance<ChildDispatchBinder> without a forward reference to AgentTool — kore-core compiles standalone in wave 1 (D-04/A2). AgentTask.depth/parentRunId and AgentLoop.maxDepth=5 all defaulted (binary compat, criterion #5); cancel path records one Cancelled audit row via withContext(NonCancellable) then re-throws (T-03-03).
 
 ### Pending Todos
 
@@ -209,6 +211,6 @@ Items acknowledged and deferred at milestone close on 2026-04-26.
 
 ## Session Continuity
 
-Last session: 2026-06-21T16:10:01.342Z
+Last session: 2026-06-21T19:21:20.548Z
 Stopped at: Phase 7 context gathered
 Resume file: .planning/phases/07-hierarchical-agents/07-CONTEXT.md

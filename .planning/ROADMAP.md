@@ -82,7 +82,7 @@ Plans:
 **Plans**: 4 plans (3 waves)Plans:
 **Wave 1**
 
-- [ ] 07-01-PLAN.md — kore-core foundation: AgentTask depth/parentRunId + AgentLoop maxDepth + D-05 Cancelled audit + InMemoryAuditLog run list + ChildDispatchBinder bind seam (HIER-02/03/04, criterion #5) [wave 1]
+- [x] 07-01-PLAN.md — kore-core foundation: AgentTask depth/parentRunId + AgentLoop maxDepth + D-05 Cancelled audit + InMemoryAuditLog run list + ChildDispatchBinder bind seam (HIER-02/03/04, criterion #5) [wave 1]
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -106,4 +106,4 @@ Phases execute in numeric order: 5 → 6 → 7 (Phase 6 has no dependency on Pha
 | 4. Event Bus & Publishing     | v0.0.1 | 6/6 | Complete | 2026-04-15 |
 | 5. CI Baseline & Skill Observability | v0.0.2 | 4/4 | Complete    | 2026-06-20 |
 | 6. Real Budget Enforcement           | v0.0.2 | 2/2 | Complete    | 2026-06-21 |
-| 7. Hierarchical Agents               | v0.0.2 | 0/4 | Planned     | - |
+| 7. Hierarchical Agents               | v0.0.2 | 1/4 | In Progress|  |
