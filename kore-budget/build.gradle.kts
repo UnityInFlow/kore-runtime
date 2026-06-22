@@ -8,7 +8,7 @@ group = "io.github.unityinflow"
 
 dependencies {
     implementation(project(":kore-core"))
-    implementation("io.github.unityinflow:budget-breaker:0.0.1")
+    implementation("io.github.unityinflow:budget-breaker:0.1.0") // KORE-07: verified-published on Maven Central
     implementation(libs.coroutines.core)
 
     testImplementation(libs.junit5)
