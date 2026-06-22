@@ -49,8 +49,62 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      # The Maven coordinates come from the Gradle `version` property (the
+      # single-source allprojects block), while the release notes derive the
+      # version from the git tag. Fail fast if they disagree — otherwise the
+      # release page would instruct users to depend on a version that does not
+      # match the published Sonatype bundle.
+      - name: Verify tag matches Gradle version
+        run: |
+          GRADLE_VERSION=$(./gradlew properties -q --no-configuration-cache | awk '/^version:/ {print $2}')
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          if [ "$GRADLE_VERSION" != "$TAG_VERSION" ]; then
+            echo "Tag $TAG_VERSION does not match Gradle version $GRADLE_VERSION" >&2
+            exit 1
+          fi
+
       - name: Lint + build + unit tests
         run: ./gradlew clean build --no-configuration-cache
+
+      # ---------------------------------------------------------------------------
+      # Pre-publish assertion gates (verify-before-publish). Maven Central releases
+      # are immutable (RESEARCH Pitfall 5), so the aggregation membership is proven
+      # correct here BEFORE the irreversible Publish step below.
+      # ---------------------------------------------------------------------------
+
+      # KORE-05 / D-04 / D-05: the aggregation must be the curated 10 (9 stable
+      # modules + kore-bom). kore-budget (the 05→08 published deliverable) MUST be
+      # present; the three experimental modules MUST NOT be.
+      - name: Gate — aggregation membership is the curated 10 (9 modules + BOM)
+        run: |
+          COUNT=$(grep -c "nmcpAggregation(project" build.gradle.kts)
+          if [ "$COUNT" -ne 10 ]; then
+            echo "Aggregation count $COUNT != 10 (curated 9 + BOM)" >&2
+            exit 1
+          fi
+          if ! grep -q 'nmcpAggregation(project(":kore-budget"))' build.gradle.kts; then
+            echo "kore-budget missing from aggregation (the 05→08 published deliverable would be unpublished)" >&2
+            exit 1
+          fi
+          if ! grep -q 'nmcpAggregation(project(":kore-bom"))' build.gradle.kts; then
+            echo "kore-bom missing from aggregation (D-05)" >&2
+            exit 1
+          fi
+          for excluded in kore-dashboard kore-kafka kore-rabbitmq; do
+            if grep -q "nmcpAggregation(project(\":$excluded\"))" build.gradle.kts; then
+              echo "Excluded module $excluded still aggregated (D-04 violation)" >&2
+              exit 1
+            fi
+          done
+          echo "Aggregation membership OK — curated 10 incl. kore-budget + kore-bom; no experimental modules"
+
+      - name: Gate — kore-bom is in the aggregation
+        run: |
+          grep -q 'nmcpAggregation(project(":kore-bom"))' build.gradle.kts || {
+            echo "kore-bom missing from aggregation" >&2
+            exit 1
+          }
+          echo "kore-bom present in aggregation"
 
       - name: Publish aggregated bundle to Sonatype Central Portal
         env:
