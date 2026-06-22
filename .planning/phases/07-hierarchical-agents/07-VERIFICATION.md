@@ -1,7 +1,8 @@
 ---
 phase: 07-hierarchical-agents
 verified: 2026-06-22T20:30:00Z
-status: human_needed
+status: passed
+human_verification_resolved: 2026-06-22T15:35:00Z — :kore-storage:integrationTest ran against real PostgreSQL (Testcontainers, TESTCONTAINERS_RYUK_DISABLED=true); PostgresAuditLogAdapterTest 7/7 + MigrationTest 5/5, 0 failures. See 07-UAT.md.
 score: 5/5 must-haves verified
 overrides_applied: 0
 re_verification:
