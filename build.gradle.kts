@@ -20,7 +20,7 @@ repositories {
 // tag-vs-version guard can read it via `./gradlew properties` at the root.
 allprojects {
     group = "io.github.unityinflow"
-    version = "0.1.0"
+    version = "0.1.1-SNAPSHOT"
 }
 
 subprojects {
