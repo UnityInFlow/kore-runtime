@@ -55,6 +55,14 @@ dependencies {
     compileOnly(libs.exposed.r2dbc)
     compileOnly("io.opentelemetry:opentelemetry-api:1.49.0")
 
+    // Gradle-native platform so the Spring Boot BOM is PUBLISHED as a dependency
+    // constraint into this module's Gradle Module Metadata (.module). The legacy
+    // io.spring.dependency-management plugin resolves versions at build time but does
+    // NOT export them, so before 0.1.1 a Gradle consumer of kore-spring saw the two
+    // version-less Spring Boot deps below with no constraint and failed to resolve them
+    // (the KORE-06 0.1.0 defect). A plain platform (not enforcedPlatform) lets a host
+    // application still override the Spring Boot version.
+    implementation(platform("org.springframework.boot:spring-boot-dependencies:4.0.5"))
     implementation("org.springframework.boot:spring-boot-autoconfigure")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
