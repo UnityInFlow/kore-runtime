@@ -31,7 +31,10 @@ on:
 
 jobs:
   publish:
-    runs-on: [arc-runner-unityinflow]
+    # Hetzner X64 fleet (arc-runner-unityinflow) offline at v0.1.0 release time;
+    # JVM artifacts are arch-independent, so run on the ARM64 orangepi runner
+    # (same fallback proven for budget-breaker 0.1.0). Revert to arc-runner-unityinflow when the fleet is back.
+    runs-on: [orangepi]
     permissions:
       contents: write   # required by softprops/action-gh-release@v2
     steps:
