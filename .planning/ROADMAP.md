@@ -25,7 +25,7 @@ Full milestone details: [milestones/v0.0.1-ROADMAP.md](milestones/v0.0.1-ROADMAP
 
 - [x] **Phase 5: CI Baseline & Skill Observability** - Integration tests run in CI and skill activations are fully observable (span + event)
 - [x] **Phase 6: Real Budget Enforcement** - budget-breaker adapter delivers actual hard-stop token budgets with per-agent isolation (completed 2026-06-21)
-- [ ] **Phase 7: Hierarchical Agents** - Parent agents spawn children via `child { }` with structured-concurrency cancellation and traceable run trees
+- [x] **Phase 7: Hierarchical Agents** - Parent agents spawn children via `child { }` with structured-concurrency cancellation and traceable run trees (completed 2026-06-22)
 
 ## Phase Details
 
@@ -91,7 +91,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 07-04-PLAN.md — kore-spring KoreProperties.hierarchy.maxDepth + KoreAgentFactory threading + ApplicationContextRunner test (HIER-03) [wave 3, depends 07-03]
+- [x] 07-04-PLAN.md — kore-spring KoreProperties.hierarchy.maxDepth + KoreAgentFactory threading + ApplicationContextRunner test (HIER-03) [wave 3, depends 07-03]
 
 ## Progress
 
@@ -106,4 +106,4 @@ Phases execute in numeric order: 5 → 6 → 7 (Phase 6 has no dependency on Pha
 | 4. Event Bus & Publishing     | v0.0.1 | 6/6 | Complete | 2026-04-15 |
 | 5. CI Baseline & Skill Observability | v0.0.2 | 4/4 | Complete    | 2026-06-20 |
 | 6. Real Budget Enforcement           | v0.0.2 | 2/2 | Complete    | 2026-06-21 |
-| 7. Hierarchical Agents               | v0.0.2 | 3/4 | In Progress|  |
+| 7. Hierarchical Agents               | v0.0.2 | 4/4 | Complete   | 2026-06-22 |

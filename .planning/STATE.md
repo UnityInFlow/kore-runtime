@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v0.0.2
 milestone_name: Hardening & Hierarchy
-status: executing
+status: verifying
 stopped_at: Phase 7 context gathered
-last_updated: "2026-06-22T06:24:50.269Z"
+last_updated: "2026-06-22T06:32:00.506Z"
 last_activity: 2026-06-21 -- Phase 07 execution started
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 10
-  completed_plans: 9
-  percent: 67
+  completed_plans: 10
+  percent: 100
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-06-12)
 
 Phase: 07 (hierarchical-agents) — EXECUTING
 Plan: 4 of 4
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-06-21 -- Phase 07 execution started
 
 Progress: [███░░░░░░░] 33% (1 of 3 milestone phases complete)
@@ -90,6 +90,7 @@ Progress: [███░░░░░░░] 33% (1 of 3 milestone phases complete
 | Phase 07-hierarchical-agents P01 | 4min | 2 tasks | 4 files |
 | Phase 07 P02 | 12min | 2 tasks | 5 files |
 | Phase 07 P03 | 7min | 2 tasks | 4 files |
+| Phase 07 P04 | 9min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -187,6 +188,8 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 06-real-budget-enforcement] Plan 06-02: BudgetBreakerAutoConfiguration triple-gate (@ConditionalOnClass string form + @ConditionalOnProperty kore.budget.enabled=true + @ConditionalOnMissingBean(BudgetEnforcer::class)) makes BudgetBreakerAdapter the sole BudgetEnforcer bean only when kore-budget is present AND enabled=true; InMemoryBudgetEnforcer stays the zero-config default otherwise (BUDG-05). No bean-ordering needed — only one gate satisfiable per app. 4-scenario ApplicationContextRunner matrix (incl. FilteredClassLoader, T-06-04) proves it; enabled defaults false, defaultMaxTokens reused as single limit (D-01)
 - [Phase ?]: [Phase 07-hierarchical-agents] Plan 07-01: ChildDispatchBinder is its own kore-core port interface so AgentLoop binds via filterIsInstance<ChildDispatchBinder> without a forward reference to AgentTool — kore-core compiles standalone in wave 1 (D-04/A2). AgentTask.depth/parentRunId and AgentLoop.maxDepth=5 all defaulted (binary compat, criterion #5); cancel path records one Cancelled audit row via withContext(NonCancellable) then re-throws (T-03-03).
 - [Phase ?]: [Phase 07-hierarchical-agents] Plan 07-03: AgentTool (port) implements ToolProvider + ChildDispatchBinder — single-child listTools (D-02), depth guard BEFORE child run as the only isError=true path (D-03/T-7-01), inline childLoop.run for cancellation propagation (D-04), exhaustive D-01 mapResult (ran-and-failed -> isError=false). AgentBuilder gained child { } (D-12 port inheritance), maxDepth(n) (D-08), internal buildLoop(), tracer cell + inheritTracer (A1).
+- [Phase ?]: 07-04: kore.hierarchy.max-depth (default 5) binds via @ConfigurationProperties and threads into every KoreAgentFactory agent; user maxDepth(n) override still wins
+- [Phase ?]: 07-04: added opentelemetry-api as kore-spring testImplementation to fix the Plan 07-03 Tracer NoClassDefFoundError regression in @SpringBootTest tests
 
 ### Pending Todos
 
@@ -214,6 +217,6 @@ Items acknowledged and deferred at milestone close on 2026-04-26.
 
 ## Session Continuity
 
-Last session: 2026-06-22T06:24:27.704Z
+Last session: 2026-06-22T06:31:40.132Z
 Stopped at: Phase 7 context gathered
 Resume file: .planning/phases/07-hierarchical-agents/07-CONTEXT.md
