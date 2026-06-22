@@ -25,7 +25,7 @@ Full milestone details: [milestones/v0.0.1-ROADMAP.md](milestones/v0.0.1-ROADMAP
 
 - [x] **Phase 5: CI Baseline & Skill Observability** - Integration tests run in CI and skill activations are fully observable (span + event)
 - [x] **Phase 6: Real Budget Enforcement** - budget-breaker adapter delivers actual hard-stop token budgets with per-agent isolation (completed 2026-06-21)
-- [x] **Phase 7: Hierarchical Agents** - Parent agents spawn children via `child { }` with structured-concurrency cancellation and traceable run trees (gap closure in progress — 2/5 criteria PARTIAL at verify; 07-05 closes the persistent-path test gap) (completed 2026-06-22)
+- [x] **Phase 7: Hierarchical Agents** - Parent agents spawn children via `child { }` with structured-concurrency cancellation and traceable run trees (5/5 criteria verified; integration UAT passed against real PostgreSQL) (completed 2026-06-22)
 
 ## Phase Details
 
