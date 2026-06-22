@@ -4,8 +4,8 @@ milestone: v0.0.2
 milestone_name: Hardening & Hierarchy
 status: verifying
 stopped_at: Phase 7 context gathered
-last_updated: "2026-06-22T06:32:00.506Z"
-last_activity: 2026-06-21 -- Phase 07 execution started
+last_updated: "2026-06-22T14:57:00Z"
+last_activity: 2026-06-22 -- Plan 07-05 gap closure executed
 progress:
   total_phases: 3
   completed_phases: 3
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-06-12)
 
 ## Current Position
 
-Phase: 07 (hierarchical-agents) — EXECUTING
-Plan: 4 of 4
-Status: Phase complete — ready for verification
-Last activity: 2026-06-21 -- Phase 07 execution started
+Phase: 07 (hierarchical-agents) — GAP CLOSURE COMPLETE
+Plan: 5 of 5
+Status: Gap closure complete — ready for re-verification (criteria #2/#4 now provable, target 5/5)
+Last activity: 2026-06-22 -- Plan 07-05 gap closure executed (non-UUID integration test added)
 
 Progress: [███░░░░░░░] 33% (1 of 3 milestone phases complete)
 
@@ -91,6 +91,7 @@ Progress: [███░░░░░░░] 33% (1 of 3 milestone phases complete
 | Phase 07 P02 | 12min | 2 tasks | 5 files |
 | Phase 07 P03 | 7min | 2 tasks | 4 files |
 | Phase 07 P04 | 9min | 2 tasks | 5 files |
+| Phase 07 P05 | 2min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -190,6 +191,7 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 07-hierarchical-agents] Plan 07-03: AgentTool (port) implements ToolProvider + ChildDispatchBinder — single-child listTools (D-02), depth guard BEFORE child run as the only isError=true path (D-03/T-7-01), inline childLoop.run for cancellation propagation (D-04), exhaustive D-01 mapResult (ran-and-failed -> isError=false). AgentBuilder gained child { } (D-12 port inheritance), maxDepth(n) (D-08), internal buildLoop(), tracer cell + inheritTracer (A1).
 - [Phase ?]: 07-04: kore.hierarchy.max-depth (default 5) binds via @ConfigurationProperties and threads into every KoreAgentFactory agent; user maxDepth(n) override still wins
 - [Phase ?]: 07-04: added opentelemetry-api as kore-spring testImplementation to fix the Plan 07-03 Tracer NoClassDefFoundError regression in @SpringBootTest tests
+- [Phase 07-hierarchical-agents]: 07-05 (gap closure): added one @Tag("integration") non-UUID test to PostgresAuditLogAdapterTest (free-form "parent-1"/"child-1" ids + non-UUID parentRunId) proving recordAgentRun never throws on non-UUID ids and child parent_run_id == toStableUuid(parent) — closes Gap 2 missing #3. Test recomputes toStableUuid inline (independent contract proof, not import of the private helper). No production code touched (CR-01/CR-02/WR-01 already in eb370c0); re-asserted kore-core 41 tests 0 failures incl. CR-01 multi-threaded + CR-02 no-throw. Integration run is CI/Docker-gated (Ryuk env constraint), not a local failure. CR-03 (kotlinx.serialization extractInput) deliberately deferred — compileOnly zero-runtime-dep contract.
 
 ### Pending Todos
 
@@ -217,6 +219,6 @@ Items acknowledged and deferred at milestone close on 2026-04-26.
 
 ## Session Continuity
 
-Last session: 2026-06-22T06:31:40.132Z
-Stopped at: Phase 7 context gathered
-Resume file: .planning/phases/07-hierarchical-agents/07-CONTEXT.md
+Last session: 2026-06-22T14:57:00Z
+Stopped at: Completed 07-05-PLAN.md (gap closure)
+Resume file: None

@@ -97,7 +97,7 @@ Plans:
 
 **Gap closure** *(verify scored 3/5; CR-01/CR-02 production fixes + concurrency/no-throw tests already committed in eb370c0; this plan closes the one remaining persistent-path test gap)*
 
-- [ ] 07-05-PLAN.md — non-UUID agentId persistence + non-UUID parent/child correlation integration test (Gap 2 missing #3) + re-assert committed CR-01 concurrency / CR-02 no-throw unit tests green (HIER-02/03/04, criteria #2/#4) [gap closure, no deps]
+- [x] 07-05-PLAN.md — non-UUID agentId persistence + non-UUID parent/child correlation integration test (Gap 2 missing #3) + re-assert committed CR-01 concurrency / CR-02 no-throw unit tests green (HIER-02/03/04, criteria #2/#4) [gap closure, no deps]
 
 ## Progress
 
@@ -112,4 +112,4 @@ Phases execute in numeric order: 5 → 6 → 7 (Phase 6 has no dependency on Pha
 | 4. Event Bus & Publishing     | v0.0.1 | 6/6 | Complete | 2026-04-15 |
 | 5. CI Baseline & Skill Observability | v0.0.2 | 4/4 | Complete    | 2026-06-20 |
 | 6. Real Budget Enforcement           | v0.0.2 | 2/2 | Complete    | 2026-06-21 |
-| 7. Hierarchical Agents               | v0.0.2 | 4/5 | Gap closure | —          |
+| 7. Hierarchical Agents               | v0.0.2 | 5/5 | Re-verify   | —          |
