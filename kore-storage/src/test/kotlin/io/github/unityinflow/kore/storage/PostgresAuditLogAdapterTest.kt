@@ -151,6 +151,55 @@ class PostgresAuditLogAdapterTest {
         }
 
     @Test
+    fun `recordAgentRun persists a non-UUID agentId and preserves non-UUID parent-child correlation (CR-02)`() =
+        runTest {
+            // Independently mirror PostgresAuditLogAdapter's private String.toStableUuid():
+            // a valid UUID string parses verbatim, any other string maps deterministically via
+            // UUID.nameUUIDFromBytes. Recomputed here (not imported) so the test proves the
+            // contract independently of the adapter's internals.
+            val toStableUuid: String.() -> UUID = {
+                runCatching { UUID.fromString(this) }
+                    .getOrElse { UUID.nameUUIDFromBytes(toByteArray(Charsets.UTF_8)) }
+            }
+
+            // FREE-FORM, non-UUID ids — exactly the crash path the verifier called out:
+            // pre-toStableUuid, UUID.fromString("parent-1") threw IllegalArgumentException
+            // straight out of recordAgentRun.
+            val parentAgentId = "parent-1"
+            val childAgentId = "child-1"
+            val parentTask = AgentTask(id = "task-parent-1", input = "parent work")
+            val childTask =
+                AgentTask(
+                    id = "task-child-1",
+                    input = "child work",
+                    parentRunId = parentAgentId,
+                )
+
+            // CR-02 / run-NEVER-throws invariant: these calls MUST NOT throw on a non-UUID id.
+            // No-exception is implicit — the test body fails if either throws.
+            adapter.recordAgentRun(parentAgentId, parentTask, AgentResult.Success("parent done", TokenUsage(1, 1)))
+            // CR-02 / run-NEVER-throws invariant: a non-UUID parentRunId must not crash the write.
+            adapter.recordAgentRun(childAgentId, childTask, AgentResult.Success("child done", TokenUsage(2, 2)))
+
+            val expectedChildPk = childAgentId.toStableUuid()
+            val expectedParentPk = parentAgentId.toStableUuid()
+
+            postgres.createConnection("").use { conn ->
+                val countPs = conn.prepareStatement("SELECT count(*) FROM agent_runs WHERE id = ?::uuid")
+                countPs.setString(1, expectedChildPk.toString())
+                val countRs = countPs.executeQuery()
+                countRs.next() shouldBe true
+                countRs.getInt(1) shouldBe 1
+
+                val parentPs = conn.prepareStatement("SELECT parent_run_id::text FROM agent_runs WHERE id = ?::uuid")
+                parentPs.setString(1, expectedChildPk.toString())
+                val parentRs = parentPs.executeQuery()
+                parentRs.next() shouldBe true
+                parentRs.getString("parent_run_id") shouldBe expectedParentPk.toString()
+            }
+        }
+
+    @Test
     fun `recordToolCall inserts row with correct tool_name`() =
         runTest {
             val agentId = UUID.randomUUID().toString()
