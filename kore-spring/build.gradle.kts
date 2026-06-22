@@ -81,6 +81,13 @@ dependencies {
     // gate fires and the BUDG-05 bean-selection matrix can assert the adapter is
     // wired when enabled=true (and the FilteredClassLoader scenario can hide it).
     testImplementation(project(":kore-budget"))
+    // opentelemetry-api on the TEST classpath: Plan 07-03 made AgentBuilder.buildLoop()
+    // reference io.opentelemetry.api.trace.Tracer unconditionally (via the tracer cell
+    // threaded into AgentLoop), so any @SpringBootTest @Bean agent that calls build()
+    // now needs the class present at runtime. compileOnly above covers main; the host
+    // app supplies it via the Spring Boot BOM, but the tests run without a host BOM, so
+    // mirror kore-core's testImplementation here to avoid NoClassDefFoundError.
+    testImplementation("io.opentelemetry:opentelemetry-api:1.49.0")
     testImplementation(libs.junit5)
     testImplementation(libs.kotest.assertions)
     testImplementation(libs.coroutines.test)
