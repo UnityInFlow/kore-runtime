@@ -61,6 +61,18 @@ dependencies {
     implementation(libs.coroutines.core)
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    // kore-storage on test classpath so the StorageAutoConfiguration @ConditionalOnClass
+    // gate fires in SpringBoot4ExposedSmokeTest (KORE-04 / D-03) and the Exposed-r2dbc
+    // classes (org.jetbrains.exposed.v1.r2dbc.*) resolve under the SB4 context. Mirrors
+    // the other @ConditionalOnClass-gate test deps; compileOnly above only covers main.
+    testImplementation(project(":kore-storage"))
+    // kore-storage declares exposed-r2dbc / r2dbc-postgresql as `implementation`, so they
+    // do NOT leak onto kore-spring's test classpath transitively. The smoke test references
+    // R2dbcDatabase + io.r2dbc.spi.* directly to build the lazy user R2dbcDatabase bean, so
+    // bring them onto the test classpath explicitly (they are present at runtime in a real
+    // host app via the host's own storage deps).
+    testImplementation(libs.exposed.r2dbc)
+    testImplementation(libs.r2dbc.postgresql)
     // kore-llm on test classpath so the @ConditionalOnClass(name = ["...ClaudeBackend"])
     // gate fires and we can assert auto-wired LLM backend bean creation (D-15).
     testImplementation(project(":kore-llm"))

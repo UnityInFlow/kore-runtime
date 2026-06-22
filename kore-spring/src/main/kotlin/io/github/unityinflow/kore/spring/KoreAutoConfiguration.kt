@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.autoconfigure.AutoConfiguration
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -212,7 +213,16 @@ class KoreAutoConfiguration {
     @Configuration(proxyBeanMethods = false)
     @ConditionalOnClass(name = ["io.github.unityinflow.kore.storage.PostgresAuditLogAdapter"])
     class StorageAutoConfiguration {
+        // @ConditionalOnBean(R2dbcDatabase) makes the documented graceful-fallback
+        // contract real (CR-02-adjacent fix, surfaced by the KORE-04 smoke test): when
+        // kore-storage is on the classpath but the host supplies NO R2dbcDatabase bean,
+        // this factory is SKIPPED (rather than throwing UnsatisfiedDependencyException),
+        // so the in-memory default AuditLog wins. The `type` string form avoids eagerly
+        // resolving the R2dbcDatabase symbol before the @ConditionalOnClass gate confirms
+        // exposed-r2dbc is present. The class is guaranteed loadable here because the
+        // outer @ConditionalOnClass already passed.
         @Bean
+        @ConditionalOnBean(type = ["org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase"])
         @ConditionalOnMissingBean(AuditLog::class)
         fun postgresAuditLog(database: org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase): AuditLog =
             io.github.unityinflow.kore.storage
