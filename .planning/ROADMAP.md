@@ -25,7 +25,7 @@ Full milestone details: [milestones/v0.0.1-ROADMAP.md](milestones/v0.0.1-ROADMAP
 
 - [x] **Phase 5: CI Baseline & Skill Observability** - Integration tests run in CI and skill activations are fully observable (span + event)
 - [x] **Phase 6: Real Budget Enforcement** - budget-breaker adapter delivers actual hard-stop token budgets with per-agent isolation (completed 2026-06-21)
-- [x] **Phase 7: Hierarchical Agents** - Parent agents spawn children via `child { }` with structured-concurrency cancellation and traceable run trees (completed 2026-06-22)
+- [ ] **Phase 7: Hierarchical Agents** - Parent agents spawn children via `child { }` with structured-concurrency cancellation and traceable run trees (gap closure in progress — 2/5 criteria PARTIAL at verify; 07-05 closes the persistent-path test gap)
 
 ## Phase Details
 
@@ -79,7 +79,9 @@ Plans:
   4. Audit log records `parent_run_id` on child agent runs, so a developer can trace a full run tree from the database
   5. Existing single-agent definitions compile and run unchanged — all new `AgentLoop`/`AgentTask` parameters have defaults (binary compatibility preserved)
 
-**Plans**: 4 plans (3 waves)Plans:
+**Plans**: 5 plans (4 base + 1 gap closure)
+Plans:
+
 **Wave 1**
 
 - [x] 07-01-PLAN.md — kore-core foundation: AgentTask depth/parentRunId + AgentLoop maxDepth + D-05 Cancelled audit + InMemoryAuditLog run list + ChildDispatchBinder bind seam (HIER-02/03/04, criterion #5) [wave 1]
@@ -92,6 +94,10 @@ Plans:
 **Wave 3** *(blocked on Wave 2 completion)*
 
 - [x] 07-04-PLAN.md — kore-spring KoreProperties.hierarchy.maxDepth + KoreAgentFactory threading + ApplicationContextRunner test (HIER-03) [wave 3, depends 07-03]
+
+**Gap closure** *(verify scored 3/5; CR-01/CR-02 production fixes + concurrency/no-throw tests already committed in eb370c0; this plan closes the one remaining persistent-path test gap)*
+
+- [ ] 07-05-PLAN.md — non-UUID agentId persistence + non-UUID parent/child correlation integration test (Gap 2 missing #3) + re-assert committed CR-01 concurrency / CR-02 no-throw unit tests green (HIER-02/03/04, criteria #2/#4) [gap closure, no deps]
 
 ## Progress
 
@@ -106,4 +112,4 @@ Phases execute in numeric order: 5 → 6 → 7 (Phase 6 has no dependency on Pha
 | 4. Event Bus & Publishing     | v0.0.1 | 6/6 | Complete | 2026-04-15 |
 | 5. CI Baseline & Skill Observability | v0.0.2 | 4/4 | Complete    | 2026-06-20 |
 | 6. Real Budget Enforcement           | v0.0.2 | 2/2 | Complete    | 2026-06-21 |
-| 7. Hierarchical Agents               | v0.0.2 | 4/4 | Complete   | 2026-06-22 |
+| 7. Hierarchical Agents               | v0.0.2 | 4/5 | Gap closure | —          |
