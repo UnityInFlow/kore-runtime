@@ -13,4 +13,5 @@ include(
     "kore-kafka",
     "kore-rabbitmq",
     "kore-budget",
+    "kore-bom", // NEW (KORE-03 / D-05): java-platform BOM aligning the curated subset
 )
