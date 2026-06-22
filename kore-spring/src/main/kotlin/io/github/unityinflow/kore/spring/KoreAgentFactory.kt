@@ -27,11 +27,20 @@ import io.github.unityinflow.kore.core.port.SkillRegistry
  * factory only pre-sets the infrastructure ports. User overrides in `block`
  * (e.g., `eventBus(customBus)`) take precedence because they run after the
  * factory's pre-wiring.
+ *
+ * In addition to the ports, the factory pre-wires the hierarchical-agent depth
+ * ceiling: it calls `maxDepth([maxDepth])` before `block()` so the configured
+ * `kore.hierarchy.max-depth` (D-08 / HIER-03) flows into every agent's loop. A
+ * user `maxDepth(n)` inside `block` still wins, exactly like the port overrides,
+ * because it runs after the factory's pre-wiring. The default of 5 preserves
+ * behavior for existing callers that construct the factory without the parameter.
  */
 class KoreAgentFactory(
     private val eventBus: EventBus,
     private val auditLog: AuditLog,
     private val skillRegistry: SkillRegistry,
+    /** Hierarchical spawn ceiling pre-wired into every built agent (D-08 / HIER-03). */
+    val maxDepth: Int = 5,
 ) {
     fun agent(
         name: String,
@@ -41,6 +50,7 @@ class KoreAgentFactory(
             eventBus(this@KoreAgentFactory.eventBus)
             auditLog(this@KoreAgentFactory.auditLog)
             skillRegistry(this@KoreAgentFactory.skillRegistry)
+            maxDepth(this@KoreAgentFactory.maxDepth)
             block()
         }
 }

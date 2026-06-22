@@ -25,6 +25,7 @@ data class KoreProperties(
     val dashboard: DashboardProperties = DashboardProperties(),
     val budget: BudgetProperties = BudgetProperties(),
     val eventBus: EventBusProperties = EventBusProperties(),
+    val hierarchy: HierarchyProperties = HierarchyProperties(),
 ) {
     /** LLM backend configuration — one nested block per supported provider. */
     data class LlmProperties(
@@ -112,6 +113,26 @@ data class KoreProperties(
     data class BudgetProperties(
         val defaultMaxTokens: Long = 100_000L,
         val enabled: Boolean = false,
+    )
+
+    /**
+     * Hierarchical-agent spawn ceiling. `kore.hierarchy.max-depth`, default 5 (HIER-03).
+     *
+     * [maxDepth] is the recursion ceiling enforced in
+     * [io.github.unityinflow.kore.core.port.AgentTool] when a parent agent spawns a
+     * child: a child whose depth would exceed this value is refused before it runs
+     * (T-7-01). [KoreAgentFactory] threads this value into every agent it builds by
+     * calling `maxDepth(...)` before the user's `block()`, so an absent/blank
+     * `kore.hierarchy.*` config keeps the safe default and existing apps behave
+     * identically (criterion #5). A user `maxDepth(n)` inside the agent block still
+     * wins, because it runs after the factory's pre-wiring.
+     *
+     * The shape is intentionally extensible (D-01): future per-agent depth overrides
+     * can be added without touching the global `maxDepth` contract — mirroring
+     * [BudgetProperties].
+     */
+    data class HierarchyProperties(
+        val maxDepth: Int = 5,
     )
 
     /**

@@ -78,7 +78,14 @@ class KoreAutoConfiguration {
         eventBus: EventBus,
         auditLog: AuditLog,
         skillRegistry: SkillRegistry,
-    ): KoreAgentFactory = KoreAgentFactory(eventBus, auditLog, skillRegistry)
+        properties: KoreProperties,
+    ): KoreAgentFactory =
+        KoreAgentFactory(
+            eventBus = eventBus,
+            auditLog = auditLog,
+            skillRegistry = skillRegistry,
+            maxDepth = properties.hierarchy.maxDepth,
+        )
 
     // ───────────────────────────────────────────────────────────────────────
     // LLM backends (D-15) — gated on kore-llm classpath presence + api-key set
