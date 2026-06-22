@@ -86,7 +86,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 07-02-PLAN.md — kore-storage V2 migration (parent_run_id, no FK) + AgentRunsTable column + adapter INSERT + Testcontainers persistence tests (HIER-04, criterion #4) [wave 2, depends 07-01]
+- [x] 07-02-PLAN.md — kore-storage V2 migration (parent_run_id, no FK) + AgentRunsTable column + adapter INSERT + Testcontainers persistence tests (HIER-04, criterion #4) [wave 2, depends 07-01]
 - [ ] 07-03-PLAN.md — AgentTool (ToolProvider+ChildDispatchBinder) + AgentBuilder child{}/maxDepth/buildLoop/tracer + AgentToolTest + AgentLoopCancellationTest (HIER-01/02/03, criteria #1/#2/#3) [wave 2, depends 07-01]
 
 **Wave 3** *(blocked on Wave 2 completion)*
@@ -106,4 +106,4 @@ Phases execute in numeric order: 5 → 6 → 7 (Phase 6 has no dependency on Pha
 | 4. Event Bus & Publishing     | v0.0.1 | 6/6 | Complete | 2026-04-15 |
 | 5. CI Baseline & Skill Observability | v0.0.2 | 4/4 | Complete    | 2026-06-20 |
 | 6. Real Budget Enforcement           | v0.0.2 | 2/2 | Complete    | 2026-06-21 |
-| 7. Hierarchical Agents               | v0.0.2 | 1/4 | In Progress|  |
+| 7. Hierarchical Agents               | v0.0.2 | 2/4 | In Progress|  |
