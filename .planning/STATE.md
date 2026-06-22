@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v0.0.2
 milestone_name: Hardening & Hierarchy
-status: milestone_complete
-stopped_at: Phase 07 complete (5/5 verified) — milestone v0.0.2 all phases done
+status: in_progress
+stopped_at: v0.0.2 milestone audit found gaps (kore-spring factory wiring) — Phase 8 added to close BUDG-05/OBSV-03/WR-01 before milestone close
 last_updated: "2026-06-22T17:15:11.098Z"
 last_activity: 2026-06-22
 progress:
@@ -21,22 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-12)
 
 **Core value:** A developer adds one Spring Boot dependency, writes an `agent { }` block, and has a production-ready agent running with observability and budget control.
-**Current focus:** Milestone v0.0.2 (Hardening & Hierarchy) — all phases complete
+**Current focus:** Phase 08 — Spring Factory Wiring (gap closure for v0.0.2 audit)
 
 ## Current Position
 
-Phase: 07 (complete)
+Phase: 08 (not planned)
 Plan: —
-Status: Phase 07 verified 5/5 (integration UAT passed against real PostgreSQL). Milestone v0.0.2 phases 5/6/7 all complete.
+Status: Phases 5/6/7 complete & verified, but the v0.0.2 milestone audit found the kore-spring KoreAgentFactory does not inject BudgetEnforcer/Tracer into built agents (BUDG-05/OBSV-03 silently no-op on the Spring path) and child{} does not inherit the parent budget (WR-01). Phase 8 closes these before milestone close.
 Last activity: 2026-06-22
 
-Progress: [██████████] 100% (3 of 3 milestone phases complete)
+Progress: [████████░░] 75% (3 of 4 milestone phases complete; Phase 8 gap closure pending)
 
 **Milestone phase structure:**
 
 - Phase 5: CI Baseline & Skill Observability (CI-01, CI-02, OBSV-03, OBSV-04)
 - Phase 6: Real Budget Enforcement (BUDG-05, BUDG-06, BUDG-07) — independent of Phase 5
 - Phase 7: Hierarchical Agents (HIER-01..04) — must follow Phase 5 (shared AgentLoop.kt)
+- Phase 8: Spring Factory Wiring (BUDG-05/OBSV-03/WR-01 gap closure) — added 2026-06-22 from v0.0.2 milestone audit; wires KoreAgentFactory to inject BudgetEnforcer/Tracer + child budget inheritance
 
 ## Performance Metrics
 

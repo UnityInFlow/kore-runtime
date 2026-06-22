@@ -3,7 +3,7 @@
 ## Milestones
 
 - ✅ **v0.0.1 Initial MVP** — Phases 1-4 (shipped 2026-04-26)
-- 🚧 **v0.0.2 Hardening & Hierarchy** — Phases 5-7 (in progress)
+- 🚧 **v0.0.2 Hardening & Hierarchy** — Phases 5-8 (in progress)
 
 ## Phases
 
@@ -26,6 +26,7 @@ Full milestone details: [milestones/v0.0.1-ROADMAP.md](milestones/v0.0.1-ROADMAP
 - [x] **Phase 5: CI Baseline & Skill Observability** - Integration tests run in CI and skill activations are fully observable (span + event)
 - [x] **Phase 6: Real Budget Enforcement** - budget-breaker adapter delivers actual hard-stop token budgets with per-agent isolation (completed 2026-06-21)
 - [x] **Phase 7: Hierarchical Agents** - Parent agents spawn children via `child { }` with structured-concurrency cancellation and traceable run trees (5/5 criteria verified; integration UAT passed against real PostgreSQL) (completed 2026-06-22)
+- [ ] **Phase 8: Spring Factory Wiring (gap closure)** - KoreAgentFactory injects BudgetEnforcer + Tracer into built agents and child{} inherits parent budget, so the documented Spring flow actually delivers budget + observability (closes v0.0.2 audit gaps BUDG-05/OBSV-03/WR-01)
 
 ## Phase Details
 
@@ -113,3 +114,24 @@ Phases execute in numeric order: 5 → 6 → 7 (Phase 6 has no dependency on Pha
 | 5. CI Baseline & Skill Observability | v0.0.2 | 4/4 | Complete    | 2026-06-20 |
 | 6. Real Budget Enforcement           | v0.0.2 | 2/2 | Complete    | 2026-06-21 |
 | 7. Hierarchical Agents               | v0.0.2 | 5/5 | Complete    | 2026-06-22 |
+| 8. Spring Factory Wiring (gap)       | v0.0.2 | 0/0 | Not planned | -          |
+
+### Phase 8: Spring Factory Wiring (gap closure)
+
+**Goal**: The documented Spring developer flow ("add the dependency, write `agent { }`, get budget + observability + run-tree") actually delivers budget enforcement and skill-span observability. `KoreAgentFactory` propagates the Spring-selected `BudgetEnforcer` and `Tracer` into every agent it builds, `AgentBuilder` gains a `budgetEnforcer(...)` override, and `child { }` inherits the parent's budget enforcer — closing the cross-phase wiring gaps the v0.0.2 milestone audit found at the kore-spring factory boundary.
+**Depends on**: Phase 7 (extends the AgentBuilder/AgentTool spawn model and KoreAgentFactory it produced)
+**Requirements**: BUDG-05 (Spring-path delivery), OBSV-03 (Spring-path delivery), WR-01 (child budget inheritance)
+**Source**: `.planning/v0.0.2-MILESTONE-AUDIT.md` (status: gaps_found)
+**Success Criteria** (what must be TRUE):
+
+  1. An agent built via `KoreAgentFactory.agent { }` enforces the Spring-configured `BudgetEnforcer` — a Spring-path integration test drives an agent to its hard limit and gets `AgentResult.BudgetExceeded` (proves BUDG-05 reaches the agent, not just the bean)
+  2. An agent built via `KoreAgentFactory.agent { }` emits the `kore.skill.activate` OTel span on skill activation — the factory injects the `KoreTracer` bean (proves OBSV-03 on the Spring path)
+  3. A parent with a budget ceiling spawning `child { }` agents shares/propagates the enforcer so child fan-out cannot exceed the parent ceiling (closes WR-01)
+  4. `AgentBuilder` exposes a `budgetEnforcer(...)` DSL override; existing zero-arg factory/DSL callers compile and behave unchanged (binary compatibility preserved)
+  5. README.md "inherits for free" claims reconciled with delivered behavior
+
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 8 to break down)
