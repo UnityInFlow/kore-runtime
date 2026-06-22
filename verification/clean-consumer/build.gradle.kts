@@ -31,6 +31,11 @@ dependencies {
     // kore-spring / kore-core declarations get their version from the BOM, proving the published
     // BOM is usable by a real downstream consumer (D-05).
     testImplementation(platform("io.github.unityinflow:kore-bom:$koreVersion")) // aligns versions
+    // A real kore-spring consumer is a Spring Boot app, so it imports the Spring Boot BOM (via the
+    // plugin or this dependencies platform). kore-spring's published POM declares spring-boot-* deps
+    // (e.g. spring-boot-starter-actuator) version-less under its own spring-boot-dependencies import;
+    // the consumer must supply that BOM to resolve their versions. Mirrors a real Spring Boot consumer.
+    testImplementation(platform("org.springframework.boot:spring-boot-dependencies:4.0.5"))
     // No version — resolved from the kore-bom platform. kore-spring brings
     // KoreAutoConfiguration + its AutoConfiguration.imports on the classpath, transitively
     // dragging in kore-core (which defines the EventBus port the test autowires).
