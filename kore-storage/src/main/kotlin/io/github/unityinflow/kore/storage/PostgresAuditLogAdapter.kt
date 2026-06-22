@@ -57,7 +57,7 @@ class PostgresAuditLogAdapter(
     ) {
         suspendTransaction(database) {
             AgentRunsTable.insert { stmt ->
-                stmt[id] = UUID.fromString(agentId)
+                stmt[id] = agentId.toStableUuid()
                 stmt[agentName] = task.metadata["agent_name"] ?: "unknown"
                 stmt[AgentRunsTable.task] = task.input
                 stmt[resultType] = result.typeName()
@@ -67,7 +67,8 @@ class PostgresAuditLogAdapter(
                 // Pitfall 4: parentRunId is String? but the column is UUID — null-safe
                 // parse. Root runs leave it NULL. No FK on parent_run_id (D-10) so the
                 // child insert (which lands before the parent row) is never rejected.
-                stmt[parentRunId] = task.parentRunId?.let(UUID::fromString)
+                // CR-02: defensive parse so a non-UUID parent id cannot crash the write.
+                stmt[parentRunId] = task.parentRunId?.toStableUuid()
             }
         }
     }
@@ -79,7 +80,7 @@ class PostgresAuditLogAdapter(
     ) {
         suspendTransaction(database) {
             LlmCallsTable.insert { stmt ->
-                stmt[runId] = UUID.fromString(agentId)
+                stmt[runId] = agentId.toStableUuid()
                 stmt[model] = backend
                 stmt[tokensIn] = usage.inputTokens
                 stmt[tokensOut] = usage.outputTokens
@@ -96,7 +97,7 @@ class PostgresAuditLogAdapter(
     ) {
         suspendTransaction(database) {
             ToolCallsTable.insert { stmt ->
-                stmt[runId] = UUID.fromString(agentId)
+                stmt[runId] = agentId.toStableUuid()
                 stmt[llmCallId] = null // correlated in Phase 3 with span context linkage
                 stmt[toolName] = call.name
                 stmt[mcpServer] = null // MCP server tracking added in Phase 3 via context
@@ -215,6 +216,23 @@ class PostgresAuditLogAdapter(
                 }
         }
 }
+
+/**
+ * CR-02 defensive id coercion: kore-core [AgentTask.id]/parentRunId are free-form
+ * Strings, but the audit tables key on UUID columns. A non-UUID id (e.g. "parent-1")
+ * previously crashed [PostgresAuditLogAdapter.recordAgentRun] via
+ * `UUID.fromString(...)`, propagating out of `AgentLoop.run` and breaking the
+ * documented "run NEVER throws" invariant.
+ *
+ * This parses a valid UUID string verbatim and, for any non-UUID string, derives a
+ * DETERMINISTIC UUID from its bytes ([UUID.nameUUIDFromBytes]) so the same logical id
+ * always maps to the same row key (preserving parent↔child correlation) without ever
+ * throwing. No `!!`; the `runCatching` covers the `IllegalArgumentException` thrown by
+ * `UUID.fromString` on malformed input.
+ */
+private fun String.toStableUuid(): UUID =
+    runCatching { UUID.fromString(this) }
+        .getOrElse { UUID.nameUUIDFromBytes(toByteArray(Charsets.UTF_8)) }
 
 /** Maps [AgentResult] to a stable string for the result_type column. */
 private fun AgentResult.typeName(): String =

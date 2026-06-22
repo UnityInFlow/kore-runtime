@@ -3,6 +3,9 @@ package io.github.unityinflow.kore.core
 import io.github.unityinflow.kore.core.internal.InMemoryAuditLog
 import io.github.unityinflow.kore.core.internal.InMemoryBudgetEnforcer
 import io.github.unityinflow.kore.core.internal.InProcessEventBus
+import io.github.unityinflow.kore.core.port.AgentCostRecord
+import io.github.unityinflow.kore.core.port.AgentRunRecord
+import io.github.unityinflow.kore.core.port.AuditLog
 import io.github.unityinflow.kore.core.port.LLMBackend
 import io.github.unityinflow.kore.core.port.ToolProvider
 import io.kotest.matchers.shouldBe
@@ -85,6 +88,50 @@ class AgentLoopTest {
 
             result.shouldBeInstanceOf<AgentResult.LLMError>()
             (result as AgentResult.LLMError).backend shouldBe "failing"
+        }
+
+    @Test
+    fun `CR-02 run returns an AgentResult and does not throw when AuditLog throws`() =
+        runTest {
+            // A storage failure on the success-path audit write must NOT break the
+            // documented "run NEVER throws" invariant (07-VERIFICATION CR-02).
+            val throwingAudit =
+                object : AuditLog {
+                    override suspend fun recordAgentRun(
+                        agentId: String,
+                        task: AgentTask,
+                        result: AgentResult,
+                    ): Unit = throw RuntimeException("audit storage down")
+
+                    override suspend fun recordLLMCall(
+                        agentId: String,
+                        backend: String,
+                        usage: TokenUsage,
+                    ) = Unit
+
+                    override suspend fun recordToolCall(
+                        agentId: String,
+                        call: ToolCall,
+                        result: ToolResult,
+                    ) = Unit
+
+                    override suspend fun queryRecentRuns(limit: Int): List<AgentRunRecord> = emptyList()
+
+                    override suspend fun queryCostSummary(): List<AgentCostRecord> = emptyList()
+                }
+            val loop =
+                AgentLoop(
+                    llmBackend = scriptedBackend(LLMChunk.Text("ok"), LLMChunk.Done),
+                    toolProviders = emptyList(),
+                    budgetEnforcer = InMemoryBudgetEnforcer(defaultLimitPerAgent = Long.MAX_VALUE),
+                    eventBus = InProcessEventBus(),
+                    auditLog = throwingAudit,
+                    config = LLMConfig(model = "test-model"),
+                )
+
+            val result = loop.run(AgentTask(id = "audit-throws", input = "hi"))
+
+            result.shouldBeInstanceOf<AgentResult.Success>()
         }
 
     @Test

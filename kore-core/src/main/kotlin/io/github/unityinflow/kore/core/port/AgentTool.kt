@@ -7,6 +7,7 @@ import io.github.unityinflow.kore.core.ToolCall
 import io.github.unityinflow.kore.core.ToolDefinition
 import io.github.unityinflow.kore.core.ToolResult
 import java.util.UUID
+import kotlin.coroutines.coroutineContext
 
 /**
  * A [ToolProvider] that spawns a child agent as a single tool call (the spawn
@@ -18,10 +19,13 @@ import java.util.UUID
  * Advertises exactly ONE tool whose name is [childName] with a single required
  * `input` string schema (D-02).
  *
- * Implements [ChildDispatchBinder]: [AgentLoop] binds the running parent's depth
- * and run id into the val-cell holders ([bind]) immediately before dispatch (A2),
+ * Implements [ChildDispatchBinder]: [AgentLoop] obtains the running parent's depth
+ * and run id as an immutable [ChildLineage] element ([bind]) and installs it into the
+ * dispatch [kotlin.coroutines.CoroutineContext] immediately before dispatch (A2),
  * because those are runtime values the fixed [ToolProvider.callTool] signature
- * cannot carry.
+ * cannot carry. [callTool] reads the lineage back from `coroutineContext[ChildLineage]`
+ * so each concurrently-dispatched child sees its OWN parent lineage (CR-01 fix —
+ * no shared mutable instance state to race).
  *
  * Depth ceiling (D-03 / HIER-03 / T-7-01): a spawn at `parentDepth + 1 > maxDepth`
  * is refused BEFORE the child runs — the ONLY `isError = true` path. Every other
@@ -39,18 +43,14 @@ class AgentTool(
     private val maxDepth: Int,
 ) : ToolProvider,
     ChildDispatchBinder {
-    // A2 val-cell holders (no `var` — CLAUDE.md). AgentLoop writes index 0 via
-    // [bind] right before the tool-dispatch block; [callTool] reads them.
-    private val parentDepthCell = IntArray(1)
-    private val parentRunIdCell = arrayOfNulls<String>(1)
-
+    // CR-01 fix: no shared mutable instance state. [bind] returns an immutable
+    // [ChildLineage] element that AgentLoop installs into the dispatch coroutine
+    // context; [callTool] reads it per-coroutine, so concurrent parent runs sharing
+    // this one AgentTool instance cannot clobber each other's depth/parentRunId.
     override fun bind(
         parentDepth: Int,
         parentRunId: String?,
-    ) {
-        parentDepthCell[0] = parentDepth
-        parentRunIdCell[0] = parentRunId
-    }
+    ): ChildLineage = ChildLineage(parentDepth = parentDepth, parentRunId = parentRunId)
 
     override suspend fun listTools(): List<ToolDefinition> =
         listOf(
@@ -62,7 +62,11 @@ class AgentTool(
         )
 
     override suspend fun callTool(call: ToolCall): ToolResult {
-        val childDepth = parentDepthCell[0] + 1
+        // CR-01 fix: lineage is read per-coroutine from the dispatch context, not from
+        // shared instance cells. Absent (provider called outside a bound dispatch) →
+        // depth 0 / no parent, matching the previous zero-initialised cell defaults.
+        val lineage = coroutineContext[ChildLineage]
+        val childDepth = (lineage?.parentDepth ?: 0) + 1
         if (childDepth > maxDepth) {
             // D-03 / T-7-01: refuse BEFORE running the child — no child loop, no
             // child audit row. Low-cardinality message (no per-call values).
@@ -80,9 +84,9 @@ class AgentTool(
                 id = UUID.randomUUID().toString(),
                 input = input,
                 depth = childDepth, // D-07
-                // T-7-02: parentRunId comes ONLY from the dispatch-time bind (parent
+                // T-7-02: parentRunId comes ONLY from the dispatch-time lineage (parent
                 // agentId), never from call.arguments — the LLM cannot forge lineage.
-                parentRunId = parentRunIdCell[0], // D-09
+                parentRunId = lineage?.parentRunId, // D-09
             )
         val childResult = childLoop.run(childTask) // D-04: INLINE suspend call
         return mapResult(call.id, childResult)

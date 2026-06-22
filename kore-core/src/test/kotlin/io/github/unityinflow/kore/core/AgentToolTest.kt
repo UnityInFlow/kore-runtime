@@ -5,14 +5,20 @@ import io.github.unityinflow.kore.core.internal.InMemoryBudgetEnforcer
 import io.github.unityinflow.kore.core.internal.InProcessEventBus
 import io.github.unityinflow.kore.core.port.AgentTool
 import io.github.unityinflow.kore.core.port.AuditLog
+import io.github.unityinflow.kore.core.port.ChildLineage
 import io.github.unityinflow.kore.core.port.LLMBackend
 import io.github.unityinflow.kore.core.port.ToolProvider
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import org.junit.jupiter.api.Test
+import kotlin.coroutines.coroutineContext
 
 /**
  * Unit tests for [AgentTool] — the child-as-tool-call spawn model.
@@ -121,9 +127,12 @@ class AgentToolTest {
                     maxDepth = 5,
                 )
             // Bind dispatch lineage directly (depth 0 → child depth 1, within limit).
-            agentTool.bind(parentDepth = 0, parentRunId = "parent-x")
-
-            val toolResult = agentTool.callTool(ToolCall(id = "tc", name = "worker", arguments = """{"input":"x"}"""))
+            // CR-01: lineage is carried per-coroutine via ChildLineage in the context.
+            val lineage = agentTool.bind(parentDepth = 0, parentRunId = "parent-x")
+            val toolResult =
+                withContext(lineage) {
+                    agentTool.callTool(ToolCall(id = "tc", name = "worker", arguments = """{"input":"x"}"""))
+                }
 
             // D-01: a child that ran and failed is informational, never isError.
             toolResult.isError shouldBe false
@@ -184,9 +193,12 @@ class AgentToolTest {
                     maxDepth = 1,
                 )
             // Parent already at depth 1 → child depth 2 > maxDepth 1 → refusal.
-            agentTool.bind(parentDepth = 1, parentRunId = "parent-deep")
-
-            val toolResult = agentTool.callTool(ToolCall(id = "tc", name = "deep", arguments = """{"input":"x"}"""))
+            // CR-01: lineage is carried per-coroutine via ChildLineage in the context.
+            val lineage = agentTool.bind(parentDepth = 1, parentRunId = "parent-deep")
+            val toolResult =
+                withContext(lineage) {
+                    agentTool.callTool(ToolCall(id = "tc", name = "deep", arguments = """{"input":"x"}"""))
+                }
 
             toolResult.isError shouldBe true
             childInvocations shouldBe 0
@@ -247,6 +259,45 @@ class AgentToolTest {
             // The child record carries the parent's run id (in-memory run tree, HIER-04).
             val childRecord = sharedAudit.recordedRuns.firstOrNull { it.parentRunId == "parent-tree" }
             (childRecord != null) shouldBe true
+        }
+
+    @Test
+    fun `CR-01 concurrent binds on one shared AgentTool do not corrupt per-run lineage`() =
+        runTest {
+            // One AgentTool instance shared across two concurrent parent runs (mirrors
+            // the Spring factory handing out one runner per @Bean). Each run binds its
+            // own lineage; the child must observe ITS OWN parentRunId/depth, never the
+            // other run's. Pre-fix this raced through shared instance cells (CR-01).
+            val childLoop = makeLoop(scriptedBackend(LLMChunk.Text("child"), LLMChunk.Done))
+            val agentTool =
+                AgentTool(
+                    childName = "sub",
+                    description = "sub agent",
+                    childLoop = childLoop,
+                    maxDepth = 10,
+                )
+
+            // Drive callTool concurrently on a REAL multi-threaded dispatcher (not the
+            // single-threaded runTest scheduler) so a shared-cell race would surface.
+            val dispatcher = Dispatchers.Default
+            val runs = (0 until 50)
+            val tasks =
+                runs.map { i ->
+                    async(dispatcher) {
+                        val lineage = agentTool.bind(parentDepth = i % 5, parentRunId = "parent-$i")
+                        withContext(lineage) {
+                            // Re-derive what the child WOULD receive from the same context.
+                            val ctxLineage = coroutineContext[ChildLineage]
+                            ctxLineage?.parentRunId to ctxLineage?.parentDepth
+                        }
+                    }
+                }
+            val observed = tasks.awaitAll()
+
+            observed.forEachIndexed { i, (parentRunId, parentDepth) ->
+                parentRunId shouldBe "parent-$i"
+                parentDepth shouldBe (i % 5)
+            }
         }
 
     // Parent backend that requests the child tool then would loop forever — used

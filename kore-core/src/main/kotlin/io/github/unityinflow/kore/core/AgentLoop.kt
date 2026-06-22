@@ -4,6 +4,7 @@ import io.github.unityinflow.kore.core.port.ActivatedSkill
 import io.github.unityinflow.kore.core.port.AuditLog
 import io.github.unityinflow.kore.core.port.BudgetEnforcer
 import io.github.unityinflow.kore.core.port.ChildDispatchBinder
+import io.github.unityinflow.kore.core.port.ChildLineage
 import io.github.unityinflow.kore.core.port.EventBus
 import io.github.unityinflow.kore.core.port.LLMBackend
 import io.github.unityinflow.kore.core.port.NoOpSkillRegistry
@@ -16,9 +17,9 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.EmptyCoroutineContext
 
 /**
  * The ReAct agent loop. Drives: task intake → LLM call → tool use → result → loop.
@@ -95,8 +96,14 @@ class AgentLoop(
         } catch (e: Throwable) {
             AgentResult.LLMError(backend = llmBackend.name, cause = e)
         }.also { result ->
-            auditLog.recordAgentRun(agentId, task, result)
-            eventBus.emit(AgentEvent.AgentCompleted(agentId = agentId, result = result))
+            // CR-02: the success/error audit write must NEVER break the documented
+            // "run NEVER throws" invariant. A throwing AuditLog (e.g. a transient
+            // storage failure) is swallowed here so run() still returns its AgentResult;
+            // the event emit is likewise guarded. CancellationException is NOT possible
+            // on this path (the cancel audit is handled in the catch above under
+            // NonCancellable), so there is no structured-concurrency token to honour.
+            runCatching { auditLog.recordAgentRun(agentId, task, result) }
+            runCatching { eventBus.emit(AgentEvent.AgentCompleted(agentId = agentId, result = result)) }
         }
     }
 
@@ -234,16 +241,20 @@ class AgentLoop(
                     ToolCall(id = chunk.id, name = chunk.name, arguments = chunk.arguments)
                 }
 
-            // A2 dispatch-time binding: push this run's lineage into any child-spawning
-            // provider before dispatch, so a child knows its parent depth and parent run
-            // id at the moment it runs (these are runtime values; see ChildDispatchBinder).
-            toolProviders.filterIsInstance<ChildDispatchBinder>().forEach {
-                it.bind(parentDepth = parentDepth, parentRunId = agentId)
-            }
+            // A2 dispatch-time binding: derive this run's lineage (CR-01 — pure, no
+            // shared mutable provider state) and install it into the dispatch coroutine
+            // context so any child-spawning provider reads its parent depth / parent run
+            // id PER-COROUTINE. Concurrent parent runs sharing one provider instance no
+            // longer race (these are runtime values; see ChildDispatchBinder/ChildLineage).
+            val childLineage: ChildLineage? =
+                toolProviders
+                    .filterIsInstance<ChildDispatchBinder>()
+                    .firstOrNull()
+                    ?.bind(parentDepth = parentDepth, parentRunId = agentId)
 
             val toolResults: List<ToolResult> =
                 try {
-                    coroutineScope {
+                    withContext(childLineage ?: EmptyCoroutineContext) {
                         toolCalls
                             .map { call ->
                                 async {
