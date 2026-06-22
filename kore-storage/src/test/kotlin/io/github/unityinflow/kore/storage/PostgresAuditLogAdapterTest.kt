@@ -109,6 +109,48 @@ class PostgresAuditLogAdapterTest {
         }
 
     @Test
+    fun `child run persists parent_run_id equal to parent id (HIER-04 criterion 4)`() =
+        runTest {
+            val parentId = UUID.randomUUID().toString()
+            val parentTask = AgentTask(id = UUID.randomUUID().toString(), input = "parent work")
+            adapter.recordAgentRun(parentId, parentTask, AgentResult.Success("parent done", TokenUsage(1, 1)))
+
+            val childId = UUID.randomUUID().toString()
+            val childTask =
+                AgentTask(
+                    id = UUID.randomUUID().toString(),
+                    input = "child work",
+                    parentRunId = parentId,
+                )
+            adapter.recordAgentRun(childId, childTask, AgentResult.Success("child done", TokenUsage(2, 2)))
+
+            postgres.createConnection("").use { conn ->
+                val ps = conn.prepareStatement("SELECT parent_run_id::text FROM agent_runs WHERE id = ?::uuid")
+                ps.setString(1, childId)
+                val rs = ps.executeQuery()
+                rs.next() shouldBe true
+                rs.getString("parent_run_id") shouldBe parentId
+            }
+        }
+
+    @Test
+    fun `root run leaves parent_run_id NULL`() =
+        runTest {
+            val rootId = UUID.randomUUID().toString()
+            val rootTask = AgentTask(id = UUID.randomUUID().toString(), input = "root work")
+            adapter.recordAgentRun(rootId, rootTask, AgentResult.Success("root done", TokenUsage(1, 1)))
+
+            postgres.createConnection("").use { conn ->
+                val ps = conn.prepareStatement("SELECT parent_run_id FROM agent_runs WHERE id = ?::uuid")
+                ps.setString(1, rootId)
+                val rs = ps.executeQuery()
+                rs.next() shouldBe true
+                rs.getString("parent_run_id") shouldBe null
+                rs.wasNull() shouldBe true
+            }
+        }
+
+    @Test
     fun `recordToolCall inserts row with correct tool_name`() =
         runTest {
             val agentId = UUID.randomUUID().toString()

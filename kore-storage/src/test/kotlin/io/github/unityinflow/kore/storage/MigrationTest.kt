@@ -70,6 +70,35 @@ class MigrationTest {
     }
 
     @Test
+    fun `V2 adds agent_runs parent_run_id as a nullable uuid column`() {
+        postgres.createConnection("").use { conn ->
+            val rs =
+                conn.createStatement().executeQuery(
+                    "SELECT data_type, is_nullable FROM information_schema.columns " +
+                        "WHERE table_name = 'agent_runs' AND column_name = 'parent_run_id'",
+                )
+            rs.next() shouldBe true
+            rs.getString("data_type") shouldBe "uuid"
+            rs.getString("is_nullable") shouldBe "YES"
+        }
+    }
+
+    @Test
+    fun `V2 indexes agent_runs parent_run_id`() {
+        postgres.createConnection("").use { conn ->
+            val ps =
+                conn.prepareStatement(
+                    "SELECT count(*) FROM pg_indexes " +
+                        "WHERE tablename = 'agent_runs' AND indexname = ?",
+                )
+            ps.setString(1, "idx_agent_runs_parent_run_id")
+            val rs = ps.executeQuery()
+            rs.next() shouldBe true
+            rs.getInt(1) shouldBe 1
+        }
+    }
+
+    @Test
     fun `migration is idempotent — running twice applies zero migrations on second run`() {
         val config =
             StorageConfig(
