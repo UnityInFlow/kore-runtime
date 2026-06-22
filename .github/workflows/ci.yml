@@ -25,6 +25,9 @@ jobs:
       - name: Lint (ktlint)
         run: ./gradlew lintKotlin
 
+      - name: kore-core API compatibility check (KORE-02)
+        run: ./gradlew :kore-core:apiCheck --no-configuration-cache
+
       - name: Build
         run: ./gradlew build
 

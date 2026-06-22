@@ -1,6 +1,10 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
+    // KORE-02 / D-06: freeze the kore-core public API. Applied to this module
+    // ONLY (do NOT apply at root or other modules) — the rest of the shipped
+    // subset stays unfrozen until it stabilizes in a later milestone.
+    alias(libs.plugins.binary.compatibility.validator)
     id("kore.publishing")
 }
 

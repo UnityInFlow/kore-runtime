@@ -24,6 +24,7 @@ spring-boot = "4.0.5"
 kafka-clients = "4.2.0"
 amqp-client = "5.29.0"
 nmcp = "1.4.4"
+bcv = "0.18.1"
 
 [libraries]
 coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
@@ -75,3 +76,7 @@ spring-dep-mgmt = { id = "io.spring.dependency-management", version = "1.1.7" }
 # + root aggregation task. Declared here so no later plan races libs.versions.toml.
 nmcp = { id = "com.gradleup.nmcp", version.ref = "nmcp" }
 nmcp-aggregation = { id = "com.gradleup.nmcp.aggregation", version.ref = "nmcp" }
+# Kotlin binary-compatibility-validator (KORE-02 / D-06). Standalone JetBrains
+# plugin (preferred over the experimental KGP abiValidation for production).
+# Applied to kore-core ONLY to freeze its public API for v0.1.0.
+binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "bcv" }

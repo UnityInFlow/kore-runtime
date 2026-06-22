@@ -1,0 +1,842 @@
+public final class io/github/unityinflow/kore/core/AgentContext {
+	public fun <init> (Ljava/lang/String;Lio/github/unityinflow/kore/core/AgentTask;Ljava/util/List;Lio/github/unityinflow/kore/core/TokenUsage;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/github/unityinflow/kore/core/AgentTask;Ljava/util/List;Lio/github/unityinflow/kore/core/TokenUsage;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lio/github/unityinflow/kore/core/AgentTask;
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()Lio/github/unityinflow/kore/core/TokenUsage;
+	public final fun copy (Ljava/lang/String;Lio/github/unityinflow/kore/core/AgentTask;Ljava/util/List;Lio/github/unityinflow/kore/core/TokenUsage;)Lio/github/unityinflow/kore/core/AgentContext;
+	public static synthetic fun copy$default (Lio/github/unityinflow/kore/core/AgentContext;Ljava/lang/String;Lio/github/unityinflow/kore/core/AgentTask;Ljava/util/List;Lio/github/unityinflow/kore/core/TokenUsage;ILjava/lang/Object;)Lio/github/unityinflow/kore/core/AgentContext;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAccumulatedTokenUsage ()Lio/github/unityinflow/kore/core/TokenUsage;
+	public final fun getAgentId ()Ljava/lang/String;
+	public final fun getHistory ()Ljava/util/List;
+	public final fun getTask ()Lio/github/unityinflow/kore/core/AgentTask;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class io/github/unityinflow/kore/core/AgentEvent {
+	public static final field Companion Lio/github/unityinflow/kore/core/AgentEvent$Companion;
+	public synthetic fun <init> (ILkotlinx/serialization/internal/SerializationConstructorMarker;)V
+	public static final synthetic fun write$Self (Lio/github/unityinflow/kore/core/AgentEvent;Lkotlinx/serialization/encoding/CompositeEncoder;Lkotlinx/serialization/descriptors/SerialDescriptor;)V
+}
+
+public final class io/github/unityinflow/kore/core/AgentEvent$AgentCompleted : io/github/unityinflow/kore/core/AgentEvent {
+	public static final field Companion Lio/github/unityinflow/kore/core/AgentEvent$AgentCompleted$Companion;
+	public fun <init> (Ljava/lang/String;Lio/github/unityinflow/kore/core/AgentResult;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lio/github/unityinflow/kore/core/AgentResult;
+	public final fun copy (Ljava/lang/String;Lio/github/unityinflow/kore/core/AgentResult;)Lio/github/unityinflow/kore/core/AgentEvent$AgentCompleted;
+	public static synthetic fun copy$default (Lio/github/unityinflow/kore/core/AgentEvent$AgentCompleted;Ljava/lang/String;Lio/github/unityinflow/kore/core/AgentResult;ILjava/lang/Object;)Lio/github/unityinflow/kore/core/AgentEvent$AgentCompleted;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAgentId ()Ljava/lang/String;
+	public final fun getResult ()Lio/github/unityinflow/kore/core/AgentResult;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/unityinflow/kore/core/AgentEvent$AgentCompleted$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/unityinflow/kore/core/AgentEvent$AgentCompleted$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/unityinflow/kore/core/AgentEvent$AgentCompleted;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/unityinflow/kore/core/AgentEvent$AgentCompleted;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/unityinflow/kore/core/AgentEvent$AgentCompleted$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/unityinflow/kore/core/AgentEvent$AgentStarted : io/github/unityinflow/kore/core/AgentEvent {
+	public static final field Companion Lio/github/unityinflow/kore/core/AgentEvent$AgentStarted$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lio/github/unityinflow/kore/core/AgentEvent$AgentStarted;
+	public static synthetic fun copy$default (Lio/github/unityinflow/kore/core/AgentEvent$AgentStarted;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/unityinflow/kore/core/AgentEvent$AgentStarted;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAgentId ()Ljava/lang/String;
+	public final fun getTaskId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/unityinflow/kore/core/AgentEvent$AgentStarted$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/unityinflow/kore/core/AgentEvent$AgentStarted$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/unityinflow/kore/core/AgentEvent$AgentStarted;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/unityinflow/kore/core/AgentEvent$AgentStarted;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/unityinflow/kore/core/AgentEvent$AgentStarted$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/unityinflow/kore/core/AgentEvent$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/unityinflow/kore/core/AgentEvent$LLMCallCompleted : io/github/unityinflow/kore/core/AgentEvent {
+	public static final field Companion Lio/github/unityinflow/kore/core/AgentEvent$LLMCallCompleted$Companion;
+	public fun <init> (Ljava/lang/String;Lio/github/unityinflow/kore/core/TokenUsage;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lio/github/unityinflow/kore/core/TokenUsage;
+	public final fun copy (Ljava/lang/String;Lio/github/unityinflow/kore/core/TokenUsage;)Lio/github/unityinflow/kore/core/AgentEvent$LLMCallCompleted;
+	public static synthetic fun copy$default (Lio/github/unityinflow/kore/core/AgentEvent$LLMCallCompleted;Ljava/lang/String;Lio/github/unityinflow/kore/core/TokenUsage;ILjava/lang/Object;)Lio/github/unityinflow/kore/core/AgentEvent$LLMCallCompleted;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAgentId ()Ljava/lang/String;
+	public final fun getTokenUsage ()Lio/github/unityinflow/kore/core/TokenUsage;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/unityinflow/kore/core/AgentEvent$LLMCallCompleted$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/unityinflow/kore/core/AgentEvent$LLMCallCompleted$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/unityinflow/kore/core/AgentEvent$LLMCallCompleted;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/unityinflow/kore/core/AgentEvent$LLMCallCompleted;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/unityinflow/kore/core/AgentEvent$LLMCallCompleted$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/unityinflow/kore/core/AgentEvent$LLMCallStarted : io/github/unityinflow/kore/core/AgentEvent {
+	public static final field Companion Lio/github/unityinflow/kore/core/AgentEvent$LLMCallStarted$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lio/github/unityinflow/kore/core/AgentEvent$LLMCallStarted;
+	public static synthetic fun copy$default (Lio/github/unityinflow/kore/core/AgentEvent$LLMCallStarted;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/unityinflow/kore/core/AgentEvent$LLMCallStarted;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAgentId ()Ljava/lang/String;
+	public final fun getBackend ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/unityinflow/kore/core/AgentEvent$LLMCallStarted$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/unityinflow/kore/core/AgentEvent$LLMCallStarted$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/unityinflow/kore/core/AgentEvent$LLMCallStarted;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/unityinflow/kore/core/AgentEvent$LLMCallStarted;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/unityinflow/kore/core/AgentEvent$LLMCallStarted$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/unityinflow/kore/core/AgentEvent$SkillActivated : io/github/unityinflow/kore/core/AgentEvent {
+	public static final field Companion Lio/github/unityinflow/kore/core/AgentEvent$SkillActivated$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/util/List;J)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/util/List;
+	public final fun component3 ()J
+	public final fun copy (Ljava/lang/String;Ljava/util/List;J)Lio/github/unityinflow/kore/core/AgentEvent$SkillActivated;
+	public static synthetic fun copy$default (Lio/github/unityinflow/kore/core/AgentEvent$SkillActivated;Ljava/lang/String;Ljava/util/List;JILjava/lang/Object;)Lio/github/unityinflow/kore/core/AgentEvent$SkillActivated;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAgentId ()Ljava/lang/String;
+	public final fun getDurationMs ()J
+	public final fun getSkillNames ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/unityinflow/kore/core/AgentEvent$SkillActivated$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/unityinflow/kore/core/AgentEvent$SkillActivated$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/unityinflow/kore/core/AgentEvent$SkillActivated;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/unityinflow/kore/core/AgentEvent$SkillActivated;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/unityinflow/kore/core/AgentEvent$SkillActivated$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/unityinflow/kore/core/AgentEvent$ToolCallCompleted : io/github/unityinflow/kore/core/AgentEvent {
+	public static final field Companion Lio/github/unityinflow/kore/core/AgentEvent$ToolCallCompleted$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Z)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Z)Lio/github/unityinflow/kore/core/AgentEvent$ToolCallCompleted;
+	public static synthetic fun copy$default (Lio/github/unityinflow/kore/core/AgentEvent$ToolCallCompleted;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lio/github/unityinflow/kore/core/AgentEvent$ToolCallCompleted;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAgentId ()Ljava/lang/String;
+	public final fun getToolName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun isError ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/unityinflow/kore/core/AgentEvent$ToolCallCompleted$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/unityinflow/kore/core/AgentEvent$ToolCallCompleted$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/unityinflow/kore/core/AgentEvent$ToolCallCompleted;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/unityinflow/kore/core/AgentEvent$ToolCallCompleted;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/unityinflow/kore/core/AgentEvent$ToolCallCompleted$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/unityinflow/kore/core/AgentEvent$ToolCallStarted : io/github/unityinflow/kore/core/AgentEvent {
+	public static final field Companion Lio/github/unityinflow/kore/core/AgentEvent$ToolCallStarted$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lio/github/unityinflow/kore/core/AgentEvent$ToolCallStarted;
+	public static synthetic fun copy$default (Lio/github/unityinflow/kore/core/AgentEvent$ToolCallStarted;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/unityinflow/kore/core/AgentEvent$ToolCallStarted;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAgentId ()Ljava/lang/String;
+	public final fun getToolName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/unityinflow/kore/core/AgentEvent$ToolCallStarted$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/unityinflow/kore/core/AgentEvent$ToolCallStarted$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/unityinflow/kore/core/AgentEvent$ToolCallStarted;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/unityinflow/kore/core/AgentEvent$ToolCallStarted;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/unityinflow/kore/core/AgentEvent$ToolCallStarted$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/unityinflow/kore/core/AgentLoop {
+	public static final field SKILL_ACTIVATE_SPAN Ljava/lang/String;
+	public fun <init> (Lio/github/unityinflow/kore/core/port/LLMBackend;Ljava/util/List;Lio/github/unityinflow/kore/core/port/BudgetEnforcer;Lio/github/unityinflow/kore/core/port/EventBus;Lio/github/unityinflow/kore/core/port/AuditLog;Lio/github/unityinflow/kore/core/port/SkillRegistry;Lio/opentelemetry/api/trace/Tracer;ILio/github/unityinflow/kore/core/LLMConfig;)V
+	public synthetic fun <init> (Lio/github/unityinflow/kore/core/port/LLMBackend;Ljava/util/List;Lio/github/unityinflow/kore/core/port/BudgetEnforcer;Lio/github/unityinflow/kore/core/port/EventBus;Lio/github/unityinflow/kore/core/port/AuditLog;Lio/github/unityinflow/kore/core/port/SkillRegistry;Lio/opentelemetry/api/trace/Tracer;ILio/github/unityinflow/kore/core/LLMConfig;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun run (Lio/github/unityinflow/kore/core/AgentTask;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract class io/github/unityinflow/kore/core/AgentResult {
+	public static final field Companion Lio/github/unityinflow/kore/core/AgentResult$Companion;
+	public synthetic fun <init> (ILkotlinx/serialization/internal/SerializationConstructorMarker;)V
+	public static final synthetic fun write$Self (Lio/github/unityinflow/kore/core/AgentResult;Lkotlinx/serialization/encoding/CompositeEncoder;Lkotlinx/serialization/descriptors/SerialDescriptor;)V
+}
+
+public final class io/github/unityinflow/kore/core/AgentResult$BudgetExceeded : io/github/unityinflow/kore/core/AgentResult {
+	public static final field Companion Lio/github/unityinflow/kore/core/AgentResult$BudgetExceeded$Companion;
+	public fun <init> (Lio/github/unityinflow/kore/core/TokenUsage;J)V
+	public final fun component1 ()Lio/github/unityinflow/kore/core/TokenUsage;
+	public final fun component2 ()J
+	public final fun copy (Lio/github/unityinflow/kore/core/TokenUsage;J)Lio/github/unityinflow/kore/core/AgentResult$BudgetExceeded;
+	public static synthetic fun copy$default (Lio/github/unityinflow/kore/core/AgentResult$BudgetExceeded;Lio/github/unityinflow/kore/core/TokenUsage;JILjava/lang/Object;)Lio/github/unityinflow/kore/core/AgentResult$BudgetExceeded;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getLimit ()J
+	public final fun getSpent ()Lio/github/unityinflow/kore/core/TokenUsage;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/unityinflow/kore/core/AgentResult$BudgetExceeded$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/unityinflow/kore/core/AgentResult$BudgetExceeded$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/unityinflow/kore/core/AgentResult$BudgetExceeded;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/unityinflow/kore/core/AgentResult$BudgetExceeded;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/unityinflow/kore/core/AgentResult$BudgetExceeded$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/unityinflow/kore/core/AgentResult$Cancelled : io/github/unityinflow/kore/core/AgentResult {
+	public static final field Companion Lio/github/unityinflow/kore/core/AgentResult$Cancelled$Companion;
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lio/github/unityinflow/kore/core/AgentResult$Cancelled;
+	public static synthetic fun copy$default (Lio/github/unityinflow/kore/core/AgentResult$Cancelled;Ljava/lang/String;ILjava/lang/Object;)Lio/github/unityinflow/kore/core/AgentResult$Cancelled;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getReason ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/unityinflow/kore/core/AgentResult$Cancelled$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/unityinflow/kore/core/AgentResult$Cancelled$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/unityinflow/kore/core/AgentResult$Cancelled;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/unityinflow/kore/core/AgentResult$Cancelled;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/unityinflow/kore/core/AgentResult$Cancelled$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/unityinflow/kore/core/AgentResult$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/unityinflow/kore/core/AgentResult$LLMError : io/github/unityinflow/kore/core/AgentResult {
+	public static final field Companion Lio/github/unityinflow/kore/core/AgentResult$LLMError$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/Throwable;
+	public final fun copy (Ljava/lang/String;Ljava/lang/Throwable;)Lio/github/unityinflow/kore/core/AgentResult$LLMError;
+	public static synthetic fun copy$default (Lio/github/unityinflow/kore/core/AgentResult$LLMError;Ljava/lang/String;Ljava/lang/Throwable;ILjava/lang/Object;)Lio/github/unityinflow/kore/core/AgentResult$LLMError;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBackend ()Ljava/lang/String;
+	public final fun getCause ()Ljava/lang/Throwable;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/unityinflow/kore/core/AgentResult$LLMError$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/unityinflow/kore/core/AgentResult$LLMError$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/unityinflow/kore/core/AgentResult$LLMError;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/unityinflow/kore/core/AgentResult$LLMError;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/unityinflow/kore/core/AgentResult$LLMError$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/unityinflow/kore/core/AgentResult$Success : io/github/unityinflow/kore/core/AgentResult {
+	public static final field Companion Lio/github/unityinflow/kore/core/AgentResult$Success$Companion;
+	public fun <init> (Ljava/lang/String;Lio/github/unityinflow/kore/core/TokenUsage;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lio/github/unityinflow/kore/core/TokenUsage;
+	public final fun copy (Ljava/lang/String;Lio/github/unityinflow/kore/core/TokenUsage;)Lio/github/unityinflow/kore/core/AgentResult$Success;
+	public static synthetic fun copy$default (Lio/github/unityinflow/kore/core/AgentResult$Success;Ljava/lang/String;Lio/github/unityinflow/kore/core/TokenUsage;ILjava/lang/Object;)Lio/github/unityinflow/kore/core/AgentResult$Success;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getOutput ()Ljava/lang/String;
+	public final fun getTokenUsage ()Lio/github/unityinflow/kore/core/TokenUsage;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/unityinflow/kore/core/AgentResult$Success$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/unityinflow/kore/core/AgentResult$Success$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/unityinflow/kore/core/AgentResult$Success;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/unityinflow/kore/core/AgentResult$Success;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/unityinflow/kore/core/AgentResult$Success$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/unityinflow/kore/core/AgentResult$ToolError : io/github/unityinflow/kore/core/AgentResult {
+	public static final field Companion Lio/github/unityinflow/kore/core/AgentResult$ToolError$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/Throwable;
+	public final fun copy (Ljava/lang/String;Ljava/lang/Throwable;)Lio/github/unityinflow/kore/core/AgentResult$ToolError;
+	public static synthetic fun copy$default (Lio/github/unityinflow/kore/core/AgentResult$ToolError;Ljava/lang/String;Ljava/lang/Throwable;ILjava/lang/Object;)Lio/github/unityinflow/kore/core/AgentResult$ToolError;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCause ()Ljava/lang/Throwable;
+	public final fun getToolName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/unityinflow/kore/core/AgentResult$ToolError$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/unityinflow/kore/core/AgentResult$ToolError$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/unityinflow/kore/core/AgentResult$ToolError;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/unityinflow/kore/core/AgentResult$ToolError;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/unityinflow/kore/core/AgentResult$ToolError$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/unityinflow/kore/core/AgentRunner {
+	public fun <init> (Lio/github/unityinflow/kore/core/AgentLoop;)V
+	public final fun run (Lio/github/unityinflow/kore/core/AgentTask;)Lkotlinx/coroutines/Deferred;
+	public final fun shutdown ()V
+}
+
+public final class io/github/unityinflow/kore/core/AgentTask {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;ILjava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;ILjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/util/Map;
+	public final fun component4 ()I
+	public final fun component5 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;ILjava/lang/String;)Lio/github/unityinflow/kore/core/AgentTask;
+	public static synthetic fun copy$default (Lio/github/unityinflow/kore/core/AgentTask;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;ILjava/lang/String;ILjava/lang/Object;)Lio/github/unityinflow/kore/core/AgentTask;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDepth ()I
+	public final fun getId ()Ljava/lang/String;
+	public final fun getInput ()Ljava/lang/String;
+	public final fun getMetadata ()Ljava/util/Map;
+	public final fun getParentRunId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/unityinflow/kore/core/ConversationMessage {
+	public fun <init> (Lio/github/unityinflow/kore/core/ConversationMessage$Role;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Lio/github/unityinflow/kore/core/ConversationMessage$Role;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/github/unityinflow/kore/core/ConversationMessage$Role;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Lio/github/unityinflow/kore/core/ConversationMessage$Role;Ljava/lang/String;Ljava/lang/String;)Lio/github/unityinflow/kore/core/ConversationMessage;
+	public static synthetic fun copy$default (Lio/github/unityinflow/kore/core/ConversationMessage;Lio/github/unityinflow/kore/core/ConversationMessage$Role;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/unityinflow/kore/core/ConversationMessage;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContent ()Ljava/lang/String;
+	public final fun getRole ()Lio/github/unityinflow/kore/core/ConversationMessage$Role;
+	public final fun getToolCallId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class io/github/unityinflow/kore/core/ConversationMessage$Role {
+}
+
+public final class io/github/unityinflow/kore/core/ConversationMessage$Role$Assistant : io/github/unityinflow/kore/core/ConversationMessage$Role {
+	public static final field INSTANCE Lio/github/unityinflow/kore/core/ConversationMessage$Role$Assistant;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/unityinflow/kore/core/ConversationMessage$Role$System : io/github/unityinflow/kore/core/ConversationMessage$Role {
+	public static final field INSTANCE Lio/github/unityinflow/kore/core/ConversationMessage$Role$System;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/unityinflow/kore/core/ConversationMessage$Role$Tool : io/github/unityinflow/kore/core/ConversationMessage$Role {
+	public static final field INSTANCE Lio/github/unityinflow/kore/core/ConversationMessage$Role$Tool;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/unityinflow/kore/core/ConversationMessage$Role$User : io/github/unityinflow/kore/core/ConversationMessage$Role {
+	public static final field INSTANCE Lio/github/unityinflow/kore/core/ConversationMessage$Role$User;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class io/github/unityinflow/kore/core/LLMChunk {
+}
+
+public final class io/github/unityinflow/kore/core/LLMChunk$Done : io/github/unityinflow/kore/core/LLMChunk {
+	public static final field INSTANCE Lio/github/unityinflow/kore/core/LLMChunk$Done;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/unityinflow/kore/core/LLMChunk$Text : io/github/unityinflow/kore/core/LLMChunk {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lio/github/unityinflow/kore/core/LLMChunk$Text;
+	public static synthetic fun copy$default (Lio/github/unityinflow/kore/core/LLMChunk$Text;Ljava/lang/String;ILjava/lang/Object;)Lio/github/unityinflow/kore/core/LLMChunk$Text;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContent ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/unityinflow/kore/core/LLMChunk$ToolCall : io/github/unityinflow/kore/core/LLMChunk {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/github/unityinflow/kore/core/LLMChunk$ToolCall;
+	public static synthetic fun copy$default (Lio/github/unityinflow/kore/core/LLMChunk$ToolCall;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/unityinflow/kore/core/LLMChunk$ToolCall;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getArguments ()Ljava/lang/String;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/unityinflow/kore/core/LLMChunk$Usage : io/github/unityinflow/kore/core/LLMChunk {
+	public fun <init> (II)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun copy (II)Lio/github/unityinflow/kore/core/LLMChunk$Usage;
+	public static synthetic fun copy$default (Lio/github/unityinflow/kore/core/LLMChunk$Usage;IIILjava/lang/Object;)Lio/github/unityinflow/kore/core/LLMChunk$Usage;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getInputTokens ()I
+	public final fun getOutputTokens ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/unityinflow/kore/core/LLMConfig {
+	public fun <init> (Ljava/lang/String;IDI)V
+	public synthetic fun <init> (Ljava/lang/String;IDIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun component3 ()D
+	public final fun component4 ()I
+	public final fun copy (Ljava/lang/String;IDI)Lio/github/unityinflow/kore/core/LLMConfig;
+	public static synthetic fun copy$default (Lio/github/unityinflow/kore/core/LLMConfig;Ljava/lang/String;IDIILjava/lang/Object;)Lio/github/unityinflow/kore/core/LLMConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMaxHistoryMessages ()I
+	public final fun getMaxTokens ()I
+	public final fun getModel ()Ljava/lang/String;
+	public final fun getTemperature ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/unityinflow/kore/core/TokenUsage {
+	public static final field Companion Lio/github/unityinflow/kore/core/TokenUsage$Companion;
+	public fun <init> (II)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun copy (II)Lio/github/unityinflow/kore/core/TokenUsage;
+	public static synthetic fun copy$default (Lio/github/unityinflow/kore/core/TokenUsage;IIILjava/lang/Object;)Lio/github/unityinflow/kore/core/TokenUsage;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getInputTokens ()I
+	public final fun getOutputTokens ()I
+	public final fun getTotalTokens ()I
+	public fun hashCode ()I
+	public final fun plus (Lio/github/unityinflow/kore/core/TokenUsage;)Lio/github/unityinflow/kore/core/TokenUsage;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/unityinflow/kore/core/TokenUsage$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/unityinflow/kore/core/TokenUsage$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/unityinflow/kore/core/TokenUsage;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/unityinflow/kore/core/TokenUsage;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/unityinflow/kore/core/TokenUsage$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/unityinflow/kore/core/ToolCall {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/github/unityinflow/kore/core/ToolCall;
+	public static synthetic fun copy$default (Lio/github/unityinflow/kore/core/ToolCall;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/unityinflow/kore/core/ToolCall;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getArguments ()Ljava/lang/String;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/unityinflow/kore/core/ToolDefinition {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/github/unityinflow/kore/core/ToolDefinition;
+	public static synthetic fun copy$default (Lio/github/unityinflow/kore/core/ToolDefinition;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/unityinflow/kore/core/ToolDefinition;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getInputSchema ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/unityinflow/kore/core/ToolResult {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Z)Lio/github/unityinflow/kore/core/ToolResult;
+	public static synthetic fun copy$default (Lio/github/unityinflow/kore/core/ToolResult;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lio/github/unityinflow/kore/core/ToolResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContent ()Ljava/lang/String;
+	public final fun getToolCallId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun isError ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/unityinflow/kore/core/dsl/AgentBuilder {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun auditLog (Lio/github/unityinflow/kore/core/port/AuditLog;)V
+	public final fun budget (J)V
+	public final fun build ()Lio/github/unityinflow/kore/core/AgentRunner;
+	public final fun child (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun child$default (Lio/github/unityinflow/kore/core/dsl/AgentBuilder;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public final fun config (Lkotlin/jvm/functions/Function1;)V
+	public final fun eventBus (Lio/github/unityinflow/kore/core/port/EventBus;)V
+	public final fun getAgentName ()Ljava/lang/String;
+	public final fun getModel ()Lio/github/unityinflow/kore/core/port/LLMBackend;
+	public final fun maxDepth (I)V
+	public final fun retry (IJJ)V
+	public static synthetic fun retry$default (Lio/github/unityinflow/kore/core/dsl/AgentBuilder;IJJILjava/lang/Object;)V
+	public final fun setModel (Lio/github/unityinflow/kore/core/port/LLMBackend;)V
+	public final fun skillRegistry (Lio/github/unityinflow/kore/core/port/SkillRegistry;)V
+	public final fun tools ([Lio/github/unityinflow/kore/core/port/ToolProvider;)V
+}
+
+public final class io/github/unityinflow/kore/core/dsl/DslKt {
+	public static final fun agent (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lio/github/unityinflow/kore/core/AgentRunner;
+}
+
+public abstract interface annotation class io/github/unityinflow/kore/core/dsl/KoreDsl : java/lang/annotation/Annotation {
+}
+
+public final class io/github/unityinflow/kore/core/dsl/LLMConfigBuilder {
+	public fun <init> ()V
+	public final fun getMaxHistoryMessages ()I
+	public final fun getMaxTokens ()I
+	public final fun getModel ()Ljava/lang/String;
+	public final fun getTemperature ()D
+	public final fun setMaxHistoryMessages (I)V
+	public final fun setMaxTokens (I)V
+	public final fun setModel (Ljava/lang/String;)V
+	public final fun setTemperature (D)V
+}
+
+public final class io/github/unityinflow/kore/core/internal/InMemoryAuditLog : io/github/unityinflow/kore/core/port/AuditLog {
+	public fun <init> ()V
+	public final fun getRecordedRuns ()Ljava/util/List;
+	public fun isPersistent ()Z
+	public fun queryCostSummary (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun queryRecentRuns (ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun recordAgentRun (Ljava/lang/String;Lio/github/unityinflow/kore/core/AgentTask;Lio/github/unityinflow/kore/core/AgentResult;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun recordLLMCall (Ljava/lang/String;Ljava/lang/String;Lio/github/unityinflow/kore/core/TokenUsage;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun recordToolCall (Ljava/lang/String;Lio/github/unityinflow/kore/core/ToolCall;Lio/github/unityinflow/kore/core/ToolResult;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/unityinflow/kore/core/internal/InMemoryAuditLog$RunRecord {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/github/unityinflow/kore/core/internal/InMemoryAuditLog$RunRecord;
+	public static synthetic fun copy$default (Lio/github/unityinflow/kore/core/internal/InMemoryAuditLog$RunRecord;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/unityinflow/kore/core/internal/InMemoryAuditLog$RunRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAgentId ()Ljava/lang/String;
+	public final fun getParentRunId ()Ljava/lang/String;
+	public final fun getResultType ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/unityinflow/kore/core/internal/InMemoryBudgetEnforcer : io/github/unityinflow/kore/core/port/BudgetEnforcer {
+	public fun <init> ()V
+	public fun <init> (J)V
+	public synthetic fun <init> (JILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun checkBudget (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getUsage (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun recordUsage (Ljava/lang/String;Lio/github/unityinflow/kore/core/TokenUsage;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/unityinflow/kore/core/internal/InProcessEventBus : io/github/unityinflow/kore/core/port/EventBus {
+	public fun <init> ()V
+	public fun emit (Lio/github/unityinflow/kore/core/AgentEvent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun subscribe ()Lkotlinx/coroutines/flow/Flow;
+}
+
+public final class io/github/unityinflow/kore/core/internal/ResilientLLMBackend : io/github/unityinflow/kore/core/port/LLMBackend {
+	public fun <init> (Lio/github/unityinflow/kore/core/port/LLMBackend;Ljava/util/List;Lio/github/unityinflow/kore/core/internal/RetryPolicy;)V
+	public synthetic fun <init> (Lio/github/unityinflow/kore/core/port/LLMBackend;Ljava/util/List;Lio/github/unityinflow/kore/core/internal/RetryPolicy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun call (Ljava/util/List;Ljava/util/List;Lio/github/unityinflow/kore/core/LLMConfig;)Lkotlinx/coroutines/flow/Flow;
+	public fun getName ()Ljava/lang/String;
+}
+
+public final class io/github/unityinflow/kore/core/internal/ResilientLLMBackendKt {
+	public static final fun fallbackTo (Lio/github/unityinflow/kore/core/port/LLMBackend;Lio/github/unityinflow/kore/core/port/LLMBackend;)Lio/github/unityinflow/kore/core/internal/ResilientLLMBackend;
+}
+
+public final class io/github/unityinflow/kore/core/internal/RetryPolicy {
+	public fun <init> ()V
+	public fun <init> (IJJD)V
+	public synthetic fun <init> (IJJDILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()J
+	public final fun component3 ()J
+	public final fun component4 ()D
+	public final fun copy (IJJD)Lio/github/unityinflow/kore/core/internal/RetryPolicy;
+	public static synthetic fun copy$default (Lio/github/unityinflow/kore/core/internal/RetryPolicy;IJJDILjava/lang/Object;)Lio/github/unityinflow/kore/core/internal/RetryPolicy;
+	public final fun delayFor (I)J
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBackoffMultiplier ()D
+	public final fun getInitialDelayMs ()J
+	public final fun getMaxAttempts ()I
+	public final fun getMaxDelayMs ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/unityinflow/kore/core/port/ActivatedSkill {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lio/github/unityinflow/kore/core/port/ActivatedSkill;
+	public static synthetic fun copy$default (Lio/github/unityinflow/kore/core/port/ActivatedSkill;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/unityinflow/kore/core/port/ActivatedSkill;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPrompt ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/unityinflow/kore/core/port/AgentCostRecord {
+	public fun <init> (Ljava/lang/String;IJJ)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun component3 ()J
+	public final fun component4 ()J
+	public final fun copy (Ljava/lang/String;IJJ)Lio/github/unityinflow/kore/core/port/AgentCostRecord;
+	public static synthetic fun copy$default (Lio/github/unityinflow/kore/core/port/AgentCostRecord;Ljava/lang/String;IJJILjava/lang/Object;)Lio/github/unityinflow/kore/core/port/AgentCostRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAgentName ()Ljava/lang/String;
+	public final fun getTotalInputTokens ()J
+	public final fun getTotalOutputTokens ()J
+	public final fun getTotalRuns ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/unityinflow/kore/core/port/AgentRunRecord {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;IIJLjava/time/Instant;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun component5 ()J
+	public final fun component6 ()Ljava/time/Instant;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;IIJLjava/time/Instant;)Lio/github/unityinflow/kore/core/port/AgentRunRecord;
+	public static synthetic fun copy$default (Lio/github/unityinflow/kore/core/port/AgentRunRecord;Ljava/lang/String;Ljava/lang/String;IIJLjava/time/Instant;ILjava/lang/Object;)Lio/github/unityinflow/kore/core/port/AgentRunRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAgentName ()Ljava/lang/String;
+	public final fun getCompletedAt ()Ljava/time/Instant;
+	public final fun getDurationMs ()J
+	public final fun getInputTokens ()I
+	public final fun getOutputTokens ()I
+	public final fun getResultType ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/unityinflow/kore/core/port/AgentTool : io/github/unityinflow/kore/core/port/ChildDispatchBinder, io/github/unityinflow/kore/core/port/ToolProvider {
+	public static final field INPUT_SCHEMA Ljava/lang/String;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/github/unityinflow/kore/core/AgentLoop;I)V
+	public fun bind (ILjava/lang/String;)Lio/github/unityinflow/kore/core/port/ChildLineage;
+	public fun callTool (Lio/github/unityinflow/kore/core/ToolCall;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun listTools (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/github/unityinflow/kore/core/port/AuditLog {
+	public fun isPersistent ()Z
+	public abstract fun queryCostSummary (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun queryRecentRuns (ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun queryRecentRuns$default (Lio/github/unityinflow/kore/core/port/AuditLog;ILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun recordAgentRun (Ljava/lang/String;Lio/github/unityinflow/kore/core/AgentTask;Lio/github/unityinflow/kore/core/AgentResult;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun recordLLMCall (Ljava/lang/String;Ljava/lang/String;Lio/github/unityinflow/kore/core/TokenUsage;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun recordToolCall (Ljava/lang/String;Lio/github/unityinflow/kore/core/ToolCall;Lio/github/unityinflow/kore/core/ToolResult;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/unityinflow/kore/core/port/AuditLog$DefaultImpls {
+	public static fun isPersistent (Lio/github/unityinflow/kore/core/port/AuditLog;)Z
+	public static synthetic fun queryRecentRuns$default (Lio/github/unityinflow/kore/core/port/AuditLog;ILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public abstract interface class io/github/unityinflow/kore/core/port/BudgetEnforcer {
+	public abstract fun checkBudget (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getUsage (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun recordUsage (Ljava/lang/String;Lio/github/unityinflow/kore/core/TokenUsage;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/github/unityinflow/kore/core/port/ChildDispatchBinder {
+	public abstract fun bind (ILjava/lang/String;)Lio/github/unityinflow/kore/core/port/ChildLineage;
+}
+
+public final class io/github/unityinflow/kore/core/port/ChildLineage : kotlin/coroutines/AbstractCoroutineContextElement {
+	public static final field Key Lio/github/unityinflow/kore/core/port/ChildLineage$Key;
+	public fun <init> (ILjava/lang/String;)V
+	public final fun getParentDepth ()I
+	public final fun getParentRunId ()Ljava/lang/String;
+}
+
+public final class io/github/unityinflow/kore/core/port/ChildLineage$Key : kotlin/coroutines/CoroutineContext$Key {
+}
+
+public abstract interface class io/github/unityinflow/kore/core/port/EventBus {
+	public abstract fun emit (Lio/github/unityinflow/kore/core/AgentEvent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun subscribe ()Lkotlinx/coroutines/flow/Flow;
+}
+
+public abstract interface class io/github/unityinflow/kore/core/port/LLMBackend {
+	public abstract fun call (Ljava/util/List;Ljava/util/List;Lio/github/unityinflow/kore/core/LLMConfig;)Lkotlinx/coroutines/flow/Flow;
+	public abstract fun getName ()Ljava/lang/String;
+}
+
+public final class io/github/unityinflow/kore/core/port/NoOpSkillRegistry : io/github/unityinflow/kore/core/port/SkillRegistry {
+	public static final field INSTANCE Lio/github/unityinflow/kore/core/port/NoOpSkillRegistry;
+	public fun activateFor (Ljava/lang/String;Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/github/unityinflow/kore/core/port/SkillRegistry {
+	public abstract fun activateFor (Ljava/lang/String;Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/github/unityinflow/kore/core/port/ToolProvider {
+	public abstract fun callTool (Lio/github/unityinflow/kore/core/ToolCall;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun listTools (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
