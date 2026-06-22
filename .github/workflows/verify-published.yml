@@ -1,0 +1,36 @@
+name: Verify Published
+
+# Runs AFTER the human presses "Publish" in the Sonatype Central Portal (KORE-06). It proves the
+# curated kore artifacts + kore-bom are clean-consumer-resolvable from Maven Central. It is
+# deliberately workflow_dispatch ONLY — it must NOT be tag-triggered (release.yml fires at staging
+# time, before the artifacts have propagated to Central; verifying then is the failure mode this
+# guards, RESEARCH Pitfall 4 / T-02-11).
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Published version to verify (e.g. 0.1.0)'
+        required: true
+        default: '0.1.0'
+
+jobs:
+  verify:
+    # Self-hosted runner only — never the hosted GitHub runners (CLAUDE.md; runner group forbids
+    # public repos).
+    runs-on: [arc-runner-unityinflow]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # No signing/Sonatype secrets: this workflow reads only public Maven Central (T-02-10).
+      - name: Verify published artifacts are clean-consumer-resolvable
+        run: bash scripts/verify-published.sh "${{ inputs.version }}"
