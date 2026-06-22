@@ -15,7 +15,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Hierarchical Agents
 
-- [ ] **HIER-01**: Developer can declare child agents via `child { }` in the `agent { }` DSL — child runs as a tool call (spawn model) and its result feeds back into the parent loop as a `ToolResult`
+- [x] **HIER-01**: Developer can declare child agents via `child { }` in the `agent { }` DSL — child runs as a tool call (spawn model) and its result feeds back into the parent loop as a `ToolResult`
 - [x] **HIER-02**: Cancelling a parent agent cancels all running child agents — structured concurrency, verified by a cancellation-propagation test
 - [x] **HIER-03**: Child spawning is bounded by a configurable `maxDepth` (default 5) — exceeding depth yields `ToolError`, never unbounded recursion
 - [x] **HIER-04**: Audit log records `parent_run_id` on child agent runs so run trees are traceable
@@ -68,7 +68,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BUDG-05 | Phase 6 | Complete |
 | BUDG-06 | Phase 6 | Complete |
 | BUDG-07 | Phase 6 | Complete |
-| HIER-01 | Phase 7 | Pending |
+| HIER-01 | Phase 7 | Complete |
 | HIER-02 | Phase 7 | Complete |
 | HIER-03 | Phase 7 | Complete |
 | HIER-04 | Phase 7 | Complete |
