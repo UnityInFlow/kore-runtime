@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v0.0.2
 milestone_name: Hardening & Hierarchy
-status: verifying
-stopped_at: Completed 07-05-PLAN.md (gap closure)
+status: milestone_complete
+stopped_at: Phase 07 complete (5/5 verified) — milestone v0.0.2 all phases done
 last_updated: "2026-06-22T17:15:11.098Z"
 last_activity: 2026-06-22
 progress:
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-12)
 
 **Core value:** A developer adds one Spring Boot dependency, writes an `agent { }` block, and has a production-ready agent running with observability and budget control.
-**Current focus:** Phase 07 — hierarchical-agents
+**Current focus:** Milestone v0.0.2 (Hardening & Hierarchy) — all phases complete
 
 ## Current Position
 
-Phase: 07
-Plan: Not started
-Status: Gap closure complete — ready for re-verification (criteria #2/#4 now provable, target 5/5)
+Phase: 07 (complete)
+Plan: —
+Status: Phase 07 verified 5/5 (integration UAT passed against real PostgreSQL). Milestone v0.0.2 phases 5/6/7 all complete.
 Last activity: 2026-06-22
 
-Progress: [███░░░░░░░] 33% (1 of 3 milestone phases complete)
+Progress: [██████████] 100% (3 of 3 milestone phases complete)
 
 **Milestone phase structure:**
 
