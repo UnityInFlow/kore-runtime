@@ -1,11 +1,11 @@
 # kore-runtime release workflow — Maven Central publish on v-tag push.
 #
-# Trust boundary (T-04-10): this workflow runs on the org-owned
-# `arc-runner-unityinflow` self-hosted runner pool. Only UnityInFlow org
-# admins can modify the runner group or the jobs that execute here. A
-# compromised runner = org compromise, which is out of scope for this plan;
-# the human RC dry-run checkpoint (see docs/RELEASE-CHECKLIST.md) catches
-# anomalous staging bundles via Sonatype portal inspection before the
+# Trust boundary (T-04-10): this workflow runs on a fresh GitHub-hosted
+# `ubuntu-24.04` runner (the repo is public; the org runner group does not
+# allow public repos on self-hosted runners). Only a tag push, which forks
+# cannot fire, runs it; the signing/Sonatype secrets are org secrets scoped
+# to this repo. The human RC dry-run checkpoint (see docs/RELEASE-CHECKLIST.md)
+# catches anomalous staging bundles via Sonatype portal inspection before the
 # manual "Publish" button is pressed.
 #
 # Provenance (T-04-09): `fetch-depth: 0` + `generate_release_notes: true`
@@ -17,10 +17,8 @@
 # re-read SIGNING_KEY / SIGNING_PASSWORD at execution time rather than
 # serializing a stale copy into the configuration cache.
 #
-# Runner label (Pitfall 10): `arc-runner-unityinflow` is the CLAUDE.md
-# default and resolves only to X64 Hetzner runners — the ARM orangepi
-# runner does NOT carry this label. An explicit `X64` pin is deliberately
-# omitted per the PF-02 pre-flight runner label audit.
+# Runner label (Pitfall 10): `ubuntu-24.04` is a fixed X64 GitHub-hosted
+# image (not the moving `ubuntu-latest`).
 
 name: Release
 
@@ -31,26 +29,25 @@ on:
 
 jobs:
   publish:
-    # Hetzner X64 fleet (arc-runner-unityinflow) offline at v0.1.0 release time;
-    # JVM artifacts are arch-independent, so run on the ARM64 orangepi runner
-    # (same fallback proven for budget-breaker 0.1.0). Revert to arc-runner-unityinflow when the fleet is back.
-    runs-on: [orangepi]
+    # GitHub-hosted X64 (see "Runner label" above). JVM artifacts are
+    # architecture-independent.
+    runs-on: ubuntu-24.04
     permissions:
       contents: write   # required by softprops/action-gh-release@v2
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
         with:
           java-version: '21'
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
 
       # The Maven coordinates come from the Gradle `version` property (the
       # single-source allprojects block), while the release notes derive the
@@ -122,7 +119,7 @@ jobs:
         run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           tag_name: ${{ github.ref_name }}
           name: kore-runtime ${{ github.ref_name }}
