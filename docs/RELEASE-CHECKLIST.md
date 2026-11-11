@@ -61,38 +61,26 @@ gh repo view UnityInFlow/kore-runtime --json visibility,defaultBranchRef
    proceeding. A not-yet-verified namespace is the #1 first-publish failure
    mode (Pitfall 3 in `04-RESEARCH.md`).
 
-### PF-02 — Runner visibility audit (already verified)
+### PF-02 — Runner (GitHub-hosted)
 
-Phase A reconnaissance confirmed:
+All kore-runtime workflows run on GitHub-hosted runners: `ubuntu-24.04` (X64)
+and `ubuntu-24.04-arm` for the CI arm64 build. The repo is public and the org
+runner group `Default` has `allows_public_repositories: false`, so no
+self-hosted runner can serve it; the former labels `arc-runner-unityinflow`
+and `orangepi` have no runner any more. GitHub-hosted runners are free for
+public repositories.
 
-- The org runner group `Default` has `allows_public_repositories: true` — no
-  action needed.
-- Three Hetzner runners (`hetzner-runner-1/2/3`) are online and carry the
-  label set `[arc-runner-unityinflow, self-hosted, Linux, X64]`.
-- `orangepi-runner` is ARM64 and does **NOT** carry `arc-runner-unityinflow`
-  — exactly what we want (Pitfall 10 defense).
+Before pressing the release button, check that Actions is enabled for this
+repo at org level and that the org action allow-list covers every `uses:`
+in `.github/workflows/` (the org requires full commit SHA pins), then run
+`Release dry-run (manual)` once and confirm it is green.
 
-No action required here. To re-verify before pressing the release button:
+### PF-03 — Docker on the runner
 
-```bash
-gh api /orgs/UnityInFlow/actions/runners \
-  --jq '.runners[] | {name, status, labels: [.labels[].name]}'
-```
-
-### PF-03 — Docker on the runner (optional, non-blocking)
-
-Integration tests are tagged `@Tag("integration")` and excluded from the
-default `./gradlew test` run, so the release workflow does **not** depend on
-Docker. If you later want Testcontainers-backed integration tests to run in
-CI, verify Docker on one of the Hetzner runners:
-
-```bash
-# SSH into hetzner-runner-1 (or trigger an ad-hoc workflow):
-docker --version
-docker ps
-```
-
-If Docker is absent, skip for v0.0.1 — the release path is unaffected.
+GitHub-hosted Ubuntu runners ship a Docker daemon, so the Testcontainers
+integration tests (`integration-test` job in `ci.yml`) run in CI. Integration
+tests are tagged `@Tag("integration")` and excluded from the default
+`./gradlew test` run, so the release workflow does **not** depend on Docker.
 
 ### PF-04 — Generate a GPG key and publish the public half
 
